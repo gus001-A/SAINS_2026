@@ -42,12 +42,6 @@
     <td class="text-center">
         <div class="d-flex justify-content-center gap-2">
             <button type="button" 
-                    onclick="verCarrera({{ $carrera->id }})" 
-                    class="btn btn-ver btn-accion"
-                    title="Ver detalles">
-                <i class="fas fa-eye me-1"></i>Ver
-            </button>
-            <button type="button" 
                     onclick="editCarrera({{ $carrera->id }}, '{{ addslashes($carrera->nombre) }}', '{{ $carrera->tronco_id }}', '{{ $carrera->id_asignatura_1 }}', '{{ $carrera->id_asignatura_2 }}', '{{ $carrera->id_asignatura_3 }}')" 
                     class="btn btn-editar btn-accion"
                     title="Editar carrera">

@@ -39,11 +39,6 @@
     
     <td class="px-3 py-2 text-center" data-label="Acciones">
         <div class="d-flex gap-1 justify-content-center">
-            <button onclick="verPregunta({{ $pregunta->id }})" 
-                    class="btn-accion btn-ver" 
-                    title="Ver detalles">
-                <i class="fas fa-eye"></i>
-            </button>
             <a href="{{ route('admin.preguntas.edit', $pregunta->id) }}" 
                class="btn-accion btn-editar" 
                title="Editar pregunta">

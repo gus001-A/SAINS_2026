@@ -1,16 +1,26 @@
 @forelse($estudiantes as $usuario)
 @php
+    // Verificar si el estudiante existe
     $estudiante = $usuario->estudiante;
-    $preparatoria = $estudiante->escuelaProcedencia;
+    
+    // Si no existe el registro en la tabla estudiantes, mostrar datos básicos del usuario
+    if (!$estudiante) {
+        // Opcional: Registrar este problema para debugging
+        // \Log::warning('Usuario con rol estudiante sin registro en tabla estudiantes', ['user_id' => $usuario->id, 'email' => $usuario->correo]);
+    }
+    
+    $preparatoria = $estudiante ? $estudiante->escuelaProcedencia : null;
 @endphp
 <tr class="animate__animated animate__fadeInUp animate__fast" style="animation-delay: {{ $loop->index * 0.03 }}s;">
     <td class="px-4 py-3">
         <div class="estudiante-info">
             <div class="avatar-estudiante">
-                {{ strtoupper(substr($estudiante->nombre ?? 'E', 0, 1)) }}
+                {{ $estudiante ? strtoupper(substr($estudiante->nombre ?? 'E', 0, 1)) : strtoupper(substr($usuario->name ?? $usuario->correo ?? 'E', 0, 1)) }}
             </div>
             <div class="estudiante-detalles">
-                <span class="estudiante-nombre">{{ $estudiante->nombre }} {{ $estudiante->paterno }} {{ $estudiante->materno }}</span>
+                <span class="estudiante-nombre">
+                    {{ $estudiante ? ($estudiante->nombre . ' ' . $estudiante->paterno . ' ' . $estudiante->materno) : ($usuario->name ?? 'Usuario sin completar') }}
+                </span>
                 <span class="estudiante-email"><i class="fas fa-envelope fa-xs"></i> {{ $usuario->correo }}</span>
             </div>
         </div>
@@ -18,28 +28,28 @@
     
     <td class="px-4 py-3">
         <div class="d-flex flex-column gap-1">
-            @if($estudiante->telefono)
+            @if($estudiante && $estudiante->telefono)
                 <div class="d-flex align-items-center gap-2">
                     <i class="fas fa-mobile-alt text-success fa-sm"></i>
                     <span>{{ $estudiante->telefono }}</span>
                 </div>
             @endif
-            @if($estudiante->telefono_casa)
+            @if($estudiante && $estudiante->telefono_casa)
                 <div class="d-flex align-items-center gap-2">
                     <i class="fas fa-phone-alt text-info fa-sm"></i>
                     <span>{{ $estudiante->telefono_casa }}</span>
                 </div>
             @endif
-            @if(!$estudiante->telefono && !$estudiante->telefono_casa)
+            @if(!$estudiante || (!$estudiante->telefono && !$estudiante->telefono_casa))
                 <span class="text-muted">—</span>
             @endif
         </div>
     </td>
     
     <td class="px-4 py-3">
-        @if($estudiante->sexo == 'M')
+        @if($estudiante && $estudiante->sexo == 'M')
             <span class="badge-sexo-m"><i class="fas fa-mars"></i> Masculino</span>
-        @elseif($estudiante->sexo == 'F')
+        @elseif($estudiante && $estudiante->sexo == 'F')
             <span class="badge-sexo-f"><i class="fas fa-venus"></i> Femenino</span>
         @else
             <span class="text-muted">—</span>
@@ -49,9 +59,9 @@
     <td class="px-4 py-3">
         <div class="text-center">
             <span class="fw-semibold">
-                {{ $estudiante->fecha_nacimiento ? \Carbon\Carbon::parse($estudiante->fecha_nacimiento)->format('d/m/Y') : '—' }}
+                {{ $estudiante && $estudiante->fecha_nacimiento ? \Carbon\Carbon::parse($estudiante->fecha_nacimiento)->format('d/m/Y') : '—' }}
             </span>
-            @if($estudiante->fecha_nacimiento)
+            @if($estudiante && $estudiante->fecha_nacimiento)
                 <br>
                 <small class="text-muted">
                     {{ \Carbon\Carbon::parse($estudiante->fecha_nacimiento)->age }} años
@@ -62,7 +72,7 @@
     
     <td class="px-4 py-3">
         <div class="d-flex flex-column">
-            @if($preparatoria)
+            @if($estudiante && $preparatoria)
                 @if($preparatoria->centro_educativo)
                     <div class="d-flex align-items-center gap-2 mt-1">
                         <i class="fas fa-school text-primary fa-sm"></i>
@@ -78,7 +88,7 @@
     </td>
     
     <td class="px-4 py-3 text-center">
-        @if($estudiante->plan_activo)
+        @if($estudiante && $estudiante->plan_activo)
             <span class="badge-plan-activo"><i class="fas fa-check-circle"></i> Activo</span>
         @else
             <span class="badge-plan-inactivo"><i class="fas fa-times-circle"></i> Inactivo</span>
@@ -86,7 +96,7 @@
     </td>
     
     <td class="px-4 py-3">
-        @if($estudiante->cupon)
+        @if($estudiante && $estudiante->cupon)
             <span class="badge-cupon" title="{{ $estudiante->cupon }}">
                 <i class="fas fa-tag me-1"></i> {{ Str::limit($estudiante->cupon, 12) }}
             </span>
@@ -107,7 +117,7 @@
                     title="Editar estudiante">
                 <i class="fas fa-edit"></i> Editar
             </button>
-            <button onclick="eliminarEstudiante({{ $usuario->id }}, '{{ addslashes($estudiante->nombre . ' ' . $estudiante->paterno . ' ' . $estudiante->materno) }}')" 
+            <button onclick="eliminarEstudiante({{ $usuario->id }}, '{{ $estudiante ? addslashes($estudiante->nombre . ' ' . $estudiante->paterno . ' ' . $estudiante->materno) : addslashes($usuario->correo) }}')" 
                     class="btn-accion btn-eliminar" 
                     title="Eliminar estudiante">
                 <i class="fas fa-trash-alt"></i> Eliminar
@@ -132,5 +142,5 @@
             </a>
         </div>
     </td>
-</table>
+</tr>
 @endforelse

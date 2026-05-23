@@ -262,6 +262,7 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::post('/', [ClaseController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [ClaseController::class, 'edit'])->name('edit');
         Route::put('/{id}', [ClaseController::class, 'update'])->name('update');
+        Route::get('/{id}', [ClaseController::class, 'show'])->name('show');
         Route::delete('/{id}', [ClaseController::class, 'destroy'])->name('destroy');
         Route::get('/api/by-asignatura/{asignaturaId}', [ClaseController::class, 'getClasesByAsignaturaApi'])->name('api.by-asignatura');
     });
