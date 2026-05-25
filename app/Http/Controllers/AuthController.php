@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Estudiante; // Asegúrate de importar el modelo Estudiante
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -35,10 +36,21 @@ class AuthController extends Controller
                 'user_rol' => $user->rol
             ]);
 
+            // Verificar si ya tiene perfil y plan activo
+            $estudiante = Estudiante::where('usuario', $user->id)->first();
+            $tienePlanActivo = $estudiante && $estudiante->plan_activo;
+            
+            // Determinar la ruta de redirección
+            if ($tienePlanActivo) {
+                $redirectRoute = route('estudiante.clases-premium');
+            } else {
+                $redirectRoute = route('estudiante.dashboard');
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => '¡Registro exitoso!',
-                'redirect' => route('estudiante.dashboard')  
+                'redirect' => $redirectRoute
             ]);
 
         } catch (\Exception $e) {
@@ -86,6 +98,7 @@ class AuthController extends Controller
             'user_rol' => $user->rol
         ]);
 
+        // Si es administrador
         if ($user->rol === 'Administrador') {
             return response()->json([
                 'success' => true,
@@ -94,11 +107,21 @@ class AuthController extends Controller
             ]);
         }
 
-        // Si es estudiante - CAMBIADO: estudiante.dashboard
+        // ========== PARA ESTUDIANTES - VERIFICAR SI TIENE PLAN ACTIVO ==========
+        $estudiante = Estudiante::where('usuario', $user->id)->first();
+        $tienePlanActivo = $estudiante && $estudiante->plan_activo;
+        
+        // Determinar la ruta de redirección
+        if ($tienePlanActivo) {
+            $redirectRoute = route('estudiante.clases-premium');
+        } else {
+            $redirectRoute = route('estudiante.dashboard');
+        }
+
         return response()->json([
             'success' => true,
             'message' => '✅ Inicio de sesión exitoso',
-            'redirect' => route('estudiante.dashboard')
+            'redirect' => $redirectRoute
         ]);
     }
 

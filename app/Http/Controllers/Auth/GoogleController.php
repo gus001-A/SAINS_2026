@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Estudiante; // Importar modelo Estudiante
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -40,13 +41,27 @@ class GoogleController extends Controller
 
             Auth::login($user);
 
-            // ⭐ Redirigir según el rol
+            // ⭐ Verificar rol del usuario
             if ($user->isAdmin()) {
                 return redirect()->route('admin.dashboard');
-            } elseif ($user->isEstudiante()) {
+            }
+            
+            // ⭐ Para estudiantes: verificar si tiene plan activo
+            if ($user->isEstudiante()) {
+                $estudiante = Estudiante::where('usuario', $user->id)->first();
+                $tienePlanActivo = $estudiante && $estudiante->plan_activo;
+                
+                // Si tiene plan activo, redirigir directamente a clases premium
+                if ($tienePlanActivo) {
+                    return redirect()->route('estudiante.clases-premium')
+                        ->with('info', 'Bienvenido de vuelta. ¡Disfruta de tus clases premium!');
+                }
+                
+                // Si no tiene plan activo, ir al dashboard normal
                 return redirect()->route('estudiante.dashboard');
             }
 
+            // Fallback por si algo sale mal
             return redirect('/');
 
         } catch (\Exception $e) {

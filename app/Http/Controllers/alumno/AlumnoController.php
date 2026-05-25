@@ -1813,7 +1813,7 @@ class AlumnoController extends Controller
     }
 
 
-    /**
+   /**
      * Mostrar página de checkout (compra del curso)
      */
     public function checkout()
@@ -1824,9 +1824,12 @@ class AlumnoController extends Controller
             return redirect()->route('estudiante.dashboard')->with('warning', 'Primero completa tu perfil');
         }
         
+        // ========== VERIFICAR SI YA TIENE EL CURSO COMPRADO ==========
         if ($estudiante->plan_activo) {
-            return redirect()->route('estudiante.dashboard')->with('info', 'Ya cuentas con un plan activo');
+            return redirect()->route('estudiante.clases-premium')
+                ->with('info', 'Ya tienes acceso al curso premium. ¡Disfruta de las clases!');
         }
+        // ========== FIN DE LA VERIFICACIÓN ==========
         
         // ========== VERIFICAR SI TIENE UN PAGO PENDIENTE ==========
         $pagoPendiente = Pago::where('alumno_pago', $estudiante->id)
