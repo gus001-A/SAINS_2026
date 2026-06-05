@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 25-05-2026 a las 23:31:52
+-- Tiempo de generación: 05-06-2026 a las 18:57:14
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -241,16 +241,16 @@ INSERT INTO `apoyo_preguntas` (`id`, `examen`, `pregunta`, `created_at`, `update
 (360, 10, 94, NULL, NULL),
 (361, 10, 98, NULL, NULL),
 (362, 10, 99, NULL, NULL),
-(363, 20, 24, NULL, NULL),
-(364, 20, 25, NULL, NULL),
-(365, 20, 28, NULL, NULL),
-(366, 20, 31, NULL, NULL),
-(367, 20, 32, NULL, NULL),
-(368, 20, 33, NULL, NULL),
-(369, 20, 37, NULL, NULL),
-(370, 20, 38, NULL, NULL),
-(371, 20, 41, NULL, NULL),
-(372, 20, 47, NULL, NULL);
+(373, 20, 24, NULL, NULL),
+(374, 20, 25, NULL, NULL),
+(375, 20, 28, NULL, NULL),
+(376, 20, 31, NULL, NULL),
+(377, 20, 32, NULL, NULL),
+(378, 20, 33, NULL, NULL),
+(379, 20, 37, NULL, NULL),
+(380, 20, 38, NULL, NULL),
+(381, 20, 41, NULL, NULL),
+(382, 20, 47, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -410,7 +410,8 @@ INSERT INTO `asignatura` (`id`, `nombre`, `created_at`, `updated_at`) VALUES
 (58, 'ADMINISTRACIÓN', NULL, NULL),
 (59, 'ENTORNO DE MEXICO : HISTORIA Y GEOGRAFIA', NULL, NULL),
 (60, 'ESTILOS DE APRENDIZAJE', NULL, NULL),
-(61, 'ESTRUCTURA DE LA LENGUA', NULL, NULL);
+(61, 'ESTRUCTURA DE LA LENGUA', NULL, NULL),
+(62, 'Introducción a la programación', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -449,6 +450,7 @@ CREATE TABLE `carreras` (
   `id_asignatura_1` bigint(20) UNSIGNED NOT NULL,
   `id_asignatura_2` bigint(20) UNSIGNED DEFAULT NULL,
   `id_asignatura_3` bigint(20) UNSIGNED DEFAULT NULL,
+  `calificacion_minima` decimal(5,2) DEFAULT NULL COMMENT 'Calificación mínima requerida para acceder a esta carrera (ej: 85.00)',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -457,56 +459,56 @@ CREATE TABLE `carreras` (
 -- Volcado de datos para la tabla `carreras`
 --
 
-INSERT INTO `carreras` (`id`, `nombre`, `tronco_id`, `id_asignatura_1`, `id_asignatura_2`, `id_asignatura_3`, `created_at`, `updated_at`) VALUES
-(1, 'INGENIERIA EN DESARROLLO RURAL', 1, 1, 2, 26, NULL, NULL),
-(2, 'INGENIERIA EN FITOSANIDAD', 1, 1, 2, 26, NULL, NULL),
-(3, 'INGENIERIA EN HORTICULTURA', 1, 1, 2, 26, NULL, NULL),
-(4, 'INGENIERIA EN PRODUCCION ANIMAL', 1, 1, 2, 26, NULL, NULL),
-(5, 'INGENIERIA EN PRODUCCION VEGETAL', 1, 1, 2, 26, NULL, NULL),
-(6, 'LICENCIATURA EN CIENCIAS APLICADAS AL DEPORTE', 2, 1, 3, 4, NULL, NULL),
-(7, 'LICENCIATURA EN COMUNICACION HUMANA', 2, 1, 3, 4, NULL, NULL),
-(8, 'LICENCIATURA EN ENFERMERIA', 2, 1, 3, 4, NULL, NULL),
-(9, 'LICENCIATURA EN FARMACIA', 2, 1, 3, 4, NULL, NULL),
-(10, 'LICENCIATURA EN NUTRICION', 2, 1, 3, 4, NULL, NULL),
-(11, 'LICENCIATURA EN PSICOLOGIA', 2, 1, 3, 4, NULL, NULL),
-(12, 'MEDICO CIRUJANO', 2, 1, 3, 4, NULL, NULL),
-(13, 'INGENIERIA ELECTRICA', 3, 3, 2, 4, NULL, NULL),
-(14, 'INGENIERIA INDUSTRIAL', 3, 3, 2, 4, NULL, NULL),
-(15, 'INGENIERIA MECANICA', 3, 3, 2, 4, NULL, NULL),
-(16, 'INGENIERIA QUIMICA', 3, 3, 2, 4, NULL, NULL),
-(17, 'LICENCIATURA EN CIENCIAS', 3, 3, 2, 4, NULL, NULL),
-(18, 'QUIMICO INDUSTRIAL', 3, 3, 2, 4, NULL, NULL),
-(19, 'CONTADOR PUBLICO', 5, 28, 13, 9, NULL, NULL),
-(20, 'LICENCIATURA EN ADMINISTRACION', 5, 28, 13, 9, NULL, NULL),
-(21, 'LICENCIATURA EN ADMINISTRACION PUBLICA', 5, 28, 13, 9, NULL, NULL),
-(22, 'LICENCIATURA EN CIENCIAS POLITICAS', 5, 28, 13, 9, NULL, NULL),
-(23, 'LICENCIATURA EN DERECHO', 5, 28, 13, 9, NULL, NULL),
-(24, 'LICENCIATURA EN ECONOMIA', 5, 28, 13, 9, NULL, NULL),
-(25, 'LICENCIATURA EN INFORMATICA', 5, 28, 13, 9, NULL, NULL),
-(26, 'LICENCIATURA EN RELACIONES PUBLICAS', 5, 28, 13, 9, NULL, NULL),
-(27, 'LICENCIATURA EN SEGURIDAD CIUDADANA', 5, 28, 13, 9, NULL, NULL),
-(28, 'LICENCIATURA EN SOCIOLOGIA', 5, 28, 13, 9, NULL, NULL),
-(29, 'LICENCIATURA EN TRABAJO SOCIAL', 5, 28, 13, 9, NULL, NULL),
-(30, 'LICENCIATURA EN TURISMO', 5, 28, 13, 9, NULL, NULL),
-(31, 'LICENCIATURA EN ANTROPOLOGIA SOCIAL', 6, 13, 12, 9, NULL, NULL),
-(32, 'LICENCIATURA EN ARQUITECTURA', 6, 13, 12, 9, NULL, NULL),
-(33, 'LICENCIATURA EN ARTES', 6, 13, 12, 9, NULL, NULL),
-(34, 'LICENCIATURA EN FILOSOFIA', 6, 13, 12, 9, NULL, NULL),
-(35, 'LICENCIATURA EN GESTION Y COMUNICACION INTERCULTURAL', 6, 13, 12, 9, NULL, NULL),
-(36, 'LICENCIATURA EN HISTORIA', 6, 13, 12, 9, NULL, NULL),
-(37, 'LICENCIATURA EN LETRAS HISPANICAS', 6, 13, 12, 9, NULL, NULL),
-(38, 'LICENCIATURA EN TEATRO', 6, 13, 12, 9, NULL, NULL),
-(39, 'LICENCIATURA EN BIOLOGIA', 4, 1, 2, 4, NULL, NULL),
-(40, 'LICENCIATURA EN CIENCIAS AMBIENTALES', 4, 1, 2, 4, NULL, NULL),
-(41, 'LICENCIATURA EN CIENCIAS DE LA EDUCACION', 7, 12, 13, 28, NULL, NULL),
-(42, 'LICENCIATURA EN COMUNICACION Y TECNOLOGIA EDUCATIVA', 7, 12, 13, 28, NULL, NULL),
-(43, 'LICENCIATURA EN DISENO', 7, 12, 13, 28, NULL, NULL),
-(44, 'LICENCIATURA EN DOCENCIA', 7, 12, 13, 28, NULL, NULL),
-(45, 'LICENCIATURA EN EDUCACION FISICA', 7, 12, 13, 28, NULL, NULL),
-(46, 'LICENCIATURA EN ENSENANZA DEL FRANCES', 7, 12, 13, 28, NULL, NULL),
-(47, 'LICENCIATURA EN ENSENANZA DEL INGLES', 7, 12, 13, 28, NULL, NULL),
-(48, 'LICENCIATURA EN PSICOLOGIA', 7, 12, 13, 28, NULL, NULL),
-(49, 'CIENCIAS DE LA COMUNICACION', 5, 28, 13, 9, NULL, NULL);
+INSERT INTO `carreras` (`id`, `nombre`, `tronco_id`, `id_asignatura_1`, `id_asignatura_2`, `id_asignatura_3`, `calificacion_minima`, `created_at`, `updated_at`) VALUES
+(1, 'INGENIERIA EN DESARROLLO RURAL', 1, 1, 2, 26, NULL, NULL, NULL),
+(2, 'INGENIERIA EN FITOSANIDAD', 1, 1, 2, 26, NULL, NULL, NULL),
+(3, 'INGENIERIA EN HORTICULTURA', 1, 1, 2, 26, NULL, NULL, NULL),
+(4, 'INGENIERIA EN PRODUCCION ANIMAL', 1, 1, 2, 26, NULL, NULL, NULL),
+(5, 'INGENIERIA EN PRODUCCION VEGETAL', 1, 1, 2, 26, NULL, NULL, NULL),
+(6, 'LICENCIATURA EN CIENCIAS APLICADAS AL DEPORTE', 2, 1, 3, 4, NULL, NULL, NULL),
+(7, 'LICENCIATURA EN COMUNICACION HUMANA', 2, 1, 3, 4, NULL, NULL, NULL),
+(8, 'LICENCIATURA EN ENFERMERIA', 2, 1, 3, 4, NULL, NULL, NULL),
+(9, 'LICENCIATURA EN FARMACIA', 2, 1, 3, 4, NULL, NULL, NULL),
+(10, 'LICENCIATURA EN NUTRICION', 2, 1, 3, 4, NULL, NULL, NULL),
+(11, 'LICENCIATURA EN PSICOLOGIA', 2, 1, 3, 4, NULL, NULL, NULL),
+(12, 'MEDICO CIRUJANO', 2, 1, 3, 4, NULL, NULL, NULL),
+(13, 'INGENIERIA ELECTRICA', 3, 3, 2, 4, NULL, NULL, NULL),
+(14, 'INGENIERIA INDUSTRIAL', 3, 3, 2, 4, NULL, NULL, NULL),
+(15, 'INGENIERIA MECANICA', 3, 3, 2, 4, NULL, NULL, NULL),
+(16, 'INGENIERIA QUIMICA', 3, 3, 2, 4, NULL, NULL, NULL),
+(17, 'LICENCIATURA EN CIENCIAS', 3, 3, 2, 4, NULL, NULL, NULL),
+(18, 'QUIMICO INDUSTRIAL', 3, 3, 2, 4, NULL, NULL, NULL),
+(19, 'CONTADOR PUBLICO', 5, 28, 13, 9, 89.00, NULL, NULL),
+(20, 'LICENCIATURA EN ADMINISTRACION', 5, 28, 13, 9, NULL, NULL, NULL),
+(21, 'LICENCIATURA EN ADMINISTRACION PUBLICA', 5, 28, 13, 9, NULL, NULL, NULL),
+(22, 'LICENCIATURA EN CIENCIAS POLITICAS', 5, 28, 13, 9, NULL, NULL, NULL),
+(23, 'LICENCIATURA EN DERECHO', 5, 28, 13, 9, NULL, NULL, NULL),
+(24, 'LICENCIATURA EN ECONOMIA', 5, 28, 13, 9, NULL, NULL, NULL),
+(25, 'LICENCIATURA EN INFORMATICA', 5, 28, 13, 9, NULL, NULL, NULL),
+(26, 'LICENCIATURA EN RELACIONES PUBLICAS', 5, 28, 13, 9, NULL, NULL, NULL),
+(27, 'LICENCIATURA EN SEGURIDAD CIUDADANA', 5, 28, 13, 9, NULL, NULL, NULL),
+(28, 'LICENCIATURA EN SOCIOLOGIA', 5, 28, 13, 9, NULL, NULL, NULL),
+(29, 'LICENCIATURA EN TRABAJO SOCIAL', 5, 28, 13, 9, NULL, NULL, NULL),
+(30, 'LICENCIATURA EN TURISMO', 5, 28, 13, 9, NULL, NULL, NULL),
+(31, 'LICENCIATURA EN ANTROPOLOGIA SOCIAL', 6, 13, 12, 9, NULL, NULL, NULL),
+(32, 'LICENCIATURA EN ARQUITECTURA', 6, 13, 12, 9, NULL, NULL, NULL),
+(33, 'LICENCIATURA EN ARTES', 6, 13, 12, 9, NULL, NULL, NULL),
+(34, 'LICENCIATURA EN FILOSOFIA', 6, 13, 12, 9, NULL, NULL, NULL),
+(35, 'LICENCIATURA EN GESTION Y COMUNICACION INTERCULTURAL', 6, 13, 12, 9, NULL, NULL, NULL),
+(36, 'LICENCIATURA EN HISTORIA', 6, 13, 12, 9, NULL, NULL, NULL),
+(37, 'LICENCIATURA EN LETRAS HISPANICAS', 6, 13, 12, 9, NULL, NULL, NULL),
+(38, 'LICENCIATURA EN TEATRO', 6, 13, 12, 9, NULL, NULL, NULL),
+(39, 'LICENCIATURA EN BIOLOGIA', 4, 1, 2, 4, 80.00, NULL, NULL),
+(40, 'LICENCIATURA EN CIENCIAS AMBIENTALES', 4, 1, 2, 4, NULL, NULL, NULL),
+(41, 'LICENCIATURA EN CIENCIAS DE LA EDUCACION', 7, 12, 13, 28, NULL, NULL, NULL),
+(42, 'LICENCIATURA EN COMUNICACION Y TECNOLOGIA EDUCATIVA', 7, 12, 13, 28, NULL, NULL, NULL),
+(43, 'LICENCIATURA EN DISENO', 7, 12, 13, 28, NULL, NULL, NULL),
+(44, 'LICENCIATURA EN DOCENCIA', 7, 12, 13, 28, NULL, NULL, NULL),
+(45, 'LICENCIATURA EN EDUCACION FISICA', 7, 12, 13, 28, NULL, NULL, NULL),
+(46, 'LICENCIATURA EN ENSENANZA DEL FRANCES', 7, 12, 13, 28, NULL, NULL, NULL),
+(47, 'LICENCIATURA EN ENSENANZA DEL INGLES', 7, 12, 13, 28, NULL, NULL, NULL),
+(48, 'LICENCIATURA EN PSICOLOGIA', 7, 12, 13, 28, NULL, NULL, NULL),
+(49, 'CIENCIAS DE LA COMUNICACION', 5, 28, 13, 9, 80.00, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -593,7 +595,8 @@ INSERT INTO `clases` (`id`, `id_asignatura`, `num_clase`, `nombre_clase`, `link`
 (125, 19, 12, 'Clase 12 Probabilidad', 'https://vimeo.com/356315500', 'https://drive.google.com/file/d/1OltYA-Se7hcPTcIoFobVPZKNVDgLJlEC/view?usp=sharing', '2026-05-21 21:14:01', '2026-05-21 21:14:01'),
 (126, 19, 13, 'Clase 13 Línea recta', 'https://vimeo.com/356317487', 'https://drive.google.com/file/d/1QnZMRH4uhGdQSCyT69uwD7OFIF839N12/view?usp=sharing', '2026-05-21 21:14:01', '2026-05-21 21:14:01'),
 (127, 19, 14, 'Clase 14 Razonamiento geométrico', 'https://vimeo.com/356503500', 'https://drive.google.com/file/d/11rM8dHqfbOKC8T6EqLdVookTRDtxFczk/view?usp=sharing', '2026-05-21 21:14:01', '2026-05-21 21:14:01'),
-(128, 19, 15, 'Clase 15 Resolución de triángulos', 'https://vimeo.com/356507308', 'https://drive.google.com/file/d/1G1Qj2uIuK_31nrpYaFybpimsHmFbFmpt/view?usp=sharing', '2026-05-21 21:14:01', '2026-05-21 21:14:01');
+(128, 19, 15, 'Clase 15 Resolución de triángulos', 'https://vimeo.com/356507308', 'https://drive.google.com/file/d/1G1Qj2uIuK_31nrpYaFybpimsHmFbFmpt/view?usp=sharing', '2026-05-21 21:14:01', '2026-05-21 21:14:01'),
+(129, 26, 1, 'Introducción al álgebra', 'https://vimeo.com/356317487', 'https://docs.google.com/file/d/0B8x71XDp4ZBfaXZ6c1ctNjFqZmc/edit?resourcekey=0-zCgDhb1MFBaJlxeYzFWLgw', '2026-06-03 23:04:37', '2026-06-03 23:04:37');
 
 -- --------------------------------------------------------
 
@@ -627,7 +630,18 @@ INSERT INTO `cupones` (`id`, `codigo`, `usado`, `usuario_uso`, `usuario_genero`,
 (3, 'OJDRILK8JJBFXYZ', 1, 3, 1, 'activo', '2026-05-18', '2026-05-19', NULL, 'cantidad_fija', 200.00, NULL, NULL),
 (4, 'OZD9NFEBD2HIWXU', 1, 2, 1, 'activo', '2026-05-22', '2026-05-22', '2026-05-30', 'porcentaje', 50.00, NULL, NULL),
 (5, '1C6WSMPQRI3RJDY', 1, 4, 1, 'activo', '2026-05-22', '2026-05-22', '2026-05-30', 'porcentaje', 25.00, NULL, NULL),
-(6, 'RAHHVX5O7T1M8AB', 1, 7, 1, 'activo', '2026-05-23', '2026-05-23', '2026-05-30', 'porcentaje', 50.00, NULL, NULL);
+(6, 'RAHHVX5O7T1M8AB', 1, 7, 1, 'activo', '2026-05-23', '2026-05-23', '2026-05-30', 'porcentaje', 50.00, NULL, NULL),
+(7, 'THDKKZNWYGI0AVF', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-05', 'porcentaje', 30.00, NULL, NULL),
+(8, 'LZY5FYXWFJH48ER', 0, NULL, 1, 'activo', '2026-05-30', NULL, NULL, 'cantidad_fija', 200.00, NULL, NULL),
+(9, 'THY5VSYD8DO4F6L', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL),
+(10, 'RS3TSOJOMYZJXUU', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL),
+(11, 'LDOPFVIN53ULBSZ', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL),
+(12, 'MSF18UETRULFKWT', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL),
+(13, 'BXFC7WXXUTTST2A', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL),
+(14, 'KPFOXP7JQM8IXPR', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL),
+(15, 'DFIP1YBKXWPNHM2', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL),
+(16, 'FEIM2XK3G2LW8YY', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL),
+(17, '6LSSQIT3PQQYL06', 0, NULL, 1, 'activo', '2026-05-30', NULL, '2026-06-30', 'porcentaje', 10.00, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -663,7 +677,8 @@ INSERT INTO `estudiante` (`id`, `nombre`, `paterno`, `materno`, `fecha_nacimient
 (1, 'Luis', 'Loera', 'Montes de Oca', '2011-05-02', 'M', '7778909192', '7778909876', 262, 'OZD9NFEBD2HIWXU', '2026-05-18', 0, 1, NULL, 2, NULL, NULL),
 (2, 'Gustavo', 'Loera', 'Martinez', '2004-07-07', 'M', '7778900102', '7771234533', 93, 'OJDRILK8JJBFXYZ', '2026-05-19', 1, 1, 'fotos_perfil/njqzNrNhldeuHG2Sot5nn4Cu3fsbi9j7VLYxy58A.png', 3, NULL, NULL),
 (3, 'Fernando', 'Diaz', 'Diaz', '2000-02-15', 'M', '7778901222', '8801919191', 42, '1C6WSMPQRI3RJDY', '2026-05-22', 1, 3, NULL, 4, NULL, NULL),
-(4, 'Arleth', 'Vega', 'Estrada', '2005-05-02', 'F', '7778900102', '7778909192', 92, 'RAHHVX5O7T1M8AB', '2026-05-23', 1, 2, NULL, 7, NULL, NULL);
+(4, 'Arleth', 'Vega', 'Estrada', '2005-05-02', 'F', '7778900102', '7778909192', 92, 'RAHHVX5O7T1M8AB', '2026-05-23', 1, 2, NULL, 7, NULL, NULL),
+(5, 'José', 'Cortés', 'Flores', '2012-05-23', 'M', '1782398172', '2198371928', 223, NULL, '2026-06-04', 0, 1, NULL, 9, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -695,7 +710,7 @@ INSERT INTO `examen_generado` (`id`, `numero_preguntas`, `tiempo`, `tipo_examen`
 (8, 20, 30, 'Simulación', '2026-05-21 21:43:11', '2026-05-21 21:43:11'),
 (9, 20, 40, 'Simulación', '2026-05-21 21:43:17', '2026-05-21 21:43:17'),
 (10, 20, 40, 'Simulación', '2026-05-21 21:43:25', '2026-05-21 21:43:25'),
-(20, 10, 60, 'General del curso', '2026-05-23 06:25:33', '2026-05-23 06:25:33');
+(20, 10, 60, 'Curso', '2026-05-23 06:25:33', '2026-06-03 18:10:25');
 
 -- --------------------------------------------------------
 
@@ -714,6 +729,7 @@ CREATE TABLE `examen_realizado` (
   `calificacion` decimal(5,2) DEFAULT NULL,
   `examen` bigint(20) UNSIGNED NOT NULL,
   `intento` int(11) NOT NULL DEFAULT 1,
+  `respuestas` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Almacena las respuestas del estudiante en formato JSON' CHECK (json_valid(`respuestas`)),
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -722,14 +738,11 @@ CREATE TABLE `examen_realizado` (
 -- Volcado de datos para la tabla `examen_realizado`
 --
 
-INSERT INTO `examen_realizado` (`id`, `estudiante`, `fecha_inicio`, `hora_inicio`, `fecha_fin`, `hora_fin`, `tiempo`, `calificacion`, `examen`, `intento`, `created_at`, `updated_at`) VALUES
-(11, 2, '2026-05-22', '03:59:33', '2026-05-22', '04:00:02', '00:00:29', 50.00, 8, 5, NULL, NULL),
-(12, 2, '2026-05-22', '09:15:57', '2026-05-22', '09:16:05', '00:00:08', 0.00, 8, 6, NULL, NULL),
-(13, 2, '2026-05-22', '09:20:18', '2026-05-22', '09:21:10', '00:00:52', 0.00, 1, 1, NULL, NULL),
-(14, 2, '2026-05-22', '11:40:51', '2026-05-22', '11:41:33', '00:00:42', 0.00, 1, 2, NULL, NULL),
-(15, 2, '2026-05-22', '15:52:43', '2026-05-22', '15:54:37', '00:01:54', 80.00, 7, 1, NULL, NULL),
-(16, 4, '2026-05-23', '00:48:23', '2026-05-23', '00:48:52', '00:00:29', 0.00, 1, 1, NULL, NULL),
-(17, 4, '2026-05-23', '00:49:27', '2026-05-23', '00:49:55', '00:00:28', 60.00, 9, 1, NULL, NULL);
+INSERT INTO `examen_realizado` (`id`, `estudiante`, `fecha_inicio`, `hora_inicio`, `fecha_fin`, `hora_fin`, `tiempo`, `calificacion`, `examen`, `intento`, `respuestas`, `created_at`, `updated_at`) VALUES
+(20, 2, '2026-06-01', '11:36:34', '2026-06-01', '11:37:27', '00:00:53', 70.00, 10, 2, '\"{\\\"respuestas\\\":[{\\\"pregunta_id\\\":9,\\\"respuesta\\\":\\\"Hermoso\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":14,\\\"respuesta\\\":\\\"El sol brilla en el cielo\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":20,\\\"respuesta\\\":\\\"Y\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":26,\\\"respuesta\\\":\\\"\\\\u00a1!\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":32,\\\"respuesta\\\":\\\"D\\\\u00edgamelo\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":38,\\\"respuesta\\\":\\\"Adem\\\\u00e1s\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":46,\\\"respuesta\\\":\\\"Carro\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":50,\\\"respuesta\\\":\\\"Lectura de barrido (skimming)\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":52,\\\"respuesta\\\":\\\"Sintetizar las ideas principales del texto\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":57,\\\"respuesta\\\":\\\"I don\'t like\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":62,\\\"respuesta\\\":\\\"I have to study\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":68,\\\"respuesta\\\":\\\"May I come in?\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":76,\\\"respuesta\\\":\\\"Yo juego f\\\\u00fatbol\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":81,\\\"respuesta\\\":\\\"Informaci\\\\u00f3n factual que sirve como base\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":83,\\\"respuesta\\\":\\\"Perro es adulto, cachorro es cr\\\\u00eda\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":86,\\\"respuesta\\\":\\\"Suma, resta, multiplicaci\\\\u00f3n, divisi\\\\u00f3n\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":91,\\\"respuesta\\\":\\\"Escribir como producto de factores\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":94,\\\"respuesta\\\":\\\"Una, ninguna o infinitas\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":98,\\\"respuesta\\\":\\\"La medida de la posibilidad de que ocurra un evento\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":99,\\\"respuesta\\\":\\\"y = mx + b\\\",\\\"estatus\\\":\\\"correcta\\\"}]}\"', NULL, NULL),
+(21, 2, '2026-06-01', '12:20:59', '2026-06-01', '12:22:59', '00:02:00', 30.00, 7, 1, '\"{\\\"respuestas\\\":[{\\\"pregunta_id\\\":6,\\\"respuesta\\\":\\\"Correr\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":10,\\\"respuesta\\\":\\\"Y\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":15,\\\"respuesta\\\":\\\"Un adverbio\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":23,\\\"respuesta\\\":\\\"Juegan\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":28,\\\"respuesta\\\":\\\"Arbol\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":33,\\\"respuesta\\\":\\\"Sin\\\\u00f3nimos\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":40,\\\"respuesta\\\":\\\"Cozina\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":48,\\\"respuesta\\\":\\\"La \\\\u00faltima frase del texto\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":51,\\\"respuesta\\\":\\\"Conclusiones que sacamos al leer entre l\\\\u00edneas\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":54,\\\"respuesta\\\":\\\"Where\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":58,\\\"respuesta\\\":\\\"She is\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":64,\\\"respuesta\\\":\\\"More tall\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":70,\\\"respuesta\\\":\\\"I going to help you\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":80,\\\"respuesta\\\":\\\"Memorizar informaci\\\\u00f3n\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":83,\\\"respuesta\\\":\\\"Son ant\\\\u00f3nimos\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":85,\\\"respuesta\\\":\\\"24\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":87,\\\"respuesta\\\":\\\"Una comparaci\\\\u00f3n entre dos cantidades\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":90,\\\"respuesta\\\":\\\"a\\\\u00b2 + 2ab + b\\\\u00b2\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":95,\\\"respuesta\\\":\\\"El dato central\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":99,\\\"respuesta\\\":\\\"y = mx + b\\\",\\\"estatus\\\":\\\"correcta\\\"}]}\"', NULL, NULL),
+(22, 2, '2026-06-02', '21:29:35', '2026-06-02', '21:36:32', '00:06:57', 60.00, 7, 2, '\"{\\\"respuestas\\\":[{\\\"pregunta_id\\\":6,\\\"respuesta\\\":\\\"Casa\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":10,\\\"respuesta\\\":\\\"Y\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":15,\\\"respuesta\\\":\\\"Un adverbio\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":23,\\\"respuesta\\\":\\\"Juegan\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":28,\\\"respuesta\\\":\\\"\\\\u00c1rbol\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":33,\\\"respuesta\\\":\\\"Ant\\\\u00f3nimos\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":40,\\\"respuesta\\\":\\\"Cozina\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":48,\\\"respuesta\\\":\\\"La idea m\\\\u00e1s importante que el autor quiere transmitir\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":51,\\\"respuesta\\\":\\\"Conclusiones que sacamos al leer entre l\\\\u00edneas\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":54,\\\"respuesta\\\":\\\"What\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":58,\\\"respuesta\\\":\\\"She is\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":64,\\\"respuesta\\\":\\\"The tallest\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":70,\\\"respuesta\\\":\\\"I going to help you\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":80,\\\"respuesta\\\":\\\"Capacidad para descomponer un problema en partes y analizarlas\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":83,\\\"respuesta\\\":\\\"Perro es adulto, cachorro es cr\\\\u00eda\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":85,\\\"respuesta\\\":\\\"14 (primero la multiplicaci\\\\u00f3n)\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":87,\\\"respuesta\\\":\\\"Una comparaci\\\\u00f3n entre dos cantidades\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":90,\\\"respuesta\\\":\\\"a\\\\u00b2 + 2ab + b\\\\u00b2\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":95,\\\"respuesta\\\":\\\"El dato que m\\\\u00e1s se repite\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":99,\\\"respuesta\\\":\\\"y = ax\\\\u00b2 + bx + c\\\",\\\"estatus\\\":\\\"incorrecta\\\"}]}\"', NULL, NULL),
+(23, 2, '2026-06-03', '12:02:33', '2026-06-03', '12:05:04', '00:02:31', 40.00, 7, 3, '\"{\\\"respuestas\\\":[{\\\"pregunta_id\\\":6,\\\"respuesta\\\":\\\"Hermoso\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":10,\\\"respuesta\\\":\\\"Pero\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":15,\\\"respuesta\\\":\\\"Un adverbio\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":23,\\\"respuesta\\\":\\\"Ellos\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":28,\\\"respuesta\\\":\\\"arbol\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":33,\\\"respuesta\\\":\\\"Sin\\\\u00f3nimos\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":40,\\\"respuesta\\\":\\\"Cocina\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":48,\\\"respuesta\\\":\\\"La idea m\\\\u00e1s importante que el autor quiere transmitir\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":51,\\\"respuesta\\\":\\\"Conclusiones que sacamos al leer entre l\\\\u00edneas\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":54,\\\"respuesta\\\":\\\"Where\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":58,\\\"respuesta\\\":\\\"She is\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":64,\\\"respuesta\\\":\\\"More tall\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":70,\\\"respuesta\\\":\\\"I going to help you\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":80,\\\"respuesta\\\":\\\"Pensar sin l\\\\u00f3gica\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":83,\\\"respuesta\\\":\\\"Son sin\\\\u00f3nimos\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":85,\\\"respuesta\\\":\\\"14 (primero la multiplicaci\\\\u00f3n)\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":87,\\\"respuesta\\\":\\\"Un producto\\\",\\\"estatus\\\":\\\"incorrecta\\\"},{\\\"pregunta_id\\\":90,\\\"respuesta\\\":\\\"a\\\\u00b2 + 2ab + b\\\\u00b2\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":95,\\\"respuesta\\\":\\\"El promedio de un conjunto de datos\\\",\\\"estatus\\\":\\\"correcta\\\"},{\\\"pregunta_id\\\":99,\\\"respuesta\\\":\\\"y = mx + b\\\",\\\"estatus\\\":\\\"correcta\\\"}]}\"', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -858,7 +871,11 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (26, 'tabla_x_tiempo_estudio', 2),
 (27, 'tabla_z_cupones_fechaexpiracion', 3),
 (28, 'reset_password', 4),
-(29, 'tabla_x_google', 5);
+(29, 'tabla_x_google', 5),
+(30, 'tabla_z_modPreguntas', 6),
+(31, 'tabla_z_modificacionCarrera', 7),
+(32, 'tabla_z_mod_examenGenerado', 8),
+(33, 'tabla_z_recursosAdicionales', 9);
 
 -- --------------------------------------------------------
 
@@ -943,6 +960,7 @@ CREATE TABLE `preguntas` (
   `respuesta_correcta` varchar(255) NOT NULL,
   `respuesta1` varchar(255) NOT NULL,
   `respuesta2` varchar(255) NOT NULL,
+  `justificacion` text DEFAULT NULL COMMENT 'Justificación de la respuesta correcta',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -951,107 +969,108 @@ CREATE TABLE `preguntas` (
 -- Volcado de datos para la tabla `preguntas`
 --
 
-INSERT INTO `preguntas` (`id`, `id_area`, `pregunta`, `respuesta_correcta`, `respuesta1`, `respuesta2`, `created_at`, `updated_at`) VALUES
-(1, 26, '¿Cuanto es 2x2?', '4', '18', '22', NULL, NULL),
-(2, 18, 'Escribe una palabra', 'Palabra', 'Correcta', 'Sin', NULL, NULL),
-(3, 40, '¿Qué es Hardware?', 'Lo que se puede tocar', 'Lo que no se puede tocar', 'Ambos', NULL, NULL),
-(4, 9, '¿Qué es un sexenio?', '6 años', '8 años', '10 años', NULL, NULL),
-(5, 6, '¿Qué son las emociones?', 'El como nos expresamos de lo que sentimos', 'Son cocos', 'Coca cola', NULL, NULL),
-(6, 17, '¿Cuál de las siguientes palabras es un SUSTANTIVO?', 'Casa', 'Hermoso', 'Correr', NULL, NULL),
-(7, 17, '¿Qué función cumplen los adjetivos en una oración?', 'Calificar o describir al sustantivo', 'Nombrar acciones', 'Indicar tiempo', NULL, NULL),
-(8, 17, '¿Cuál es el verbo en la siguiente oración: \"María corre rápidamente\"?', 'Corre', 'María', 'Rápidamente', NULL, NULL),
-(9, 17, '¿Qué palabra es un ADVERBIO?', 'Rápidamente', 'Hermoso', 'Mesa', NULL, NULL),
-(10, 17, '¿Cuál de las siguientes es una preposición?', 'A', 'Y', 'Pero', NULL, NULL),
-(11, 17, '¿Qué función tienen las preposiciones?', 'Relacionar palabras indicando origen, destino, causa, etc.', 'Unir oraciones', 'Expresar emociones', NULL, NULL),
-(12, 17, '¿Cuál es el SUJETO en la oración: \"El perro ladra fuerte\"?', 'El perro', 'Ladra', 'Fuerte', NULL, NULL),
-(13, 17, '¿Qué parte de la oración indica lo que se dice del sujeto?', 'El predicado', 'El sujeto', 'El verbo', NULL, NULL),
-(14, 17, '¿Cuál de las siguientes es una oración completa?', 'El sol brilla en el cielo', 'Corriendo alegre', 'Muy feliz', NULL, NULL),
-(15, 17, '¿Qué elemento es indispensable en una oración?', 'Un verbo conjugado', 'Un adjetivo', 'Un adverbio', NULL, NULL),
-(16, 17, '¿Qué es un pleonasmo?', 'Uso de palabras redundantes que repiten un concepto', 'Falta de concordancia gramatical', 'Uso incorrecto de tildes', NULL, NULL),
-(17, 17, '¿Cuál de las siguientes es un ejemplo de PLEONASMO?', 'Subir arriba', 'Casa grande', 'Correr rápido', NULL, NULL),
-(18, 17, '¿Qué signo de puntuación se usa para indicar una pausa corta?', 'La coma', 'El punto', 'El punto y coma', NULL, NULL),
-(19, 17, '¿Qué signo se utiliza para expresar sorpresa o énfasis?', 'Signos de exclamación (¡!)', 'Signos de interrogación (¿?)', 'Comillas', NULL, NULL),
-(20, 17, '¿Cuál de los siguientes es un NEXO de causalidad?', 'Porque', 'Y', 'O', NULL, NULL),
-(21, 17, '¿Qué palabra conecta ideas en esta oración: \"Estudió mucho, PERO no aprobó\"?', 'Pero', 'Estudió', 'Aprobó', NULL, NULL),
-(22, 17, '¿Qué son los heterónimos?', 'Palabras que tienen la misma escritura pero diferente pronunciación y significado', 'Palabras con significado opuesto', 'Palabras que suenan igual pero se escriben diferente', NULL, NULL),
-(23, 61, '¿Cuál es el verbo en la oración: \"Ellos juegan en el parque\"?', 'Juegan', 'Ellos', 'Parque', NULL, NULL),
-(24, 61, '¿En qué tiempo verbal está \"cantaré\"?', 'Futuro', 'Presente', 'Pasado', NULL, NULL),
-(25, 61, '¿Dónde se coloca la coma en este enunciado? \"Hola cómo estás\"', 'Hola, ¿cómo estás?', 'Hola cómo, estás?', 'Hola cómo estás,', NULL, NULL),
-(26, 61, '¿Qué signo se usa para preguntar?', '¿?', '¡!', '...', NULL, NULL),
-(27, 61, 'La palabra \"MÉDICO\" es una palabra...', 'Esdrújula (siempre lleva tilde)', 'Grave', 'Aguda', NULL, NULL),
-(28, 61, '¿Cuál está correctamente acentuada?', 'Árbol', 'Arbol', 'arbol', NULL, NULL),
-(29, 61, '¿Cuál de estas palabras lleva tilde por ser aguda terminada en N, S o vocal?', 'Canción', 'Casa', 'Libro', NULL, NULL),
-(30, 61, 'La palabra \"TAMBIÉN\" lleva tilde porque...', 'Es aguda terminada en N', 'Es grave', 'Es esdrújula', NULL, NULL),
-(31, 61, '¿Cuál es la palabra GRAVE que NO lleva tilde?', 'Mesa', 'Césped', 'Árbol', NULL, NULL),
-(32, 61, 'Las palabras SOBREESDRÚJULAS siempre llevan tilde. ¿Cuál lo es?', 'Dígamelo', 'Casa', 'Perro', NULL, NULL),
-(33, 61, '¿Qué relación existe entre \"CALIENTE\" y \"FRÍO\"?', 'Antónimos', 'Sinónimos', 'Homófonos', NULL, NULL),
-(34, 61, '¿Cuál es sinónimo de \"ALEGRE\"?', 'Feliz', 'Triste', 'Enojado', NULL, NULL),
-(35, 61, '¿Cuál de las siguientes es una PREPOSICIÓN?', 'Sin', 'Y', 'Aunque', NULL, NULL),
-(36, 61, '¿Qué palabra es un ADVERBIO DE LUGAR?', 'Aquí', 'Bien', 'Pronto', NULL, NULL),
-(37, 61, '¿Qué permite la cohesión textual?', 'Conectar ideas correctamente', 'Escribir sin errores', 'Usar palabras bonitas', NULL, NULL),
-(38, 61, '¿Qué conector indica CONTRASTE?', 'Pero', 'Además', 'También', NULL, NULL),
-(39, 61, '¿Qué elemento da coherencia a un texto?', 'Que todas las ideas giren alrededor de un tema central', 'Que tenga muchas palabras', 'Que sea largo', NULL, NULL),
-(40, 61, '¿Cuál es la palabra correctamente escrita?', 'Cocina', 'Cosina', 'Cozina', NULL, NULL),
-(41, 61, '¿Qué letra usarías en \"felici_ dad\"?', 'Z', 'C', 'S', NULL, NULL),
-(42, 61, '¿Cuál está escrita correctamente?', 'Gente', 'Jente', 'Gente', NULL, NULL),
-(43, 61, '¿Qué palabra lleva J?', 'Caja', 'Gato', 'Gema', NULL, NULL),
-(44, 61, '¿Cuál está correctamente escrita?', 'Bien', 'Vien', 'Vien', NULL, NULL),
-(45, 61, 'Después de N va...', 'V (envidia)', 'B (enbidia)', 'Ambas son válidas', NULL, NULL),
-(46, 61, '¿Cuál está correctamente escrita?', 'Carro', 'Caro', 'Carro', NULL, NULL),
-(47, 61, 'Al inicio de la palabra se escribe...', 'R simple (ropa)', 'RR (rropa)', 'Ambas', NULL, NULL),
-(48, 57, '¿Qué es la idea principal de un texto?', 'La idea más importante que el autor quiere transmitir', 'Un detalle secundario', 'La última frase del texto', NULL, NULL),
-(49, 57, '¿Qué permite hacer una LECTURA CRÍTICA?', 'Analizar y cuestionar lo que se lee', 'Leer más rápido', 'Memorizar todo', NULL, NULL),
-(50, 57, '¿Cómo se llama la técnica de leer rápidamente para captar lo esencial?', 'Lectura de barrido (skimming)', 'Lectura lenta', 'Subrayado', NULL, NULL),
-(51, 57, '¿Qué son las inferencias?', 'Conclusiones que sacamos al leer entre líneas', 'Datos explícitos', 'Resúmenes', NULL, NULL),
-(52, 57, '¿Para qué sirve hacer un resumen?', 'Sintetizar las ideas principales del texto', 'Alargar el contenido', 'Copiar el texto original', NULL, NULL),
-(53, 57, '¿Qué significa que un texto sea COHERENTE?', 'Que todas sus partes se relacionan lógicamente', 'Que tiene buena ortografía', 'Que usa palabras bonitas', NULL, NULL),
-(54, 23, '¿Cuál WH question se usa para preguntar por personas?', 'Who', 'What', 'Where', NULL, NULL),
-(55, 23, '¿Cómo preguntarías \"¿Dónde vives?\"', 'Where do you live?', 'What do you live?', 'Who do you live?', NULL, NULL),
-(56, 23, '¿Cuál es la forma correcta para HE/SHE/IT en Simple Present?', 'He plays', 'He play', 'He playing', NULL, NULL),
-(57, 23, '¿Cómo se niega en Simple Present con I?', 'I don\'t like', 'I doesn\'t like', 'I not like', NULL, NULL),
-(58, 23, '¿Cuál es la forma correcta del verbo TO BE para \"SHE\"?', 'She is', 'She are', 'She am', NULL, NULL),
-(59, 23, '¿Cómo se dice \"Yo soy estudiante\"?', 'I am a student', 'I is a student', 'I are a student', NULL, NULL),
-(60, 23, '¿Cómo saludas en la mañana?', 'Good morning', 'Good afternoon', 'Good night', NULL, NULL),
-(61, 23, '¿Cómo dices \"Gracias\"?', 'Thank you', 'Please', 'Sorry', NULL, NULL),
-(62, 23, '¿Cómo se dice \"Tengo que estudiar\"?', 'I have to study', 'I has to study', 'I must to study', NULL, NULL),
-(63, 23, '¿Qué expresa MUST?', 'Obligación fuerte', 'Permiso', 'Posibilidad', NULL, NULL),
-(64, 23, '¿Cuál es el comparativo de \"TALL\"?', 'Taller', 'More tall', 'The tallest', NULL, NULL),
-(65, 23, '¿Cuál es el superlativo de \"BIG\"?', 'The biggest', 'Bigger', 'More big', NULL, NULL),
-(66, 23, '¿Cómo pides la cuenta?', 'Can I have the bill please?', 'Give me the money', 'I want food', NULL, NULL),
-(67, 23, '¿Cómo preguntas \"¿Qué recomiendas?\"', 'What do you recommend?', 'What you recommend?', 'What recommend you?', NULL, NULL),
-(68, 23, '¿Cómo pides permiso formalmente?', 'May I come in?', 'Can I come in?', 'I come in?', NULL, NULL),
-(69, 23, '¿Qué significa \"You can sit here\"?', 'Tú puedes sentarte aquí', 'Tú debes sentarte aquí', 'Tú no puedes sentarte aquí', NULL, NULL),
-(70, 23, '¿Cómo expresas una decisión espontánea?', 'I will help you', 'I going to help you', 'I help you', NULL, NULL),
-(71, 23, '¿Qué significa \"It\'s going to rain\"?', 'Va a llover', 'Llueve ahora', 'Llovió', NULL, NULL),
-(72, 23, '¿Cómo preguntas \"¿Cuál es el título del libro?\"', 'What is the title of the book?', 'Who is the book?', 'Where is the book?', NULL, NULL),
-(73, 23, '¿Qué significa \"The main character\"?', 'El personaje principal', 'El autor', 'El título', NULL, NULL),
-(74, 23, '¿Cómo preguntas \"¿Cuántos años tienes?\"', 'How old are you?', 'How many years you have?', 'What age you?', NULL, NULL),
-(75, 23, '¿Cómo dices \"Mi cumpleaños es el 10 de mayo\"?', 'My birthday is on May 10th', 'My birthday is in May 10', 'I birthday is May 10', NULL, NULL),
-(76, 23, '¿Qué significa \"I used to play soccer\"?', 'Yo solía jugar fútbol', 'Yo juego fútbol', 'Yo jugaré fútbol', NULL, NULL),
-(77, 23, '¿Cómo se niega \"used to\"?', 'I didn\'t use to', 'I used not to', 'I don\'t used to', NULL, NULL),
-(78, 23, '¿Qué tiempo usas para acciones pasadas completadas?', 'Simple Past', 'Present Perfect', 'Past Continuous', NULL, NULL),
-(79, 23, '¿Cómo se forma el Present Continuous?', 'Am/is/are + verbo-ing', 'Verbo en pasado', 'Will + verbo', NULL, NULL),
-(80, 56, '¿Qué es el pensamiento analítico?', 'Capacidad para descomponer un problema en partes y analizarlas', 'Memorizar información', 'Pensar sin lógica', NULL, NULL),
-(81, 56, '¿Qué son los datos en un análisis?', 'Información factual que sirve como base', 'Opiniones personales', 'Suposiciones', NULL, NULL),
-(82, 56, '¿Qué permite una representación gráfica?', 'Visualizar datos y encontrar patrones', 'Ocultar información', 'Complicar el análisis', NULL, NULL),
-(83, 56, '¿Qué relación tienen un \"perro\" con un \"cachorro\"?', 'Perro es adulto, cachorro es cría', 'Son sinónimos', 'Son antónimos', NULL, NULL),
-(84, 56, 'Si A es a B como C es a ___, ¿qué es esto?', 'Una analogía', 'Un sinónimo', 'Una metáfora', NULL, NULL),
-(85, 19, '¿Cuál es el resultado de 2 + 3 × 4?', '14 (primero la multiplicación)', '20', '24', NULL, NULL),
-(86, 19, '¿Cuál es la jerarquía correcta de operaciones?', 'Paréntesis, potencias, multiplicación/división, suma/resta', 'Suma, resta, multiplicación, división', 'De izquierda a derecha', NULL, NULL),
-(87, 19, '¿Qué es una razón?', 'Una comparación entre dos cantidades', 'Una suma', 'Un producto', NULL, NULL),
-(88, 19, 'Si 2 manzanas cuestan $10, ¿cuánto cuesta una?', '$5 (regla de tres)', '$10', '$2', NULL, NULL),
-(89, 19, '¿Qué es una expresión algebraica?', 'Combinación de números y letras con operaciones', 'Solo números', 'Solo letras', NULL, NULL),
-(90, 19, '¿Cuál es el producto notable (a+b)²?', 'a² + 2ab + b²', 'a² + b²', 'a² - b²', NULL, NULL),
-(91, 19, '¿Qué es factorizar?', 'Escribir como producto de factores', 'Sumar términos', 'Restar términos', NULL, NULL),
-(92, 19, '¿Qué es una ecuación lineal?', 'Ecuación de grado 1 (ax + b = 0)', 'Ecuación de grado 2', 'Ecuación sin incógnitas', NULL, NULL),
-(93, 19, '¿Qué forma tiene una ecuación cuadrática?', 'ax² + bx + c = 0', 'ax + b = 0', 'a/x + b = 0', NULL, NULL),
-(94, 19, '¿Cuántas soluciones puede tener un sistema de ecuaciones lineales?', 'Una, ninguna o infinitas', 'Siembre una', 'Siempre dos', NULL, NULL),
-(95, 19, '¿Qué mide la media aritmética?', 'El promedio de un conjunto de datos', 'El dato central', 'El dato que más se repite', NULL, NULL),
-(96, 19, '¿Qué es la mediana?', 'El valor central ordenando los datos', 'El promedio', 'El valor que más se repite', NULL, NULL),
-(97, 19, '¿Qué es la moda?', 'El valor que más se repite', 'El promedio', 'El valor central', NULL, NULL),
-(98, 19, '¿Qué es la probabilidad?', 'La medida de la posibilidad de que ocurra un evento', 'Un número seguro', 'Una estadística', NULL, NULL),
-(99, 19, '¿Cuál es la ecuación de una línea recta?', 'y = mx + b', 'y = ax² + bx + c', 'x = y', NULL, NULL),
-(100, 19, '¿Qué es un triángulo rectángulo?', 'El que tiene un ángulo de 90°', 'El que tiene tres lados iguales', 'El que tiene todos los ángulos agudos', NULL, NULL);
+INSERT INTO `preguntas` (`id`, `id_area`, `pregunta`, `respuesta_correcta`, `respuesta1`, `respuesta2`, `justificacion`, `created_at`, `updated_at`) VALUES
+(1, 26, '¿Cuanto es 2x2?', '4', '18', '22', 'La multiplicación tiene prioridad sobre la suma. Primero se calcula 2x2=4 y luego se suma 1+4+1? No: La operación es 2x2 = 4. Luego se suma el 1 inicial: 1+4=5. La pregunta original en la fila 1 dice \"¿Cuanto es 2x2?\" y la respuesta correcta es 4, por lo tanto la justificación es que 2 multiplicado por 2 es igual a 4.', NULL, NULL),
+(2, 18, 'Escribe una palabra', 'Palabra', 'Correcta', 'Sin', 'La instrucción pide \"Escribe una palabra\". Cualquier palabra válida es correcta, pero \"Palabra\" es el ejemplo dado como respuesta correcta porque es una palabra genérica que cumple con el requisito.', NULL, NULL),
+(3, 40, '¿Qué es Hardware?', 'Lo que se puede tocar', 'Lo que no se puede tocar', 'Ambos', 'Hardware se refiere a los componentes físicos de una computadora, como el teclado, monitor o disco duro, que se pueden tocar.', NULL, NULL),
+(4, 9, '¿Qué es un sexenio?', '6 años', '8 años', '10 años', 'Un sexenio es un período de seis años. En México, por ejemplo, el presidente dura en su cargo un sexenio.', NULL, NULL),
+(5, 6, '¿Qué son las emociones?', 'El como nos expresamos de lo que sentimos', 'Son cocos', 'Coca cola', 'Las emociones son reacciones psicofisiológicas que experimentamos ante estímulos y se expresan a través de sentimientos, conductas y respuestas fisiológicas.', NULL, NULL),
+(6, 17, '¿Cuál de las siguientes palabras es un SUSTANTIVO?', 'Casa', 'Hermoso', 'Correr', 'Un sustantivo es una palabra que nombra a personas, animales, cosas o ideas. \"Casa\" nombra un lugar o cosa, mientras que \"hermoso\" es adjetivo y \"correr\" es verbo.', NULL, NULL),
+(7, 17, '¿Qué función cumplen los adjetivos en una oración?', 'Calificar o describir al sustantivo', 'Nombrar acciones', 'Indicar tiempo', 'Los adjetivos cumplen la función de modificar, calificar o describir al sustantivo, añadiendo cualidades como tamaño, color, forma, etc.', NULL, NULL),
+(8, 17, '¿Cuál es el verbo en la siguiente oración: \"María corre rápidamente\"?', 'Corre', 'María', 'Rápidamente', 'El verbo es la palabra que expresa acción, estado o proceso. En la oración \"María corre rápidamente\", la acción es \"corre\".', NULL, NULL),
+(9, 17, '¿Qué palabra es un ADVERBIO?', 'Rápidamente', 'Hermoso', 'Mesa', 'Un adverbio modifica al verbo, adjetivo u otro adverbio. \"Rápidamente\" indica cómo se realiza la acción (modo), \"hermoso\" es adjetivo y \"mesa\" es sustantivo.', NULL, NULL),
+(10, 17, '¿Cuál de las siguientes es una preposición?', 'A', 'Y', 'Pero', 'Las preposiciones son palabras invariables que sirven para relacionar términos. \"A\" es una preposición que indica dirección, tiempo o modo. \"Y\" y \"pero\" son conjunciones.', NULL, NULL),
+(11, 17, '¿Qué función tienen las preposiciones?', 'Relacionar palabras indicando origen, destino, causa, etc.', 'Unir oraciones', 'Expresar emociones', 'Las preposiciones (a, ante, bajo, con, contra, de, desde, en, entre, hacia, hasta, para, por, según, sin, so, sobre, tras) relacionan palabras indicando origen, destino, causa, lugar, tiempo, etc.', NULL, NULL),
+(12, 17, '¿Cuál es el SUJETO en la oración: \"El perro ladra fuerte\"?', 'El perro', 'Ladra', 'Fuerte', 'El sujeto es la persona, animal o cosa de la que se dice algo. En \"El perro ladra fuerte\", el sujeto es \"El perro\" porque es quien realiza la acción de ladrar.', NULL, NULL),
+(13, 17, '¿Qué parte de la oración indica lo que se dice del sujeto?', 'El predicado', 'El sujeto', 'El verbo', 'El predicado es la parte de la oración que indica lo que se dice del sujeto. Contiene el verbo y los complementos.', NULL, NULL),
+(14, 17, '¿Cuál de las siguientes es una oración completa?', 'El sol brilla en el cielo', 'Corriendo alegre', 'Muy feliz', 'Una oración completa debe tener al menos un verbo conjugado y sentido completo. \"El sol brilla en el cielo\" tiene verbo (brilla) y expresa una idea completa.', NULL, NULL),
+(15, 17, '¿Qué elemento es indispensable en una oración?', 'Un verbo conjugado', 'Un adjetivo', 'Un adverbio', 'El verbo conjugado es el núcleo del predicado y es indispensable para que exista una oración, ya que sin verbo no hay predicado ni sentido completo.', NULL, NULL),
+(16, 17, '¿Qué es un pleonasmo?', 'Uso de palabras redundantes que repiten un concepto', 'Falta de concordancia gramatical', 'Uso incorrecto de tildes', 'El pleonasmo es una figura retórica que consiste en usar palabras redundantes que repiten un concepto, como \"subir arriba\" o \"salir fuera\".', NULL, NULL),
+(17, 17, '¿Cuál de las siguientes es un ejemplo de PLEONASMO?', 'Subir arriba', 'Casa grande', 'Correr rápido', '\"Subir arriba\" es pleonasmo porque \"subir\" ya implica ir hacia arriba, por lo que \"arriba\" es redundante.', NULL, NULL),
+(18, 17, '¿Qué signo de puntuación se usa para indicar una pausa corta?', 'La coma', 'El punto', 'El punto y coma', 'La coma (,) se usa para indicar una pausa breve dentro de la oración, separar elementos enumerados, vocativos, etc. El punto indica una pausa mayor.', NULL, NULL),
+(19, 17, '¿Qué signo se utiliza para expresar sorpresa o énfasis?', 'Signos de exclamación (¡!)', 'Signos de interrogación (¿?)', 'Comillas', 'Los signos de exclamación (¡!) se utilizan para expresar sorpresa, énfasis, alegría, enojo o cualquier emoción intensa en la escritura.', NULL, NULL),
+(20, 17, '¿Cuál de los siguientes es un NEXO de causalidad?', 'Porque', 'Y', 'O', 'Los nexos de causalidad indican causa o motivo. \"Porque\" es un nexo causal que introduce la razón de algo. \"Y\" es copulativo, \"O\" es disyuntivo.', NULL, NULL),
+(21, 17, '¿Qué palabra conecta ideas en esta oración: \"Estudió mucho, PERO no aprobó\"?', 'Pero', 'Estudió', 'Aprobó', 'El nexo \"pero\" conecta ideas opuestas o que contrastan. En la oración, une el esfuerzo (estudió) con el resultado inesperado (no aprobó).', NULL, NULL),
+(22, 17, '¿Qué son los heterónimos?', 'Palabras que tienen la misma escritura pero diferente pronunciación y significado', 'Palabras con significado opuesto', 'Palabras que suenan igual pero se escriben diferente', 'Los heterónimos son palabras que tienen la misma escritura (ortografía) pero diferente significado, como \"vino\" (bebida) y \"vino\" (del verbo venir).', NULL, NULL),
+(23, 61, '¿Cuál es el verbo en la oración: \"Ellos juegan en el parque\"?', 'Juegan', 'Ellos', 'Parque', 'El verbo es \"juegan\" porque expresa la acción que realizan \"ellos\". \"Ellos\" es el sujeto y \"parque\" es el lugar donde ocurre la acción.', NULL, NULL),
+(24, 61, '¿En qué tiempo verbal está \"cantaré\"?', 'Futuro', 'Presente', 'Pasado', '\"Cantaré\" indica una acción que ocurrirá después del momento presente, por lo tanto está en tiempo futuro.', NULL, NULL),
+(25, 61, '¿Dónde se coloca la coma en este enunciado? \"Hola cómo estás\"', 'Hola, ¿cómo estás?', 'Hola cómo, estás?', 'Hola cómo estás,', 'La coma se coloca después del saludo o vocativo para separarlo del resto de la oración. La forma correcta es \"Hola, ¿cómo estás?\"', NULL, NULL),
+(26, 61, '¿Qué signo se usa para preguntar?', '¿?', '¡!', '...', 'El signo de interrogación (¿?) se usa para formular preguntas. Se abre con ¿ y se cierra con ?', NULL, NULL),
+(27, 61, 'La palabra \"MÉDICO\" es una palabra...', 'Esdrújula (siempre lleva tilde)', 'Grave', 'Aguda', 'La palabra \"MÉDICO\" es grave o llana porque su sílaba tónica (la que suena más fuerte) es la penúltima \"DI\". Las palabras graves llevan tilde si NO terminan en N, S o vocal. Termina en O (vocal), por lo tanto NO lleva tilde. La afirmación \"siempre lleva tilde\" es falsa.', NULL, NULL),
+(28, 61, '¿Cuál está correctamente acentuada?', 'Árbol', 'Arbol', 'arbol', '\"Árbol\" está correctamente acentuada porque es una palabra grave terminada en \"l\" (consonante que no es N ni S), por lo que debe llevar tilde en la primera \"a\".', NULL, NULL),
+(29, 61, '¿Cuál de estas palabras lleva tilde por ser aguda terminada en N, S o vocal?', 'Canción', 'Casa', 'Libro', 'Las palabras agudas llevan tilde cuando terminan en N, S o vocal. \"Canción\" termina en N, por lo tanto lleva tilde en la última sílaba \"ción\".', NULL, NULL),
+(30, 61, 'La palabra \"TAMBIÉN\" lleva tilde porque...', 'Es aguda terminada en N', 'Es grave', 'Es esdrújula', '\"También\" es una palabra aguda terminada en N, por lo tanto debe llevar tilde en la última sílaba \"bién\".', NULL, NULL),
+(31, 61, '¿Cuál es la palabra GRAVE que NO lleva tilde?', 'Mesa', 'Césped', 'Árbol', 'Las palabras graves (o llanas) NO llevan tilde cuando terminan en N, S o vocal. \"Mesa\" es grave y termina en vocal \"a\", por lo tanto NO lleva tilde.', NULL, NULL),
+(32, 61, 'Las palabras SOBREESDRÚJULAS siempre llevan tilde. ¿Cuál lo es?', 'Dígamelo', 'Casa', 'Perro', 'Las palabras sobreesdrújulas son aquellas cuya sílaba tónica está antes de la antepenúltima. Por regla ortográfica, SIEMPRE llevan tilde, como en \"dígamelo\".', NULL, NULL),
+(33, 61, '¿Qué relación existe entre \"CALIENTE\" y \"FRÍO\"?', 'Antónimos', 'Sinónimos', 'Homófonos', '\"Caliente\" y \"frío\" tienen significados opuestos: uno indica temperatura alta y el otro baja. Por lo tanto son antónimos.', NULL, NULL),
+(34, 61, '¿Cuál es sinónimo de \"ALEGRE\"?', 'Feliz', 'Triste', 'Enojado', 'Un sinónimo es una palabra que tiene un significado similar o idéntico. \"Feliz\" es sinónimo de \"alegre\", ambas expresan alegría o satisfacción.', NULL, NULL),
+(35, 61, '¿Cuál de las siguientes es una PREPOSICIÓN?', 'Sin', 'Y', 'Aunque', '\"Sin\" es una preposición que indica carencia o falta. \"Y\" es una conjunción copulativa y \"aunque\" es una conjunción concesiva.', NULL, NULL),
+(36, 61, '¿Qué palabra es un ADVERBIO DE LUGAR?', 'Aquí', 'Bien', 'Pronto', 'Los adverbios de lugar indican dónde ocurre la acción. \"Aquí\" responde a la pregunta \"¿dónde?\". \"Bien\" es modo, \"pronto\" es tiempo.', NULL, NULL),
+(37, 61, '¿Qué permite la cohesión textual?', 'Conectar ideas correctamente', 'Escribir sin errores', 'Usar palabras bonitas', 'La cohesión textual es la propiedad que permite conectar las ideas y oraciones de un texto mediante recursos como conectores, pronombres, sinónimos, etc., para que sea fluido y comprensible.', NULL, NULL),
+(38, 61, '¿Qué conector indica CONTRASTE?', 'Pero', 'Además', 'También', 'El conector \"pero\" (o \"sin embargo\", \"no obstante\") indica contraste u oposición entre dos ideas. \"Además\" y \"también\" indican adición.', NULL, NULL),
+(39, 61, '¿Qué elemento da coherencia a un texto?', 'Que todas las ideas giren alrededor de un tema central', 'Que tenga muchas palabras', 'Que sea largo', 'La coherencia es la propiedad de un texto que garantiza que todas las ideas giren alrededor de un mismo tema central, organizadas lógicamente.', NULL, NULL),
+(40, 61, '¿Cuál es la palabra correctamente escrita?', 'Cocina', 'Cosina', 'Cozina', '\"Cocina\" es la forma correcta. Las opciones \"cosina\" y \"cozina\" son incorrectas porque la \"c\" suave seguida de \"o\" se mantiene como \"c\", no como \"s\" o \"z\".', NULL, NULL),
+(41, 61, '¿Qué letra usarías en \"felici_ dad\"?', 'Z', 'C', 'S', 'La palabra \"felicidad\" se escribe con Z porque el sufijo \"-ez\" cambia a \"-eza\" para formar sustantivos abstractos (feliz → felicidad, pero la raíz viene de \"feliz\" + \"idad\", y la \"z\" se mantiene en algunas formas). En este caso, la letra correcta es Z.', NULL, NULL),
+(42, 61, '¿Cuál está escrita correctamente?', 'Gente', 'Jente', 'Gente', 'La forma correcta es \"Gente\" con G, ya que las palabras que comienzan con \"ge-\" o \"gi-\" llevan G. \"Jente\" es incorrecto.', NULL, NULL),
+(43, 61, '¿Qué palabra lleva J?', 'Caja', 'Gato', 'Gema', '\"Caja\" se escribe con J porque es una palabra que lleva J. \"Gato\" y \"gema\" se escriben con G.', NULL, NULL),
+(44, 61, '¿Cuál está correctamente escrita?', 'Bien', 'Vien', 'Vien', 'La forma correcta es \"Bien\" con B. \"Vien\" es incorrecto porque la palabra \"bien\" proviene del latín \"bene\" y se escribe con B.', NULL, NULL),
+(45, 61, 'Después de N va...', 'V (envidia)', 'B (enbidia)', 'Ambas son válidas', 'Después de la letra N siempre se escribe V (no B). Ejemplos: envidia, invitación, enviar. \"Enbidia\" es incorrecto.', NULL, NULL),
+(46, 61, '¿Cuál está correctamente escrita?', 'Carro', 'Caro', 'Carro', 'La forma correcta es \"Carro\" con doble R porque entre vocales y en posición intermedia, el sonido fuerte de R se escribe RR. \"Caro\" tiene un significado diferente (costoso o querido).', NULL, NULL),
+(47, 61, 'Al inicio de la palabra se escribe...', 'R simple (ropa)', 'RR (rropa)', 'Ambas', 'Al inicio de palabra, el sonido fuerte de la R se escribe con una sola R (ejemplos: ropa, rata, rosa). Nunca se escribe RR al inicio.', NULL, NULL),
+(48, 57, '¿Qué es la idea principal de un texto?', 'La idea más importante que el autor quiere transmitir', 'Un detalle secundario', 'La última frase del texto', 'La idea principal es el concepto central o mensaje más importante que el autor quiere transmitir. Es la columna vertebral del texto.', NULL, NULL),
+(49, 57, '¿Qué permite hacer una LECTURA CRÍTICA?', 'Analizar y cuestionar lo que se lee', 'Leer más rápido', 'Memorizar todo', 'La lectura crítica permite analizar, cuestionar, evaluar y reflexionar sobre el contenido del texto, identificando sesgos, supuestos y argumentos.', NULL, NULL),
+(50, 57, '¿Cómo se llama la técnica de leer rápidamente para captar lo esencial?', 'Lectura de barrido (skimming)', 'Lectura lenta', 'Subrayado', 'La lectura de barrido o skimming es una técnica de lectura rápida que consiste en pasar la vista por el texto para identificar la idea general o localizar información específica.', NULL, NULL),
+(51, 57, '¿Qué son las inferencias?', 'Conclusiones que sacamos al leer entre líneas', 'Datos explícitos', 'Resúmenes', 'Las inferencias son conclusiones o interpretaciones que el lector deduce a partir de la información implícita en el texto, leyendo \"entre líneas\".', NULL, NULL),
+(52, 57, '¿Para qué sirve hacer un resumen?', 'Sintetizar las ideas principales del texto', 'Alargar el contenido', 'Copiar el texto original', 'Un resumen sirve para sintetizar las ideas principales y secundarias más importantes de un texto, expresándolas con nuestras propias palabras y de forma concisa.', NULL, NULL),
+(53, 57, '¿Qué significa que un texto sea COHERENTE?', 'Que todas sus partes se relacionan lógicamente', 'Que tiene buena ortografía', 'Que usa palabras bonitas', 'Un texto es coherente cuando todas sus partes (introducción, desarrollo, conclusión) se relacionan lógicamente entre sí y giran en torno a un tema central.', NULL, NULL),
+(54, 23, '¿Cuál WH question se usa para preguntar por personas?', 'Who', 'What', 'Where', 'La WH question \"Who\" se usa para preguntar por personas. \"What\" es para cosas, \"Where\" para lugares.', NULL, NULL),
+(55, 23, '¿Cómo preguntarías \"¿Dónde vives?\"', 'Where do you live?', 'What do you live?', 'Who do you live?', 'Para preguntar \"¿Dónde vives?\" se usa \"Where\" (lugar) + do (auxiliar) + you + live. La forma correcta es \"Where do you live?\"', NULL, NULL),
+(56, 23, '¿Cuál es la forma correcta para HE/SHE/IT en Simple Present?', 'He plays', 'He play', 'He playing', 'En Simple Present, para HE/SHE/IT (tercera persona singular) se añade una \"s\" al verbo. \"He plays\" es la forma correcta.', NULL, NULL),
+(57, 23, '¿Cómo se niega en Simple Present con I?', 'I don\'t like', 'I doesn\'t like', 'I not like', 'Para negar en Simple Present con I, se usa el auxiliar \"do not\" (don\'t) seguido del verbo en infinitivo. \"I don\'t like\" es la forma correcta.', NULL, NULL),
+(58, 23, '¿Cuál es la forma correcta del verbo TO BE para \"SHE\"?', 'She is', 'She are', 'She am', 'El verbo TO BE para \"She\" (tercera persona singular femenina) es \"is\". \"She is\" es la forma correcta.', NULL, NULL),
+(59, 23, '¿Cómo se dice \"Yo soy estudiante\"?', 'I am a student', 'I is a student', 'I are a student', 'Para decir \"Yo soy estudiante\" se usa el verbo TO BE \"am\" para I, seguido de \"a student\". La forma correcta es \"I am a student\".', NULL, NULL),
+(60, 23, '¿Cómo saludas en la mañana?', 'Good morning', 'Good afternoon', 'Good night', 'Para saludar en la mañana se dice \"Good morning\". \"Good afternoon\" es para la tarde, \"Good night\" para despedirse o al acostarse.', NULL, NULL),
+(61, 23, '¿Cómo dices \"Gracias\"?', 'Thank you', 'Please', 'Sorry', '\"Gracias\" en inglés se dice \"Thank you\". \"Please\" es por favor, \"Sorry\" es lo siento o disculpa.', NULL, NULL),
+(62, 23, '¿Cómo se dice \"Tengo que estudiar\"?', 'I have to study', 'I has to study', 'I must to study', 'Para expresar obligación o necesidad se usa \"have to\". \"Tengo que estudiar\" se traduce como \"I have to study\".', NULL, NULL),
+(63, 23, '¿Qué expresa MUST?', 'Obligación fuerte', 'Permiso', 'Posibilidad', 'El verbo modal \"MUST\" expresa una obligación fuerte, necesidad o certeza. Ejemplo: \"You must stop\" (Debes parar).', NULL, NULL),
+(64, 23, '¿Cuál es el comparativo de \"TALL\"?', 'Taller', 'More tall', 'The tallest', 'El comparativo de adjetivos cortos (como \"tall\") se forma añadiendo \"-er\". \"Taller\" significa \"más alto\".', NULL, NULL),
+(65, 23, '¿Cuál es el superlativo de \"BIG\"?', 'The biggest', 'Bigger', 'More big', 'El superlativo de adjetivos cortos se forma con \"the\" + adjetivo + \"-est\". \"Big\" duplica la G por ser CVC (consonante-vocal-consonante): \"the biggest\".', NULL, NULL),
+(66, 23, '¿Cómo pides la cuenta?', 'Can I have the bill please?', 'Give me the money', 'I want food', 'Para pedir la cuenta en un restaurante se usa \"Can I have the bill, please?\" o simplemente \"The bill, please\".', NULL, NULL),
+(67, 23, '¿Cómo preguntas \"¿Qué recomiendas?\"', 'What do you recommend?', 'What you recommend?', 'What recommend you?', 'Para preguntar \"¿Qué recomiendas?\" se usa \"What do you recommend?\" con el auxiliar \"do\" y el verbo en infinitivo.', NULL, NULL),
+(68, 23, '¿Cómo pides permiso formalmente?', 'May I come in?', 'Can I come in?', 'I come in?', 'Para pedir permiso formalmente se usa \"May I...\". \"May I come in?\" es más formal y cortés que \"Can I come in?\"', NULL, NULL),
+(69, 23, '¿Qué significa \"You can sit here\"?', 'Tú puedes sentarte aquí', 'Tú debes sentarte aquí', 'Tú no puedes sentarte aquí', '\"You can sit here\" significa \"Tú puedes sentarte aquí\". \"Can\" expresa permiso o capacidad.', NULL, NULL),
+(70, 23, '¿Cómo expresas una decisión espontánea?', 'I will help you', 'I going to help you', 'I help you', 'Para expresar una decisión espontánea (tomada en el momento) se usa \"will\" + verbo. \"I will help you\" expresa una decisión repentina de ayudar.', NULL, NULL),
+(71, 23, '¿Qué significa \"It\'s going to rain\"?', 'Va a llover', 'Llueve ahora', 'Llovió', '\"It\'s going to rain\" es la estructura \"going to\" para expresar un futuro planeado o inminente. Significa \"Va a llover\".', NULL, NULL),
+(72, 23, '¿Cómo preguntas \"¿Cuál es el título del libro?\"', 'What is the title of the book?', 'Who is the book?', 'Where is the book?', 'Para preguntar \"¿Cuál es el título del libro?\" se usa \"What\" (qué/cuál) + is + the title of the book?', NULL, NULL),
+(73, 23, '¿Qué significa \"The main character\"?', 'El personaje principal', 'El autor', 'El título', '\"The main character\" se traduce como \"el personaje principal\" de una historia, novela o película.', NULL, NULL),
+(74, 23, '¿Cómo preguntas \"¿Cuántos años tienes?\"', 'How old are you?', 'How many years you have?', 'What age you?', 'Para preguntar la edad se usa la expresión fija \"How old are you?\" (¿Cuántos años tienes?).', NULL, NULL),
+(75, 23, '¿Cómo dices \"Mi cumpleaños es el 10 de mayo\"?', 'My birthday is on May 10th', 'My birthday is in May 10', 'I birthday is May 10', 'Para decir una fecha con día específico se usa la preposición \"on\". \"My birthday is on May 10th\" es la forma correcta.', NULL, NULL),
+(76, 23, '¿Qué significa \"I used to play soccer\"?', 'Yo solía jugar fútbol', 'Yo juego fútbol', 'Yo jugaré fútbol', '\"Used to\" + verbo se usa para hablar de hábitos o acciones del pasado que ya no se realizan. \"I used to play soccer\" significa \"Yo solía jugar fútbol\".', NULL, NULL),
+(77, 23, '¿Cómo se niega \"used to\"?', 'I didn\'t use to', 'I used not to', 'I don\'t used to', 'Para negar \"used to\" se usa \"didn\'t use to\" (el auxiliar en pasado elimina la \"d\" de \"used\"). \"I didn\'t use to\" es la forma correcta.', NULL, NULL),
+(78, 23, '¿Qué tiempo usas para acciones pasadas completadas?', 'Simple Past', 'Present Perfect', 'Past Continuous', 'El Simple Past (Pasado Simple) se usa para acciones pasadas completadas en un momento específico o que ya terminaron.', NULL, NULL),
+(79, 23, '¿Cómo se forma el Present Continuous?', 'Am/is/are + verbo-ing', 'Verbo en pasado', 'Will + verbo', 'El Present Continuous se forma con el verbo TO BE (am/is/are) + el verbo principal con terminación -ing. Indica acciones en curso ahora.', NULL, NULL),
+(80, 56, '¿Qué es el pensamiento analítico?', 'Capacidad para descomponer un problema en partes y analizarlas', 'Memorizar información', 'Pensar sin lógica', 'El pensamiento analítico es la capacidad para descomponer un problema complejo en partes más pequeñas, analizarlas individualmente y comprender las relaciones entre ellas.', NULL, NULL),
+(81, 56, '¿Qué son los datos en un análisis?', 'Información factual que sirve como base', 'Opiniones personales', 'Suposiciones', 'Los datos son información factual, medible y verificable que sirve como base para el análisis, la toma de decisiones o la investigación.', NULL, NULL),
+(82, 56, '¿Qué permite una representación gráfica?', 'Visualizar datos y encontrar patrones', 'Ocultar información', 'Complicar el análisis', 'Las representaciones gráficas (gráficas, diagramas, tablas) permiten visualizar datos de manera clara, identificar patrones, tendencias y relaciones que no son obvias en datos brutos.', NULL, NULL),
+(83, 56, '¿Qué relación tienen un \"perro\" con un \"cachorro\"?', 'Perro es adulto, cachorro es cría', 'Son sinónimos', 'Son antónimos', 'Un perro adulto y un cachorro son la misma especie animal pero en diferentes etapas de desarrollo: \"cachorro\" es la cría o bebé del perro.', NULL, NULL),
+(84, 56, 'Si A es a B como C es a ___, ¿qué es esto?', 'Una analogía', 'Un sinónimo', 'Una metáfora', 'Una analogía es una relación de semejanza o comparación entre dos pares de elementos. La estructura \"A es a B como C es a D\" expresa una analogía.', NULL, NULL),
+(85, 19, '¿Cuál es el resultado de 2 + 3 × 4?', '14 (primero la multiplicación)', '20', '24', 'Por jerarquía de operaciones, la multiplicación (3×4=12) se resuelve antes que la suma, por lo tanto 2 + 12 = 14.', NULL, NULL),
+(86, 19, '¿Cuál es la jerarquía correcta de operaciones?', 'Paréntesis, potencias, multiplicación/división, suma/resta', 'Suma, resta, multiplicación, división', 'De izquierda a derecha', 'La jerarquía correcta de operaciones es: 1) Paréntesis, 2) Potencias y raíces, 3) Multiplicación y división (de izquierda a derecha), 4) Suma y resta (de izquierda a derecha).', NULL, NULL),
+(87, 19, '¿Qué es una razón?', 'Una comparación entre dos cantidades', 'Una suma', 'Un producto', 'Una razón es una comparación entre dos cantidades mediante una división o cociente, expresada como a:b o a/b.', NULL, NULL),
+(88, 19, 'Si 2 manzanas cuestan $10, ¿cuánto cuesta una?', '$5 (regla de tres)', '$10', '$2', 'Mediante regla de tres simple: si 2 manzanas cuestan $10, entonces 1 manzana cuesta $10 ÷ 2 = $5.', NULL, NULL),
+(89, 19, '¿Qué es una expresión algebraica?', 'Combinación de números y letras con operaciones', 'Solo números', 'Solo letras', 'Una expresión algebraica es una combinación de números, letras (variables) y operaciones matemáticas (suma, resta, multiplicación, división, potencias).', NULL, NULL),
+(90, 19, '¿Cuál es el producto notable (a+b)²?', 'a² + 2ab + b²', 'a² + b²', 'a² - b²', 'El producto notable (a+b)² se desarrolla como a² + 2ab + b² (binomio al cuadrado = cuadrado del primero + doble producto + cuadrado del segundo).', NULL, NULL),
+(91, 19, '¿Qué es factorizar?', 'Escribir como producto de factores', 'Sumar términos', 'Restar términos', 'Factorizar es escribir una expresión algebraica como producto de factores (expresiones más simples multiplicadas entre sí).', NULL, NULL),
+(92, 19, '¿Qué es una ecuación lineal?', 'Ecuación de grado 1 (ax + b = 0)', 'Ecuación de grado 2', 'Ecuación sin incógnitas', 'Una ecuación lineal es una ecuación de grado 1, donde la variable tiene exponente 1. Tiene la forma ax + b = 0.', NULL, NULL),
+(93, 19, '¿Qué forma tiene una ecuación cuadrática?', 'ax² + bx + c = 0', 'ax + b = 0', 'a/x + b = 0', 'Una ecuación cuadrática o de segundo grado tiene la forma estándar ax² + bx + c = 0, donde a, b y c son constantes y a ≠ 0.', NULL, NULL),
+(94, 19, '¿Cuántas soluciones puede tener un sistema de ecuaciones lineales?', 'Una, ninguna o infinitas', 'Siembre una', 'Siempre dos', 'Un sistema de ecuaciones lineales puede tener: una solución (compatible determinado), ninguna solución (incompatible) o infinitas soluciones (compatible indeterminado).', NULL, NULL),
+(95, 19, '¿Qué mide la media aritmética?', 'El promedio de un conjunto de datos', 'El dato central', 'El dato que más se repite', 'La media aritmética (o promedio) se calcula sumando todos los datos y dividiendo entre el número total de datos. Mide la tendencia central.', NULL, NULL),
+(96, 19, '¿Qué es la mediana?', 'El valor central ordenando los datos', 'El promedio', 'El valor que más se repite', 'La mediana es el valor que ocupa la posición central cuando los datos están ordenados de menor a mayor.', NULL, NULL),
+(97, 19, '¿Qué es la moda?', 'El valor que más se repite', 'El promedio', 'El valor central', 'La moda es el valor o valores que aparecen con mayor frecuencia en un conjunto de datos.', NULL, NULL),
+(98, 19, '¿Qué es la probabilidad?', 'La medida de la posibilidad de que ocurra un evento', 'Un número seguro', 'Una estadística', 'La probabilidad es una medida numérica entre 0 y 1 que cuantifica la posibilidad de que ocurra un evento aleatorio.', NULL, NULL),
+(99, 19, '¿Cuál es la ecuación de una línea recta?', 'y = mx + b', 'y = ax² + bx + c', 'x = y', 'La ecuación de una línea recta en su forma pendiente-ordenada es y = mx + b, donde m es la pendiente y b es la intersección con el eje Y.', NULL, NULL),
+(100, 19, '¿Qué es un triángulo rectángulo?', 'El que tiene un ángulo de 90°', 'El que tiene tres lados iguales', 'El que tiene todos los ángulos agudos', 'Un triángulo rectángulo es aquel que tiene un ángulo interior de 90° (ángulo recto). Los lados que forman ese ángulo se llaman catetos y el lado opuesto es la hipotenusa.', NULL, NULL),
+(101, 3, '¿Cuál es el valor de x?\r\n3x+2+1=0', '-1', '0', '2', 'Para resolver 3x+2+1=0, primero sumamos 2+1=3, quedando 3x+3=0. Luego restamos 3 en ambos lados: 3x = -3. Finalmente dividimos entre 3: x = -1. Por lo tanto, el valor de x es -1 mediante el despeje de la ecuación lineal.', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1408,7 +1427,10 @@ CREATE TABLE `progreso_videos` (
 INSERT INTO `progreso_videos` (`id`, `estudiante_id`, `video_id`, `fecha_visto`, `completado`, `ultimo_segundo`, `veces_visto`, `created_at`, `updated_at`) VALUES
 (6, 2, 31, '2026-05-22 10:23:05', 0, '00:01:10', 1, NULL, NULL),
 (7, 2, 6, '2026-05-22 16:52:31', 1, '00:01:40', 1, NULL, NULL),
-(8, 4, 1, '2026-05-23 00:47:52', 0, '00:00:30', 1, NULL, NULL);
+(8, 4, 1, '2026-05-23 00:47:52', 0, '00:00:30', 1, NULL, NULL),
+(9, 2, 1, '2026-06-02 16:29:21', 0, '00:00:10', 1, NULL, NULL),
+(10, 1, 1, '2026-06-02 21:10:58', 0, '00:00:15', 1, NULL, NULL),
+(11, 2, 7, '2026-06-02 21:14:05', 0, '00:00:10', 1, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1425,6 +1447,33 @@ CREATE TABLE `recursos_adicionales` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `recursos_clase`
+--
+
+CREATE TABLE `recursos_clase` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `id_clase` bigint(20) UNSIGNED NOT NULL,
+  `titulo` varchar(255) NOT NULL,
+  `tipo` enum('pdf','video_youtube','video_vimeo','video_drive','presentacion','documento','podcast','imagen','enlace','otros') NOT NULL DEFAULT 'otros',
+  `url` text NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `orden` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `recursos_clase`
+--
+
+INSERT INTO `recursos_clase` (`id`, `id_clase`, `titulo`, `tipo`, `url`, `descripcion`, `orden`, `created_at`, `updated_at`) VALUES
+(1, 129, 'Libro de aritmética', 'pdf', 'https://docs.google.com/file/d/0B8x71XDp4ZBfaXZ6c1ctNjFqZmc/edit?resourcekey=0-zCgDhb1MFBaJlxeYzFWLgw', 'Libro de aritmética de Baldor', 2, '2026-06-03 23:04:37', '2026-06-04 16:20:00'),
+(2, 129, 'Video de muestra', 'video_youtube', 'https://www.youtube.com/watch?v=ASL5qnZUUdY', 'Video de muestra 1', 3, '2026-06-03 23:04:37', '2026-06-04 16:20:00'),
+(3, 1, 'Guía de estudio', 'pdf', 'https://drive.google.com/file/d/1EXhNbWgLhF21BavnfM1nicrzWL_sIPrC/view', 'Prueba de la guía de estudio :P', 0, '2026-06-04 16:56:11', '2026-06-04 16:56:11');
 
 -- --------------------------------------------------------
 
@@ -1468,7 +1517,18 @@ INSERT INTO `tiempo_estudio` (`id`, `estudiante_id`, `fecha`, `segundos_estudiad
 (1, 2, '2026-05-21', 18120, 302, 5, 3, '2026-05-22 05:59:19', '2026-05-22 03:18:15', '2026-05-22 05:59:19'),
 (2, 2, '2026-05-22', 105600, 1760, 29, 9, '2026-05-22 23:27:19', '2026-05-22 06:00:47', '2026-05-22 23:27:19'),
 (3, 1, '2026-05-22', 1560, 26, 0, 4, '2026-05-23 00:02:14', '2026-05-22 22:51:41', '2026-05-23 00:02:14'),
-(4, 3, '2026-05-22', 3480, 58, 0, 2, '2026-05-23 01:40:36', '2026-05-23 00:15:57', '2026-05-23 01:40:36');
+(4, 3, '2026-05-22', 3480, 58, 0, 2, '2026-05-23 01:40:36', '2026-05-23 00:15:57', '2026-05-23 01:40:36'),
+(5, 2, '2026-05-25', 240, 4, 0, 1, '2026-05-25 21:36:52', '2026-05-25 21:35:51', '2026-05-25 21:36:52'),
+(6, 2, '2026-05-27', 780, 13, 0, 1, '2026-05-27 18:48:15', '2026-05-27 18:41:33', '2026-05-27 18:48:15'),
+(7, 1, '2026-05-27', 480, 8, 0, 3, '2026-05-27 20:14:04', '2026-05-27 18:50:34', '2026-05-27 20:14:04'),
+(8, 2, '2026-05-30', 2100, 35, 0, 1, '2026-05-30 19:08:37', '2026-05-30 18:34:35', '2026-05-30 19:08:37'),
+(9, 2, '2026-06-01', 10020, 167, 2, 2, '2026-06-01 20:31:25', '2026-06-01 17:15:25', '2026-06-01 20:31:25'),
+(10, 2, '2026-06-02', 15420, 257, 4, 3, '2026-06-03 03:36:20', '2026-06-02 18:39:35', '2026-06-03 03:36:20'),
+(11, 1, '2026-06-02', 4800, 80, 1, 3, '2026-06-03 03:31:06', '2026-06-02 23:38:49', '2026-06-03 03:31:06'),
+(12, 2, '2026-06-03', 2220, 37, 0, 2, '2026-06-03 18:51:46', '2026-06-03 18:00:23', '2026-06-03 18:51:46'),
+(13, 2, '2026-06-04', 3000, 50, 0, 1, '2026-06-04 17:30:17', '2026-06-04 16:37:53', '2026-06-04 17:30:17'),
+(14, 5, '2026-06-04', 8520, 142, 2, 4, '2026-06-05 05:53:03', '2026-06-05 00:35:07', '2026-06-05 05:53:03'),
+(15, 5, '2026-06-05', 120, 2, 0, 1, '2026-06-05 06:01:26', '2026-06-05 06:00:26', '2026-06-05 06:01:26');
 
 -- --------------------------------------------------------
 
@@ -1548,9 +1608,11 @@ CREATE TABLE `usuario` (
 INSERT INTO `usuario` (`id`, `correo`, `google_id`, `contraseña`, `rol`, `created_at`, `updated_at`) VALUES
 (1, 'admin@sistema.com', NULL, '$2y$10$VG/hG7Y6PUbOBSFYqJih/ux/RR5jvi/A0ZeEaV2TQcuYW2s2e/02G', 'Administrador', NULL, NULL),
 (2, 'prueba@prueba.com', NULL, '$2y$10$bSVI7OtnFIc7LXSL1Z0iB.pGNilq2gbZ3DRM6qbTKaqwJnIKEjPuW', 'estudiante', NULL, NULL),
-(3, 'gvegaestrada@gmail.com', NULL, '$2y$10$2aC9A5UZoRTiV4PnNllQM.DVOzzbM2q0i19ejZ6bQWoXxlCjhtUE.', 'estudiante', NULL, NULL),
+(3, 'gvegaestrada@gmail.com', '113535884961217147444', '$2y$10$2aC9A5UZoRTiV4PnNllQM.DVOzzbM2q0i19ejZ6bQWoXxlCjhtUE.', 'estudiante', NULL, NULL),
 (4, 'gus.vega.estrada@gmail.com', NULL, '$2y$10$bl.FQElwwTuUuTKYiGVTHe3vXYROZlpnnwM7qwjh3RtZaS8r2QnA6', 'estudiante', NULL, NULL),
-(7, 'arlethv259@gmail.com', '102775356930872964261', '$2y$10$h81YB9yHu4crhXAUh3UyvuwE3WmHwA/8NQJFPuiS7.rkvmJ3TN7BC', 'estudiante', NULL, NULL);
+(7, 'arlethv259@gmail.com', '102775356930872964261', '$2y$10$h81YB9yHu4crhXAUh3UyvuwE3WmHwA/8NQJFPuiS7.rkvmJ3TN7BC', 'estudiante', NULL, NULL),
+(8, 'gusvegaestrada13@gmail.com', '112134513915968447919', '$2y$10$RHdhqjgAgU8p4zPSVvRM9.R1fLyvWaI26EGJEuKze8UwCR1uluyxC', 'estudiante', NULL, NULL),
+(9, 'gv71061@gmail.com', '106982457571478224901', '$2y$10$Tp6Jmjy436.e5JjGM442wubqygYj8QFhN7.ExACKav9Oo0BpyvZ1q', 'estudiante', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1575,7 +1637,7 @@ CREATE TABLE `videos` (
 --
 
 INSERT INTO `videos` (`id`, `materia`, `tema`, `titulo`, `link`, `duracion`, `plan`, `created_at`, `updated_at`) VALUES
-(1, 'LENGUAJE ESCRITO', 'Sustantivos y adjetivos', 'Sustantivos y adjetivos', 'https://vimeo.com/356512619', '03:55:00', 1, NULL, NULL),
+(1, 'LENGUAJE ESCRITO', 'Sustantivos y adjetivos', 'Sustantivos y adjetivos', 'https://vimeo.com/356512619', '03:55:00', 0, NULL, NULL),
 (2, 'LENGUAJE ESCRITO', 'Verbos y Adverbios', 'Verbos y adverbios', 'https://vimeo.com/356516521', '08:25:00', 1, NULL, NULL),
 (3, 'LENGUAJE ESCRITO', 'Preposición', 'Preposición', 'https://vimeo.com/356523797', '09:27:00', 1, NULL, NULL),
 (4, 'LENGUAJE ESCRITO', 'Sujeto y predicado', 'Sujeto y predicado', 'https://vimeo.com/356684560', '17:09:00', 1, NULL, NULL),
@@ -1638,7 +1700,7 @@ INSERT INTO `videos` (`id`, `materia`, `tema`, `titulo`, `link`, `duracion`, `pl
 (61, 'PENSAMIENTO MATEMATICO', 'Probabilidad', 'Probabilidad', 'https://vimeo.com/356315500', '00:00:00', 1, NULL, NULL),
 (62, 'PENSAMIENTO MATEMATICO', 'Línea recta', 'Línea recta', 'https://vimeo.com/356317487', '00:00:00', 1, NULL, NULL),
 (63, 'PENSAMIENTO MATEMATICO', 'Razonamiento geométrico', 'Razonamiento geométrico', 'https://vimeo.com/356503500', '00:00:00', 1, NULL, NULL),
-(64, 'PENSAMIENTO MATEMATICO', 'Resolución de triángulos', 'Resolución de triángulos', 'https://vimeo.com/356507308', '00:00:00', 1, NULL, NULL);
+(64, 'PENSAMIENTO MATEMATICO', 'Resolución de triángulos', 'Resolución de triángulos', 'https://vimeo.com/356507308', '12:43:00', 0, NULL, NULL);
 
 --
 -- Índices para tablas volcadas
@@ -1822,6 +1884,13 @@ ALTER TABLE `recursos_adicionales`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indices de la tabla `recursos_clase`
+--
+ALTER TABLE `recursos_clase`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `recursos_clase_id_clase_index` (`id_clase`);
+
+--
 -- Indices de la tabla `sessions`
 --
 ALTER TABLE `sessions`
@@ -1881,7 +1950,7 @@ ALTER TABLE `administradores`
 -- AUTO_INCREMENT de la tabla `apoyo_preguntas`
 --
 ALTER TABLE `apoyo_preguntas`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=373;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=383;
 
 --
 -- AUTO_INCREMENT de la tabla `area_preguntas`
@@ -1893,7 +1962,7 @@ ALTER TABLE `area_preguntas`
 -- AUTO_INCREMENT de la tabla `asignatura`
 --
 ALTER TABLE `asignatura`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT de la tabla `carreras`
@@ -1905,19 +1974,19 @@ ALTER TABLE `carreras`
 -- AUTO_INCREMENT de la tabla `clases`
 --
 ALTER TABLE `clases`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=130;
 
 --
 -- AUTO_INCREMENT de la tabla `cupones`
 --
 ALTER TABLE `cupones`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de la tabla `estudiante`
 --
 ALTER TABLE `estudiante`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `examen_generado`
@@ -1929,7 +1998,7 @@ ALTER TABLE `examen_generado`
 -- AUTO_INCREMENT de la tabla `examen_realizado`
 --
 ALTER TABLE `examen_realizado`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT de la tabla `failed_jobs`
@@ -1953,13 +2022,13 @@ ALTER TABLE `jobs`
 -- AUTO_INCREMENT de la tabla `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT de la tabla `pagos`
 --
 ALTER TABLE `pagos`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `personal_access_tokens`
@@ -1971,7 +2040,7 @@ ALTER TABLE `personal_access_tokens`
 -- AUTO_INCREMENT de la tabla `preguntas`
 --
 ALTER TABLE `preguntas`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
 
 --
 -- AUTO_INCREMENT de la tabla `preparatorias`
@@ -1983,7 +2052,7 @@ ALTER TABLE `preparatorias`
 -- AUTO_INCREMENT de la tabla `progreso_videos`
 --
 ALTER TABLE `progreso_videos`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `recursos_adicionales`
@@ -1992,10 +2061,16 @@ ALTER TABLE `recursos_adicionales`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `recursos_clase`
+--
+ALTER TABLE `recursos_clase`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT de la tabla `tiempo_estudio`
 --
 ALTER TABLE `tiempo_estudio`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `tronco`
@@ -2013,7 +2088,7 @@ ALTER TABLE `universidades`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `videos`
@@ -2101,6 +2176,12 @@ ALTER TABLE `preguntas`
 ALTER TABLE `progreso_videos`
   ADD CONSTRAINT `progreso_videos_estudiante_id_foreign` FOREIGN KEY (`estudiante_id`) REFERENCES `estudiante` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `progreso_videos_video_id_foreign` FOREIGN KEY (`video_id`) REFERENCES `videos` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `recursos_clase`
+--
+ALTER TABLE `recursos_clase`
+  ADD CONSTRAINT `recursos_clase_id_clase_foreign` FOREIGN KEY (`id_clase`) REFERENCES `clases` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `tiempo_estudio`
