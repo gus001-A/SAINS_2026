@@ -113,7 +113,7 @@
     <div id="examenesGrid" class="examenes-grid" style="display: none;"></div>
 </div>
 
-<!-- MODAL DE RESULTADOS -->
+<!-- MODAL DE RESULTADOS (RESUMEN) -->
 <div id="resultadosModal" class="custom-modal" style="display: none;">
     <div class="custom-modal-overlay"></div>
     <div class="custom-modal-container">
@@ -202,6 +202,13 @@
                             <span id="modalProgressText">0%</span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Botón para ver respuestas completas -->
+                <div class="modal-actions">
+                    <button class="btn-ver-completo" id="btnVerRespuestasCompletas">
+                        <i class="fas fa-list-check me-2"></i>Ver respuestas completas del examen
+                    </button>
                 </div>
 
                 <!-- Recomendaciones -->
@@ -707,6 +714,8 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     animation: modalSlideIn 0.3s ease-out;
     overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 @keyframes modalSlideIn {
@@ -727,6 +736,9 @@
     justify-content: space-between;
     align-items: center;
     color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .custom-modal-header-left {
@@ -782,26 +794,6 @@
 
 .custom-modal-body {
     padding: 32px;
-    max-height: calc(90vh - 140px);
-    overflow-y: auto;
-}
-
-.custom-modal-body::-webkit-scrollbar {
-    width: 6px;
-}
-
-.custom-modal-body::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 10px;
-}
-
-.custom-modal-body::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 10px;
-}
-
-.custom-modal-body::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
 }
 
 .resultado-principal {
@@ -878,7 +870,7 @@
 }
 
 .progreso-section {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
 }
 
 .progreso-section h6 {
@@ -905,6 +897,28 @@
     font-weight: 600;
     transition: width 0.5s ease;
     border-radius: 20px;
+}
+
+.modal-actions {
+    margin-bottom: 24px;
+}
+
+.btn-ver-completo {
+    width: 100%;
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-ver-completo:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102,126,234,0.4);
 }
 
 .recomendaciones-section {
@@ -1012,6 +1026,9 @@
     justify-content: flex-end;
     gap: 12px;
     background: white;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
 }
 
 .btn-cancel, .btn-submit {
@@ -1163,14 +1180,6 @@ body.dark-mode .progress-bar-container {
     background: #334155;
 }
 
-body.dark-mode .custom-modal-body::-webkit-scrollbar-track {
-    background: #334155;
-}
-
-body.dark-mode .custom-modal-body::-webkit-scrollbar-thumb {
-    background: #475569;
-}
-
 body.dark-mode .materia-badge {
     background: #1e3a8a;
     color: #bfdbfe;
@@ -1195,7 +1204,7 @@ let todosExamenes = [];
 let filtroActual = 'todos';
 let examenesAgrupados = {};
 
-// Funciones del modal manual
+// Funciones del modal
 function abrirModal() {
     const modal = document.getElementById('resultadosModal');
     modal.style.display = 'block';
@@ -1334,13 +1343,12 @@ function agruparExamenes() {
         examenesAgrupados[examenId].push(examen);
     });
     
-    // Ordenar cada grupo por intento
     for (let key in examenesAgrupados) {
         examenesAgrupados[key].sort((a, b) => (a.intento || 1) - (b.intento || 1));
     }
 }
 
-// Actualizar estadísticas del header - AHORA CON TODOS LOS INTENTOS
+// Actualizar estadísticas del header
 function actualizarEstadisticas() {
     if (!todosExamenes || todosExamenes.length === 0) {
         document.getElementById('promedioGeneral').innerText = '0%';
@@ -1350,7 +1358,6 @@ function actualizarEstadisticas() {
         return;
     }
     
-    // Usar TODOS los exámenes registrados
     const calificaciones = todosExamenes.map(e => parseFloat(e.calificacion) || 0);
     const promedio = calificaciones.reduce((a, b) => a + b, 0) / calificaciones.length;
     const mejor = Math.max(...calificaciones);
@@ -1397,12 +1404,10 @@ function formatearHora(horaStr) {
     return horaStr;
 }
 
-// Renderizar tarjetas - VERSIÓN CORREGIDA (Muestra TODOS los intentos)
+// Renderizar tarjetas
 function renderizarExamenes() {
     const grid = document.getElementById('examenesGrid');
     let examenesFiltrados = [...todosExamenes];
-    
-    console.log('Total exámenes originales:', todosExamenes.length);
     
     if (filtroActual === 'aprobados') {
         examenesFiltrados = examenesFiltrados.filter(e => (parseFloat(e.calificacion) || 0) >= 70);
@@ -1419,8 +1424,6 @@ function renderizarExamenes() {
         );
     }
     
-    console.log('Exámenes después de filtros:', examenesFiltrados.length);
-    
     if (examenesFiltrados.length === 0) {
         grid.innerHTML = `
             <div style="grid-column: 1/-1;">
@@ -1436,7 +1439,6 @@ function renderizarExamenes() {
         return;
     }
     
-    // Ordenar por fecha descendente (más reciente primero)
     examenesFiltrados.sort((a, b) => {
         const fechaA = new Date(a.fecha + ' ' + (a.hora_inicio || '00:00:00'));
         const fechaB = new Date(b.fecha + ' ' + (b.hora_inicio || '00:00:00'));
@@ -1507,7 +1509,6 @@ function renderizarExamenes() {
         `;
     }).join('');
     
-    // Agregar evento click a las tarjetas
     document.querySelectorAll('.examen-card').forEach(card => {
         const examenId = parseInt(card.getAttribute('data-id'));
         card.addEventListener('click', (e) => {
@@ -1532,16 +1533,13 @@ function mostrarResultados(examenId) {
     const aprobado = calificacionActual >= 70;
     const nombreExamen = examenActual.nombre_examen || getNombreExamen(examenActual.tipo_examen);
     
-    // Configurar título del modal
     document.getElementById('modalTituloExamen').innerText = nombreExamen;
     
-    // Configurar calificación
     const modalCalificacion = document.getElementById('modalCalificacionResultado');
     modalCalificacion.innerHTML = `<span class="calificacion-value">${Math.round(calificacionActual)}%</span>`;
     modalCalificacion.style.background = aprobado ? '#d1fae5' : '#fee2e2';
     modalCalificacion.style.color = aprobado ? '#065f46' : '#991b1b';
     
-    // Configurar mensaje
     const mensajeDiv = document.getElementById('modalMensajeResultado');
     if (aprobado) {
         mensajeDiv.innerHTML = '<i class="fas fa-check-circle me-2" style="color:#10b981"></i>¡Felicidades! Has aprobado este examen';
@@ -1549,28 +1547,21 @@ function mostrarResultados(examenId) {
         mensajeDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2" style="color:#f59e0b"></i>Sigue practicando para mejorar tu puntaje';
     }
     
-    // Configurar información básica
     document.getElementById('modalFechaResultado').innerHTML = `<i class="fas fa-calendar me-1"></i> ${formatearFecha(examenActual.fecha)}`;
     document.getElementById('modalFechaInfo').innerText = formatearFecha(examenActual.fecha);
     document.getElementById('modalHoraInfo').innerText = formatearHora(examenActual.hora_inicio);
     document.getElementById('modalHoraFinInfo').innerText = formatearHora(examenActual.hora_fin);
     document.getElementById('modalTiempoInfo').innerText = examenActual.tiempo || '00:00:00';
     document.getElementById('modalIntentoInfo').innerText = examenActual.intento || 1;
-    
-    // Configurar estadísticas adicionales
     document.getElementById('modalMejorPuntaje').innerText = Math.round(mejorPuntaje) + '%';
     document.getElementById('modalPromedio').innerText = Math.round(promedio) + '%';
     
-    // Configurar barra de progreso
     const progressBar = document.getElementById('modalProgressBar');
     const progressText = document.getElementById('modalProgressText');
     progressBar.style.width = calificacionActual + '%';
-    progressBar.style.background = aprobado ? 
-        'linear-gradient(90deg, #10b981, #34d399)' : 
-        'linear-gradient(90deg, #f59e0b, #fbbf24)';
+    progressBar.style.background = aprobado ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #f59e0b, #fbbf24)';
     progressText.innerText = Math.round(calificacionActual) + '%';
     
-    // Configurar recomendaciones
     const recomendacionesDiv = document.getElementById('modalRecomendaciones');
     if (calificacionActual >= 90) {
         recomendacionesDiv.innerHTML = '<i class="fas fa-star me-2"></i>¡Excelente trabajo! Tu conocimiento es sobresaliente. Sigue así para mantener tu nivel.';
@@ -1594,7 +1585,16 @@ function mostrarResultados(examenId) {
         recomendacionesDiv.style.color = '#991b1b';
     }
     
-    // Configurar historial de intentos (otros intentos del mismo examen)
+    // ========== BOTÓN PARA VER RESPUESTAS COMPLETAS - RUTA CORRECTA ==========
+    const btnVerRespuestas = document.getElementById('btnVerRespuestasCompletas');
+    if (btnVerRespuestas) {
+        btnVerRespuestas.onclick = function() {
+            // Redirige a la página de resultados completos con todas las preguntas y respuestas
+            window.location.href = '/estudiante/resultados/' + examenActual.id;
+        };
+    }
+    
+    // Historial de intentos
     const otrosIntentos = todosIntentos.filter(i => i.id != examenId);
     if (otrosIntentos.length > 0) {
         document.getElementById('modalHistorialIntentos').style.display = 'block';
@@ -1607,12 +1607,11 @@ function mostrarResultados(examenId) {
                     <td>#${intento.intento || 1}</td>
                     <td>${formatearFecha(intento.fecha)}</td>
                     <td><span class="badge ${badgeClass}">${Math.round(calif)}%</span></td>
-                    <td>${intento.tiempo || '00:00:00'}</td>
+                    <td>${intento.tiempo || '00:00:00'}</span></td>
                 </tr>
             `;
         }).join('');
         
-        // Resetear el estado del historial (cerrado)
         const historialBody = document.getElementById('historialBody');
         const historialIcon = document.getElementById('historialIcon');
         if (historialBody.classList.contains('active')) {
@@ -1624,7 +1623,7 @@ function mostrarResultados(examenId) {
         document.getElementById('modalHistorialIntentos').style.display = 'none';
     }
     
-    // Configurar botón de nuevo intento según el tipo
+    // Botón nuevo intento
     const nuevoIntentoBtn = document.getElementById('btnNuevoIntentoModal');
     const tipoExamen = examenActual.tipo_examen;
     
@@ -1651,7 +1650,6 @@ function mostrarResultados(examenId) {
         };
     }
     
-    // Abrir modal
     abrirModal();
 }
 
@@ -1674,30 +1672,16 @@ function buscarExamen() {
 document.addEventListener('DOMContentLoaded', function() {
     cargarExamenes();
     
-    // Configurar eventos del modal
     const closeModalBtn = document.getElementById('closeModalBtn');
     const cancelModalBtn = document.getElementById('cancelModalBtn');
     const modalOverlay = document.querySelector('.custom-modal-overlay');
     
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', cerrarModal);
-    }
+    if (closeModalBtn) closeModalBtn.addEventListener('click', cerrarModal);
+    if (cancelModalBtn) cancelModalBtn.addEventListener('click', cerrarModal);
+    if (modalOverlay) modalOverlay.addEventListener('click', cerrarModal);
     
-    if (cancelModalBtn) {
-        cancelModalBtn.addEventListener('click', cerrarModal);
-    }
-    
-    if (modalOverlay) {
-        modalOverlay.addEventListener('click', cerrarModal);
-    }
-    
-    // Prevenir que el click dentro del contenido cierre el modal
     const modalContent = document.querySelector('.custom-modal-content');
-    if (modalContent) {
-        modalContent.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
+    if (modalContent) modalContent.addEventListener('click', function(e) { e.stopPropagation(); });
 });
 </script>
 @endpush

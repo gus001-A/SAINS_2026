@@ -6,15 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Clase;
 use App\Models\Asignatura;
 use App\Models\Video;
+use App\Models\RecursoClase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator; 
 
 class ClaseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Clase::with('asignatura');
+        // Obtener todas las clases con relaciones
+        $query = Clase::with('asignatura', 'recursos');
         
+        // Búsqueda
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -25,13 +29,74 @@ class ClaseController extends Controller
             });
         }
         
+        // Filtro por materia
         if ($request->filled('asignatura_id')) {
             $query->where('id_asignatura', $request->asignatura_id);
         }
         
-        $clases = $query->orderBy('id_asignatura', 'asc')
-                        ->orderBy('num_clase', 'asc')
-                        ->paginate(15);
+        // Obtener todas las clases (sin paginar aún)
+        $clasesCollection = $query->get();
+        
+        // ORDENAMIENTO
+        $ordenCampo = $request->get('orden_campo', 'asignatura');
+        $ordenDireccion = $request->get('orden_direccion', 'asc');
+        
+        // Ordenar la colección según el campo seleccionado
+        if ($ordenCampo == 'id') {
+            $clasesCollection = $ordenDireccion == 'asc' 
+                ? $clasesCollection->sortBy('id') 
+                : $clasesCollection->sortByDesc('id');
+        } 
+        elseif ($ordenCampo == 'asignatura') {
+            $clasesCollection = $ordenDireccion == 'asc' 
+                ? $clasesCollection->sortBy(function($item) {
+                    return $item->asignatura ? $item->asignatura->nombre : '';
+                }) 
+                : $clasesCollection->sortByDesc(function($item) {
+                    return $item->asignatura ? $item->asignatura->nombre : '';
+                });
+        }
+        elseif ($ordenCampo == 'num_clase') {
+            $clasesCollection = $ordenDireccion == 'asc' 
+                ? $clasesCollection->sortBy('num_clase') 
+                : $clasesCollection->sortByDesc('num_clase');
+        }
+        elseif ($ordenCampo == 'nombre_clase') {
+            $clasesCollection = $ordenDireccion == 'asc' 
+                ? $clasesCollection->sortBy('nombre_clase') 
+                : $clasesCollection->sortByDesc('nombre_clase');
+        }
+        elseif ($ordenCampo == 'video') {
+            $clasesCollection = $ordenDireccion == 'asc' 
+                ? $clasesCollection->sortBy(function($item) {
+                    return $item->link ? 1 : 0;
+                }) 
+                : $clasesCollection->sortByDesc(function($item) {
+                    return $item->link ? 1 : 0;
+                });
+        }
+        elseif ($ordenCampo == 'material') {
+            $clasesCollection = $ordenDireccion == 'asc' 
+                ? $clasesCollection->sortBy(function($item) {
+                    return $item->url ? 1 : 0;
+                }) 
+                : $clasesCollection->sortByDesc(function($item) {
+                    return $item->url ? 1 : 0;
+                });
+        }
+        
+        // Paginar la colección manualmente
+        $perPage = 15;
+        $currentPage = $request->get('page', 1);
+        $currentItems = $clasesCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        
+        $clases = new LengthAwarePaginator(
+            $currentItems,
+            $clasesCollection->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
         
         // Estadísticas
         $totalClases = Clase::count();
@@ -46,7 +111,9 @@ class ClaseController extends Controller
             'totalClases', 
             'conVideo', 
             'conMaterial',
-            'asignaturas'
+            'asignaturas',
+            'ordenCampo',
+            'ordenDireccion'
         ));
     }
     
@@ -54,8 +121,9 @@ class ClaseController extends Controller
     {
         $asignaturas = Asignatura::orderBy('nombre', 'asc')->get();
         $videos = Video::orderBy('materia')->orderBy('tema')->orderBy('titulo')->get();
+        $tiposRecursos = RecursoClase::TIPOS;
         
-        return view('administrador.clases.create', compact('asignaturas', 'videos'));
+        return view('administrador.clases.create', compact('asignaturas', 'videos', 'tiposRecursos'));
     }
     
     public function store(Request $request)
@@ -64,12 +132,17 @@ class ClaseController extends Controller
             'id_asignatura' => 'required|exists:asignatura,id',
             'num_clase' => 'required|integer|min:1',
             'nombre_clase' => 'required|string|max:255',
-            'link' => 'nullable|string|max:500',  // ← Video link
-            'url' => 'nullable|string|max:500',   // ← Material apoyo
+            'link' => 'nullable|string|max:500',
+            'url' => 'nullable|string|max:500',
+            'recursos' => 'nullable|array',
+            'recursos.*.titulo' => 'required_with:recursos.*|string|max:255',
+            'recursos.*.tipo' => 'required_with:recursos.*|string',
+            'recursos.*.url' => 'required_with:recursos.*|url',
+            'recursos.*.descripcion' => 'nullable|string',
         ]);
         
         try {
-            // Verificar que el número de clase no esté duplicado para la misma asignatura
+            // Verificar duplicado de número de clase
             $existe = Clase::where('id_asignatura', $request->id_asignatura)
                            ->where('num_clase', $request->num_clase)
                            ->exists();
@@ -78,6 +151,7 @@ class ClaseController extends Controller
                 return redirect()->back()->with('error', 'Ya existe una clase con el número ' . $request->num_clase . ' para esta asignatura')->withInput();
             }
             
+            // Crear la clase
             $clase = Clase::create([
                 'id_asignatura' => $request->id_asignatura,
                 'num_clase' => $request->num_clase,
@@ -86,18 +160,35 @@ class ClaseController extends Controller
                 'url' => $request->url,
             ]);
             
-            return redirect()->route('admin.clases.index')->with('success', 'Clase creada exitosamente');
+            // Guardar recursos adicionales
+            if ($request->has('recursos')) {
+                foreach ($request->recursos as $index => $recursoData) {
+                    if (!empty($recursoData['titulo']) && !empty($recursoData['url'])) {
+                        RecursoClase::create([
+                            'id_clase' => $clase->id,
+                            'titulo' => $recursoData['titulo'],
+                            'tipo' => $recursoData['tipo'],
+                            'url' => $recursoData['url'],
+                            'descripcion' => $recursoData['descripcion'] ?? null,
+                            'orden' => $index
+                        ]);
+                    }
+                }
+            }
+            
+            return redirect()->route('admin.clases.index')->with('success', 'Clase creada exitosamente con ' . ($request->recursos ? count(array_filter($request->recursos, function($r) { return !empty($r['titulo']); })) : 0) . ' recursos adicionales');
         } catch (\Exception $e) {
             Log::error('Error al crear clase: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al crear la clase: ' . $e->getMessage())->withInput();
         }
     }
     
-    public function show($id){
+    public function show($id)
+    {
         try {
-            $clase = Clase::with('asignatura')->findOrFail($id);
+            $clase = Clase::with('asignatura', 'recursos')->findOrFail($id);
+            $tiposRecursos = RecursoClase::TIPOS;
             
-            // Verificar si la petición espera JSON (para edición modal)
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json([
                     'success' => true,
@@ -105,8 +196,7 @@ class ClaseController extends Controller
                 ]);
             }
             
-            // Para peticiones normales, retornar la vista
-            return view('administrador.clases.show', compact('clase'));
+            return view('administrador.clases.show', compact('clase', 'tiposRecursos'));
         } catch (\Exception $e) {
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json([
@@ -120,11 +210,12 @@ class ClaseController extends Controller
     
     public function edit($id)
     {
-        $clase = Clase::with('asignatura')->findOrFail($id);
+        $clase = Clase::with('asignatura', 'recursos')->findOrFail($id);
         $asignaturas = Asignatura::orderBy('nombre', 'asc')->get();
         $videos = Video::orderBy('materia')->orderBy('tema')->orderBy('titulo')->get();
+        $tiposRecursos = RecursoClase::TIPOS;
         
-        return view('administrador.clases.edit', compact('clase', 'asignaturas', 'videos'));
+        return view('administrador.clases.edit', compact('clase', 'asignaturas', 'videos', 'tiposRecursos'));
     }
     
     public function update(Request $request, $id)
@@ -135,6 +226,12 @@ class ClaseController extends Controller
             'nombre_clase' => 'required|string|max:255',
             'link' => 'nullable|string|max:500',
             'url' => 'nullable|string|max:500',
+            'recursos' => 'nullable|array',
+            'recursos.*.titulo' => 'required_with:recursos.*|string|max:255',
+            'recursos.*.tipo' => 'required_with:recursos.*|string',
+            'recursos.*.url' => 'required_with:recursos.*|url',
+            'recursos.*.descripcion' => 'nullable|string',
+            'recursos_eliminar' => 'nullable|array',
         ]);
         
         try {
@@ -150,6 +247,7 @@ class ClaseController extends Controller
                 return redirect()->back()->with('error', 'Ya existe una clase con el número ' . $request->num_clase . ' para esta asignatura')->withInput();
             }
             
+            // Actualizar la clase
             $clase->update([
                 'id_asignatura' => $request->id_asignatura,
                 'num_clase' => $request->num_clase,
@@ -157,6 +255,42 @@ class ClaseController extends Controller
                 'link' => $request->link,
                 'url' => $request->url,
             ]);
+            
+            // Eliminar recursos marcados para eliminar
+            if ($request->has('recursos_eliminar')) {
+                RecursoClase::whereIn('id', $request->recursos_eliminar)->delete();
+            }
+            
+            // Actualizar o crear recursos existentes
+            if ($request->has('recursos')) {
+                foreach ($request->recursos as $index => $recursoData) {
+                    if (!empty($recursoData['titulo']) && !empty($recursoData['url'])) {
+                        if (isset($recursoData['id']) && $recursoData['id']) {
+                            // Actualizar recurso existente
+                            $recurso = RecursoClase::find($recursoData['id']);
+                            if ($recurso && $recurso->id_clase == $clase->id) {
+                                $recurso->update([
+                                    'titulo' => $recursoData['titulo'],
+                                    'tipo' => $recursoData['tipo'],
+                                    'url' => $recursoData['url'],
+                                    'descripcion' => $recursoData['descripcion'] ?? null,
+                                    'orden' => $index
+                                ]);
+                            }
+                        } else {
+                            // Crear nuevo recurso
+                            RecursoClase::create([
+                                'id_clase' => $clase->id,
+                                'titulo' => $recursoData['titulo'],
+                                'tipo' => $recursoData['tipo'],
+                                'url' => $recursoData['url'],
+                                'descripcion' => $recursoData['descripcion'] ?? null,
+                                'orden' => $index
+                            ]);
+                        }
+                    }
+                }
+            }
             
             return redirect()->route('admin.clases.index')->with('success', 'Clase actualizada exitosamente');
         } catch (\Exception $e) {
@@ -169,6 +303,7 @@ class ClaseController extends Controller
     {
         try {
             $clase = Clase::findOrFail($id);
+            // Los recursos se eliminarán automáticamente por cascade
             $clase->delete();
             
             return redirect()->route('admin.clases.index')->with('success', 'Clase eliminada exitosamente');
@@ -179,8 +314,26 @@ class ClaseController extends Controller
     }
     
     /**
-     * API para obtener videos por materia/tema (para búsqueda en tiempo real)
+     * Obtener el siguiente número de clase disponible para una asignatura
      */
+    public function getSiguienteNumero($asignaturaId)
+    {
+        try {
+            $maxNumero = Clase::where('id_asignatura', $asignaturaId)->max('num_clase');
+            $siguiente = $maxNumero ? $maxNumero + 1 : 1;
+            
+            return response()->json([
+                'success' => true,
+                'siguiente_numero' => $siguiente
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el número'
+            ], 500);
+        }
+    }
+    
     public function getVideosApi(Request $request)
     {
         try {
@@ -213,9 +366,6 @@ class ClaseController extends Controller
         }
     }
     
-    /**
-     * API para obtener clases por asignatura
-     */
     public function getClasesByAsignaturaApi($asignaturaId)
     {
         try {

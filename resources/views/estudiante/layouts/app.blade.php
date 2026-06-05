@@ -523,6 +523,13 @@
 </head>
 <body>
 
+    <!-- ========================================== -->
+    <!-- FORMULARIO OCULTO PARA CERRAR SESIÓN (POST) -->
+    <!-- ========================================== -->
+    <form id="logoutForm" method="POST" action="{{ route('logout') }}" style="display: none;">
+        @csrf
+    </form>
+
     <!-- NAVBAR RESPONSIVO -->
     <nav class="navbar">
         <div class="navbar-container">
@@ -535,11 +542,6 @@
             </a>
 
             <div class="nav-menu" id="navMenu">
-                <a class="nav-link {{ request()->routeIs('estudiante.dashboard') ? 'active' : '' }}" 
-                   href="{{ route('estudiante.dashboard') }}">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Dashboard</span>
-                </a>
                 
                 <a class="nav-link {{ request()->routeIs('estudiante.examenes') ? 'active' : '' }}" 
                    href="{{ route('estudiante.examenes') }}">
@@ -593,19 +595,17 @@
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-custom dropdown-menu-end">
-                        <!-- SOLO MI PERFIL -->
                         <li>
                             <a class="dropdown-item" href="{{ route('estudiante.perfil') }}">
                                 <i class="fas fa-user-edit"></i> Mi Perfil
                             </a>
                         </li>
-                        
-                        <!-- SOLO CERRAR SESIÓN -->
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item text-danger" href="#" id="btnLogout">
+                            <!-- Botón de cerrar sesión que usa el formulario POST -->
+                            <button class="dropdown-item text-danger" id="btnLogout" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
                                 <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                            </a>
+                            </button>
                         </li>
                     </ul>
                 </div>
@@ -645,22 +645,18 @@
         
         // ========== CONTROL DE INACTIVIDAD ==========
         function resetInactivityTimer() {
-            // Resetear el tiempo restante
             timeLeft = TIMEOUT_MINUTES * 60;
             warningShown = false;
             
-            // Ocultar el timer visual si estaba visible
             const timerDiv = document.getElementById('inactivityTimer');
             if (timerDiv) {
                 timerDiv.style.display = 'none';
                 timerDiv.classList.remove('warning');
             }
             
-            // Limpiar timers existentes
             if (inactivityTimer) clearTimeout(inactivityTimer);
             if (warningTimer) clearInterval(warningTimer);
             
-            // Iniciar nuevo timer
             inactivityTimer = setTimeout(() => {
                 showInactivityWarning();
             }, TIMEOUT_MINUTES * 60 * 1000);
@@ -670,7 +666,6 @@
             if (warningShown) return;
             warningShown = true;
             
-            // Mostrar el timer visual
             const timerDiv = document.getElementById('inactivityTimer');
             const timerText = document.getElementById('timerText');
             
@@ -678,7 +673,6 @@
                 timerDiv.style.display = 'flex';
                 timerDiv.classList.add('warning');
                 
-                // Actualizar el contador cada segundo
                 warningTimer = setInterval(() => {
                     timeLeft--;
                     const minutes = Math.floor(timeLeft / 60);
@@ -692,7 +686,6 @@
                 }, 1000);
             }
             
-            // Mostrar SweetAlert de advertencia
             Swal.fire({
                 title: '⚠️ ¿Sigues ahí?',
                 html: `Tu sesión expirará en <strong>5 minutos</strong> por inactividad.<br><br>
@@ -705,14 +698,14 @@
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Seguir aquí',
                 cancelButtonText: 'Cerrar sesión',
-                timer: 300000, // 5 minutos
+                timer: 300000,
                 timerProgressBar: true,
                 didOpen: () => {
                     const progressBar = Swal.getPopup().querySelector('#swalProgressBar');
                     if (progressBar) {
                         let width = 100;
                         const interval = setInterval(() => {
-                            width -= 100 / 300; // 300 = 5 minutos / 1 segundo
+                            width -= 100 / 300;
                             if (progressBar) progressBar.style.width = Math.max(0, width) + '%';
                             if (width <= 0) clearInterval(interval);
                         }, 1000);
@@ -723,9 +716,7 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Usuario activo, resetear timers
                     resetInactivityTimer();
-                    // Hacer heartbeat para mantener sesión activa
                     fetch('{{ route("estudiante.heartbeat") }}', {
                         method: 'POST',
                         headers: {
@@ -751,23 +742,11 @@
                 confirmButtonText: 'Aceptar',
                 allowOutsideClick: false
             }).then(() => {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = "{{ route('logout') }}";
-                form.style.display = 'none';
-                
-                const csrfToken = document.createElement('input');
-                csrfToken.type = 'hidden';
-                csrfToken.name = '_token';
-                csrfToken.value = '{{ csrf_token() }}';
-                
-                form.appendChild(csrfToken);
-                document.body.appendChild(form);
-                form.submit();
+                // Usar el formulario oculto para logout (POST)
+                document.getElementById('logoutForm').submit();
             });
         }
         
-        // Eventos que indican actividad del usuario
         const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click', 'keydown'];
         
         function startInactivityTracking() {
@@ -869,7 +848,7 @@
             confirmButtonColor: '#4361ee' 
         });
 
-        // ========== HEARTBEAT (Registro de actividad) ==========
+        // ========== HEARTBEAT ==========
         function iniciarHeartbeat() {
             if (heartbeatInterval) clearInterval(heartbeatInterval);
             
@@ -883,10 +862,10 @@
                     credentials: 'same-origin'
                 })
                 .catch(error => console.log('Heartbeat error:', error));
-            }, 60000); // Cada minuto
+            }, 60000);
         }
 
-        // ========== CERRAR SESIÓN ==========
+        // ========== CERRAR SESIÓN (CORREGIDO) ==========
         const logoutBtn = document.getElementById('btnLogout');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => {
@@ -906,19 +885,8 @@
                     if (result.isConfirmed) {
                         if (heartbeatInterval) clearInterval(heartbeatInterval);
                         stopInactivityTracking();
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = "{{ route('logout') }}";
-                        form.style.display = 'none';
-                        
-                        const csrfToken = document.createElement('input');
-                        csrfToken.type = 'hidden';
-                        csrfToken.name = '_token';
-                        csrfToken.value = '{{ csrf_token() }}';
-                        
-                        form.appendChild(csrfToken);
-                        document.body.appendChild(form);
-                        form.submit();
+                        // Usar el formulario oculto para logout (POST)
+                        document.getElementById('logoutForm').submit();
                     }
                 });
             });
@@ -928,13 +896,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             iniciarHeartbeat();
             
-            // Iniciar el tracking de inactividad SOLO si el usuario está autenticado
             @if(Auth::check())
                 startInactivityTracking();
             @endif
         });
 
-        // Mostrar mensajes flash
+        // Mensajes flash
         @if(session('success')) mostrarExito("{{ session('success') }}"); @endif
         @if(session('error')) mostrarError("{{ session('error') }}"); @endif
         @if(session('warning')) mostrarAlerta("{{ session('warning') }}"); @endif

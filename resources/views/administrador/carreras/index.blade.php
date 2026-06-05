@@ -4,184 +4,257 @@
 @section('title', 'Gestión de Carreras - SAINS')
 
 @section('content')
-<div class="container-fluid px-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <div>
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        <div class="rounded-3 p-2" style="background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);">
-                            <i class="fas fa-graduation-cap fa-2x" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; background-clip: text; color: transparent;"></i>
+<div class="container-fluid p-0 p-lg-2">
+    <div class="px-2 px-xl-3 px-xxl-4">
+        
+        <!-- Header mejorado -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="rounded-3 p-2" style="background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);">
+                                <i class="fas fa-graduation-cap fa-2x" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; background-clip: text; color: transparent;"></i>
+                            </div>
+                            <h1 class="display-5 fw-bold mb-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                                Gestión de Carreras
+                            </h1>
                         </div>
-                        <h1 class="display-5 fw-bold mb-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; background-clip: text; color: transparent;">
-                            Gestión de Carreras
-                        </h1>
+                        <p class="text-muted fs-5 mb-0">Administre las carreras universitarias y sus materias asociadas</p>
                     </div>
-                    <p class="text-muted fs-5 mb-0">Administre las carreras universitarias y sus materias asociadas</p>
-                </div>
-                <div>
-                    <button type="button" class="btn btn-primary-custom px-4 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#createCarreraModal">
-                        <i class="fas fa-plus-circle me-2"></i>Nueva Carrera
-                    </button>
+                    <div>
+                        <button type="button" class="btn btn-primary-custom px-4 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#createCarreraModal">
+                            <i class="fas fa-plus-circle me-2"></i>Nueva Carrera
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Panel de Filtros -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-header bg-transparent border-0 pt-4 px-4">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fas fa-sliders-h text-primary"></i>
-                        <h5 class="fw-semibold mb-0">Filtros de búsqueda</h5>
-                    </div>
-                </div>
-                <div class="card-body p-4 pt-0">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-5 col-lg-5">
-                            <label class="form-label fw-semibold text-muted mb-2">
-                                <i class="fas fa-search me-1"></i>Buscar carrera
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-transparent border-end-0 rounded-start-3">
-                                    <i class="fas fa-graduation-cap text-primary"></i>
-                                </span>
-                                <input type="text" id="searchInput" class="form-control border-start-0 rounded-end-3" 
-                                       placeholder="Nombre de la carrera..." value="{{ request('search') }}">
+        <!-- CONTADORES RÁPIDOS - Tarjetas de estadísticas -->
+        <div class="row mb-4 g-3">
+            <div class="col-sm-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 hover-card stat-card-primary">
+                    <div class="card-body p-3 p-xl-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1 small fw-semibold text-uppercase">Total Carreras</p>
+                                <h2 class="display-4 fw-bold mb-0">{{ $totalCarreras }}</h2>
+                                <p class="text-muted small mt-2 mb-0">
+                                    <i class="fas fa-database me-1"></i> Registros activos
+                                </p>
                             </div>
-                        </div>
-                        <div class="col-md-4 col-lg-4">
-                            <label class="form-label fw-semibold text-muted mb-2">
-                                <i class="fas fa-layer-group me-1"></i>Filtrar por Tronco
-                            </label>
-                            <select id="troncoFilter" class="form-select rounded-3">
-                                <option value="">Todos los troncos</option>
-                                @foreach($troncos as $tronco)
-                                    <option value="{{ $tronco->id }}" {{ request('tronco_id') == $tronco->id ? 'selected' : '' }}>
-                                        {{ $tronco->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3 col-lg-3">
-                            <div class="d-flex gap-2">
-                                <button id="btnFiltrar" class="btn btn-primary-custom w-100 py-2 rounded-3 shadow-sm">
-                                    <i class="fas fa-filter me-2"></i>Filtrar
-                                </button>
-                                <button id="btnLimpiar" class="btn btn-outline-secondary w-100 py-2 rounded-3">
-                                    <i class="fas fa-times me-2"></i>
-                                </button>
+                            <div class="rounded-3 p-3 stat-icon">
+                                <i class="fas fa-graduation-cap fa-2x"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 hover-card stat-card-success">
+                    <div class="card-body p-3 p-xl-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1 small fw-semibold text-uppercase">Con Tronco Asignado</p>
+                                <h2 class="display-4 fw-bold mb-0">{{ $conTronco }}</h2>
+                                <p class="text-muted small mt-2 mb-0">
+                                    <i class="fas fa-layer-group me-1"></i> Tronco común
+                                </p>
+                            </div>
+                            <div class="rounded-3 p-3 stat-icon">
+                                <i class="fas fa-layer-group fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 hover-card stat-card-warning">
+                    <div class="card-body p-3 p-xl-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1 small fw-semibold text-uppercase">Con Universidades</p>
+                                <h2 class="display-4 fw-bold mb-0">{{ $conUniversidades }}</h2>
+                                <p class="text-muted small mt-2 mb-0">
+                                    <i class="fas fa-university me-1"></i> Universidades asociadas
+                                </p>
+                            </div>
+                            <div class="rounded-3 p-3 stat-icon">
+                                <i class="fas fa-university fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 hover-card stat-card-info">
+                    <div class="card-body p-3 p-xl-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1 small fw-semibold text-uppercase">Con Calificación Mínima</p>
+                                <h2 class="display-4 fw-bold mb-0">{{ $conCalificacionMinima ?? 0 }}</h2>
+                                <p class="text-muted small mt-2 mb-0">
+                                    <i class="fas fa-chart-line me-1"></i> Requisito definido
+                                </p>
+                            </div>
+                            <div class="rounded-3 p-3 stat-icon">
+                                <i class="fas fa-chart-line fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Tarjetas de estadísticas -->
-    <div class="row mb-4 g-3">
-        <div class="col-sm-6 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 hover-card stat-card stat-card-primary">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-0 small text-uppercase fw-semibold">Total Carreras</p>
-                            <h3 class="fw-bold mb-0 mt-1">{{ $totalCarreras }}</h3>
+        <!-- Panel de Filtros -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-sliders-h text-primary"></i>
+                            <h5 class="fw-semibold mb-0">Filtros de búsqueda</h5>
                         </div>
-                        <div class="stat-icon rounded-3">
-                            <i class="fas fa-graduation-cap fa-xl"></i>
-                        </div>
+                    </div>
+                    <div class="card-body p-4 pt-0">
+                        <form method="GET" action="{{ route('admin.carreras.index') }}" id="filtroForm">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-5 col-lg-4">
+                                    <label class="form-label fw-semibold text-muted mb-2">
+                                        <i class="fas fa-search me-1"></i>Buscar carrera
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-transparent border-end-0 rounded-start-3">
+                                            <i class="fas fa-graduation-cap text-primary"></i>
+                                        </span>
+                                        <input type="text" name="search" class="form-control border-start-0 rounded-end-3" 
+                                               placeholder="Nombre de la carrera..." value="{{ request('search') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-lg-3">
+                                    <label class="form-label fw-semibold text-muted mb-2">
+                                        <i class="fas fa-layer-group me-1"></i>Filtrar por Tronco
+                                    </label>
+                                    <select name="tronco_id" class="form-select rounded-3">
+                                        <option value="">Todos los troncos</option>
+                                        @foreach($troncos as $tronco)
+                                            <option value="{{ $tronco->id }}" {{ request('tronco_id') == $tronco->id ? 'selected' : '' }}>
+                                                {{ $tronco->nombre }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <!-- Campos ocultos para mantener el ordenamiento -->
+                                <input type="hidden" name="orden_campo" id="orden_campo" value="{{ request('orden_campo', 'nombre') }}">
+                                <input type="hidden" name="orden_direccion" id="orden_direccion" value="{{ request('orden_direccion', 'asc') }}">
+                                <div class="col-md-3 col-lg-5">
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary-custom w-100 py-2 rounded-3 shadow-sm">
+                                            <i class="fas fa-filter me-2"></i>Filtrar
+                                        </button>
+                                        <a href="{{ route('admin.carreras.index') }}" class="btn btn-outline-secondary w-100 py-2 rounded-3">
+                                            <i class="fas fa-times me-2"></i>Limpiar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 hover-card stat-card stat-card-success">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-0 small text-uppercase fw-semibold">Con Tronco Asignado</p>
-                            <h3 class="fw-bold mb-0 mt-1">{{ $conTronco }}</h3>
-                        </div>
-                        <div class="stat-icon rounded-3">
-                            <i class="fas fa-layer-group fa-xl"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 hover-card stat-card stat-card-warning">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-0 small text-uppercase fw-semibold">Con Universidades</p>
-                            <h3 class="fw-bold mb-0 mt-1">{{ $conUniversidades }}</h3>
-                        </div>
-                        <div class="stat-icon rounded-3">
-                            <i class="fas fa-university fa-xl"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Tabla de carreras -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="fw-semibold mb-0">
-                            <i class="fas fa-list me-2 text-primary"></i>Listado de Carreras
-                        </h5>
-                        <span class="badge bg-primary rounded-pill">{{ $carreras->total() }} registros</span>
+        <!-- Tabla de carreras - MÁS ANCHA -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="fw-semibold mb-0">
+                                <i class="fas fa-list me-2 text-primary"></i>Listado de Carreras
+                            </h5>
+                            <span class="badge bg-primary rounded-pill">{{ $carreras->total() }} registros</span>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-header">
-                                <tr>
-                                    <th class="py-3 px-4 fw-semibold" style="width: 80px;">
-                                        <i class="fas fa-hashtag me-1"></i> ID
-                                    </th>
-                                    <th class="py-3 px-4 fw-semibold">
-                                        <i class="fas fa-graduation-cap me-1"></i> Carrera
-                                    </th>
-                                    <th class="py-3 px-4 fw-semibold" style="width: 200px;">
-                                        <i class="fas fa-layer-group me-1"></i> Tronco
-                                    </th>
-                                    <th class="py-3 px-4 fw-semibold text-center" style="width: 100px;">
-                                        <i class="fas fa-university me-1"></i> Universidades
-                                    </th>
-                                    <th class="py-3 px-4 fw-semibold text-center" style="width: 230px;">
-                                        <i class="fas fa-cog me-1"></i> Acciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaBody">
-                                @include('administrador.carreras.partials.table_rows', ['carreras' => $carreras])
-                            </tbody>
-                        </table>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" style="min-width: 1000px;">
+                                <thead class="table-header">
+                                    <tr>
+                                        <th class="py-3 px-4 fw-semibold" style="width: 70px;">
+                                            <a href="#" class="ordenar-link text-decoration-none" data-campo="id">
+                                                <i class="fas fa-hashtag me-1"></i> ID
+                                                @if(request('orden_campo') == 'id')
+                                                    <i class="fas fa-sort-{{ request('orden_direccion') == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                                @else
+                                                    <i class="fas fa-sort ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th class="py-3 px-4 fw-semibold" style="min-width: 280px;">
+                                            <a href="#" class="ordenar-link text-decoration-none" data-campo="nombre">
+                                                <i class="fas fa-graduation-cap me-1"></i> Carrera
+                                                @if(request('orden_campo') == 'nombre')
+                                                    <i class="fas fa-sort-{{ request('orden_direccion') == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                                @else
+                                                    <i class="fas fa-sort ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th class="py-3 px-4 fw-semibold" style="min-width: 180px;">
+                                            <a href="#" class="ordenar-link text-decoration-none" data-campo="tronco">
+                                                <i class="fas fa-layer-group me-1"></i> Tronco
+                                                @if(request('orden_campo') == 'tronco')
+                                                    <i class="fas fa-sort-{{ request('orden_direccion') == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                                @else
+                                                    <i class="fas fa-sort ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th class="py-3 px-4 fw-semibold text-center" style="width: 140px;">
+                                            <a href="#" class="ordenar-link text-decoration-none" data-campo="calificacion_minima">
+                                                <i class="fas fa-chart-line me-1"></i> Calif. Mínima
+                                                @if(request('orden_campo') == 'calificacion_minima')
+                                                    <i class="fas fa-sort-{{ request('orden_direccion') == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                                @else
+                                                    <i class="fas fa-sort ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th class="py-3 px-4 fw-semibold text-center" style="width: 130px;">
+                                            <a href="#" class="ordenar-link text-decoration-none" data-campo="universidades">
+                                                <i class="fas fa-university me-1"></i> Universidades
+                                                @if(request('orden_campo') == 'universidades')
+                                                    <i class="fas fa-sort-{{ request('orden_direccion') == 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                                @else
+                                                    <i class="fas fa-sort ms-1 opacity-50"></i>
+                                                @endif
+                                            </a>
+                                        </th>
+                                        <th class="py-3 px-4 fw-semibold text-center" style="width: 220px;">
+                                            <i class="fas fa-cog me-1"></i> Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaBody">
+                                    @include('administrador.carreras.partials.table_rows', ['carreras' => $carreras])
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Paginación -->
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center p-4 bg-light border-top gap-3">
-                    <div class="text-muted small">
-                        <i class="fas fa-chart-line me-1"></i>
-                        Mostrando <span class="fw-semibold text-primary">{{ $carreras->firstItem() ?? 0 }}</span> - 
-                        <span class="fw-semibold text-primary">{{ $carreras->lastItem() ?? 0 }}</span> 
-                        de <span class="fw-semibold text-primary">{{ $carreras->total() }}</span> registros
-                    </div>
-                    <div id="paginationLinks" class="d-flex justify-content-end">
-                        {{ $carreras->appends(request()->query())->links('pagination::bootstrap-4') }}
+                    
+                    <!-- Paginación -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center p-4 bg-light border-top gap-3">
+                        <div class="text-muted small">
+                            <i class="fas fa-chart-line me-1"></i>
+                            Mostrando <span class="fw-semibold text-primary">{{ $carreras->firstItem() ?? 0 }}</span> - 
+                            <span class="fw-semibold text-primary">{{ $carreras->lastItem() ?? 0 }}</span> 
+                            de <span class="fw-semibold text-primary">{{ $carreras->total() }}</span> registros
+                        </div>
+                        <div id="paginationLinks" class="d-flex justify-content-end">
+                            {{ $carreras->appends(request()->query())->links('pagination::bootstrap-4') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -189,6 +262,7 @@
     </div>
 </div>
 
+<!-- Modales (Crear, Editar, Ver) - Se mantienen igual que en tu código original -->
 <!-- Modal Crear Carrera -->
 <div class="modal fade" id="createCarreraModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -215,58 +289,67 @@
                                required autofocus>
                     </div>
                     
-                    <div class="mb-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted mb-2">
+                                <i class="fas fa-layer-group me-2 text-primary"></i>Tronco Común
+                            </label>
+                            <select class="form-select rounded-3" id="tronco_id" name="tronco_id">
+                                <option value="">Seleccione un tronco (opcional)</option>
+                                @foreach($troncos as $tronco)
+                                    <option value="{{ $tronco->id }}">{{ $tronco->nombre }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text text-muted small mt-1">El tronco común es opcional</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted mb-2">
+                                <i class="fas fa-chart-line me-2 text-primary"></i>Calificación Mínima
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control rounded-3" 
+                                       id="calificacion_minima" name="calificacion_minima" 
+                                       step="0.01" min="0" max="100"
+                                       placeholder="Ej: 85.00">
+                                <span class="input-group-text rounded-3">%</span>
+                            </div>
+                            <div class="form-text text-muted small mt-1">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Calificación mínima requerida para acceder a esta carrera (opcional)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label class="form-label fw-semibold text-muted mb-2">
-                            <i class="fas fa-layer-group me-2 text-primary"></i>Tronco Común
+                            <i class="fas fa-book me-2 text-primary"></i>Materias Asociadas (Opcional)
                         </label>
-                        <select class="form-select form-select-lg rounded-3" id="tronco_id" name="tronco_id">
-                            <option value="">Seleccione un tronco (opcional)</option>
-                            @foreach($troncos as $tronco)
-                                <option value="{{ $tronco->id }}">{{ $tronco->nombre }}</option>
-                            @endforeach
-                        </select>
-                        <div class="form-text text-muted small mt-1">El tronco común es opcional</div>
-                    </div>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold text-muted mb-2">
-                                <i class="fas fa-book me-2 text-primary"></i>Materia 1
-                            </label>
-                            <select class="form-select rounded-3" id="id_asignatura_1" name="id_asignatura_1">
-                                <option value="">Seleccione una materia</option>
-                                @foreach($asignaturas as $asignatura)
-                                    <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
-                                @endforeach
-                            </select>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <select class="form-select rounded-3" id="id_asignatura_1" name="id_asignatura_1">
+                                    <option value="">Materia 1</option>
+                                    @foreach($asignaturas as $asignatura)
+                                        <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select rounded-3" id="id_asignatura_2" name="id_asignatura_2">
+                                    <option value="">Materia 2</option>
+                                    @foreach($asignaturas as $asignatura)
+                                        <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select rounded-3" id="id_asignatura_3" name="id_asignatura_3">
+                                    <option value="">Materia 3</option>
+                                    @foreach($asignaturas as $asignatura)
+                                        <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold text-muted mb-2">
-                                <i class="fas fa-book me-2 text-primary"></i>Materia 2
-                            </label>
-                            <select class="form-select rounded-3" id="id_asignatura_2" name="id_asignatura_2">
-                                <option value="">Seleccione una materia</option>
-                                @foreach($asignaturas as $asignatura)
-                                    <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold text-muted mb-2">
-                                <i class="fas fa-book me-2 text-primary"></i>Materia 3
-                            </label>
-                            <select class="form-select rounded-3" id="id_asignatura_3" name="id_asignatura_3">
-                                <option value="">Seleccione una materia</option>
-                                @foreach($asignaturas as $asignatura)
-                                    <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-info small rounded-3 mt-4">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Las materias son opcionales y se pueden asignar posteriormente.
                     </div>
                 </form>
             </div>
@@ -311,51 +394,65 @@
                                required>
                     </div>
                     
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold text-muted mb-2">
-                            <i class="fas fa-layer-group me-2 text-primary"></i>Tronco Común
-                        </label>
-                        <select class="form-select form-select-lg rounded-3" id="edit_tronco_id" name="tronco_id">
-                            <option value="">Seleccione un tronco (opcional)</option>
-                            @foreach($troncos as $tronco)
-                                <option value="{{ $tronco->id }}">{{ $tronco->nombre }}</option>
-                            @endforeach
-                        </select>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted mb-2">
+                                <i class="fas fa-layer-group me-2 text-primary"></i>Tronco Común
+                            </label>
+                            <select class="form-select rounded-3" id="edit_tronco_id" name="tronco_id">
+                                <option value="">Seleccione un tronco (opcional)</option>
+                                @foreach($troncos as $tronco)
+                                    <option value="{{ $tronco->id }}">{{ $tronco->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted mb-2">
+                                <i class="fas fa-chart-line me-2 text-primary"></i>Calificación Mínima
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control rounded-3" 
+                                       id="edit_calificacion_minima" name="calificacion_minima" 
+                                       step="0.01" min="0" max="100"
+                                       placeholder="Ej: 85.00">
+                                <span class="input-group-text rounded-3">%</span>
+                            </div>
+                            <div class="form-text text-muted small mt-1">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Calificación mínima requerida para acceder a esta carrera (opcional)
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold text-muted mb-2">
-                                <i class="fas fa-book me-2 text-primary"></i>Materia 1
-                            </label>
-                            <select class="form-select rounded-3" id="edit_id_asignatura_1" name="id_asignatura_1">
-                                <option value="">Seleccione una materia</option>
-                                @foreach($asignaturas as $asignatura)
-                                    <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold text-muted mb-2">
-                                <i class="fas fa-book me-2 text-primary"></i>Materia 2
-                            </label>
-                            <select class="form-select rounded-3" id="edit_id_asignatura_2" name="id_asignatura_2">
-                                <option value="">Seleccione una materia</option>
-                                @foreach($asignaturas as $asignatura)
-                                    <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold text-muted mb-2">
-                                <i class="fas fa-book me-2 text-primary"></i>Materia 3
-                            </label>
-                            <select class="form-select rounded-3" id="edit_id_asignatura_3" name="id_asignatura_3">
-                                <option value="">Seleccione una materia</option>
-                                @foreach($asignaturas as $asignatura)
-                                    <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
-                                @endforeach
-                            </select>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted mb-2">
+                            <i class="fas fa-book me-2 text-primary"></i>Materias Asociadas
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <select class="form-select rounded-3" id="edit_id_asignatura_1" name="id_asignatura_1">
+                                    <option value="">Materia 1</option>
+                                    @foreach($asignaturas as $asignatura)
+                                        <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select rounded-3" id="edit_id_asignatura_2" name="id_asignatura_2">
+                                    <option value="">Materia 2</option>
+                                    @foreach($asignaturas as $asignatura)
+                                        <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select rounded-3" id="edit_id_asignatura_3" name="id_asignatura_3">
+                                    <option value="">Materia 3</option>
+                                    @foreach($asignaturas as $asignatura)
+                                        <option value="{{ $asignatura->id }}">{{ $asignatura->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -400,6 +497,27 @@
 
 @push('styles')
 <style>
+    /* CONTENEDOR MÁS ANCHO */
+    .container-fluid {
+        width: 100%;
+        max-width: 100% !important;
+    }
+    
+    @media (min-width: 1400px) {
+        .px-xxl-4 {
+            padding-right: 0.5rem !important;
+            padding-left: 0.5rem !important;
+        }
+    }
+    
+    @media (min-width: 1600px) {
+        .container-fluid {
+            padding-right: 0.25rem !important;
+            padding-left: 0.25rem !important;
+        }
+    }
+    
+    /* Tarjetas de estadísticas */
     .stat-card {
         transition: all 0.3s ease;
         cursor: pointer;
@@ -428,13 +546,17 @@
         background: linear-gradient(90deg, #f59e0b, #d97706);
     }
     
+    .stat-card-info::before {
+        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    }
+    
     .stat-card .stat-icon {
-        width: 48px;
-        height: 48px;
+        width: 55px;
+        height: 55px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(102, 126, 234, 0.1);
+        border-radius: 16px;
     }
     
     .stat-card-primary .stat-icon {
@@ -452,6 +574,11 @@
         color: #f59e0b;
     }
     
+    .stat-card-info .stat-icon {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+    }
+    
     .hover-card {
         transition: all 0.3s ease-in-out;
     }
@@ -461,6 +588,21 @@
         box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
     }
     
+    /* Links de ordenamiento */
+    .ordenar-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #1e293b;
+        transition: all 0.2s ease;
+    }
+    
+    .ordenar-link:hover {
+        color: #667eea;
+        transform: translateY(-1px);
+    }
+    
+    /* Header de tabla */
     .table-header {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         border-bottom: 2px solid #e2e8f0;
@@ -474,6 +616,7 @@
         letter-spacing: 0.5px;
     }
     
+    /* Botones de acción */
     .btn-accion {
         padding: 6px 14px;
         margin: 0 3px;
@@ -524,6 +667,24 @@
         box-shadow: 0 4px 12px rgba(198,40,40,0.3);
     }
     
+    .badge-calificacion {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .badge-calificacion-definida {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+    
+    .badge-calificacion-no-definida {
+        background: #e2e8f0;
+        color: #64748b;
+    }
+    
     .btn-primary-custom {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
@@ -539,10 +700,7 @@
         color: white;
     }
     
-    .table {
-        min-width: 800px;
-    }
-    
+    /* Tabla */
     .table td {
         padding: 1rem 1rem;
         vertical-align: middle;
@@ -558,6 +716,7 @@
         transform: scale(1.01);
     }
     
+    /* Paginación */
     .pagination {
         margin-bottom: 0;
         gap: 5px;
@@ -586,10 +745,10 @@
         box-shadow: 0 4px 12px rgba(102,126,234,0.4);
     }
     
+    /* Inputs */
     .input-group-text {
         background: white;
         border: 2px solid #e2e8f0;
-        border-right: none;
     }
     
     .form-control, .form-select {
@@ -602,6 +761,22 @@
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
     
+    /* Animación fade-in */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate__fadeInUp {
+        animation: fadeInUp 0.4s ease-out forwards;
+    }
+    
     /* Dark Mode */
     body.dark-mode .table-header {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -610,6 +785,14 @@
     
     body.dark-mode .table-header th {
         color: #e2e8f0;
+    }
+    
+    body.dark-mode .ordenar-link {
+        color: #e2e8f0;
+    }
+    
+    body.dark-mode .ordenar-link:hover {
+        color: #818cf8;
     }
     
     body.dark-mode .table td {
@@ -684,18 +867,13 @@
         background-color: #1e293b;
     }
     
-    body.dark-mode .alert-info {
-        background-color: rgba(6, 182, 212, 0.1);
-        border-color: rgba(6, 182, 212, 0.3);
-        color: #67e8f9;
-    }
-    
     body.dark-mode .bg-light {
         background-color: #0f172a !important;
     }
     
-    body.dark-mode .text-muted {
-        color: #94a3b8 !important;
+    body.dark-mode .badge-calificacion-no-definida {
+        background: #334155;
+        color: #94a3b8;
     }
 </style>
 @endpush
@@ -703,8 +881,46 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    let editId = null;
+    // Ordenamiento dinámico
+    document.querySelectorAll('.ordenar-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const campo = this.dataset.campo;
+            const direccionActual = '{{ request("orden_direccion", "asc") }}';
+            const campoActual = '{{ request("orden_campo", "nombre") }}';
+            
+            let nuevaDireccion = 'asc';
+            if (campoActual === campo && direccionActual === 'asc') {
+                nuevaDireccion = 'desc';
+            }
+            
+            // Actualizar los campos ocultos del formulario
+            document.getElementById('orden_campo').value = campo;
+            document.getElementById('orden_direccion').value = nuevaDireccion;
+            
+            // Enviar el formulario
+            document.getElementById('filtroForm').submit();
+        });
+    });
     
+    // Auto-submit del formulario de filtros
+    let timeoutId;
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                document.getElementById('filtroForm').submit();
+            }, 500);
+        });
+    }
+    
+    // Auto-submit al cambiar el select de tronco
+    document.querySelector('select[name="tronco_id"]')?.addEventListener('change', function() {
+        document.getElementById('filtroForm').submit();
+    });
+    
+    // Funciones CRUD
     function verCarrera(id) {
         const modal = new bootstrap.Modal(document.getElementById('showCarreraModal'));
         const modalContent = document.getElementById('modalCarreraContent');
@@ -725,6 +941,10 @@
             .then(data => {
                 if (data.success) {
                     const carrera = data.data;
+                    const calificacionMinimaHtml = carrera.calificacion_minima 
+                        ? `<span class="badge bg-success"><i class="fas fa-chart-line me-1"></i> ${carrera.calificacion_minima}%</span>`
+                        : `<span class="badge bg-secondary"><i class="fas fa-minus-circle me-1"></i> No definida</span>`;
+                    
                     modalContent.innerHTML = `
                         <div class="d-flex flex-column gap-3">
                             <div class="text-center p-3 rounded-4" style="background: rgba(102,126,234,0.05);">
@@ -734,8 +954,16 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <div class="p-3 rounded-3" style="background: rgba(102,126,234,0.05);">
-                                        <small class="text-muted d-block mb-1"><i class="fas fa-layer-group me-1"></i> Tronco Común</small>
-                                        <strong>${escapeHtml(carrera.tronco)}</strong>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <small class="text-muted d-block mb-1"><i class="fas fa-layer-group me-1"></i> Tronco Común</small>
+                                                <strong>${escapeHtml(carrera.tronco)}</strong>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted d-block mb-1"><i class="fas fa-chart-line me-1"></i> Calificación Mínima</small>
+                                                ${calificacionMinimaHtml}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -774,10 +1002,11 @@
             });
     }
     
-    function editCarrera(id, nombre, troncoId, asignatura1Id, asignatura2Id, asignatura3Id) {
+    function editCarrera(id, nombre, troncoId, calificacionMinima, asignatura1Id, asignatura2Id, asignatura3Id) {
         document.getElementById('edit_id').value = id;
         document.getElementById('edit_nombre').value = nombre;
         document.getElementById('edit_tronco_id').value = troncoId || '';
+        document.getElementById('edit_calificacion_minima').value = calificacionMinima || '';
         document.getElementById('edit_id_asignatura_1').value = asignatura1Id || '';
         document.getElementById('edit_id_asignatura_2').value = asignatura2Id || '';
         document.getElementById('edit_id_asignatura_3').value = asignatura3Id || '';
@@ -856,27 +1085,6 @@
         return div.innerHTML;
     }
     
-    function cargarTabla() {
-        const search = document.getElementById('searchInput')?.value || '';
-        const troncoId = document.getElementById('troncoFilter')?.value || '';
-        const url = new URL(window.location.href);
-        
-        if (search) url.searchParams.set('search', search);
-        else url.searchParams.delete('search');
-        
-        if (troncoId) url.searchParams.set('tronco_id', troncoId);
-        else url.searchParams.delete('tronco_id');
-        
-        url.searchParams.set('page', 1);
-        window.location.href = url.toString();
-    }
-    
-    // Eventos
-    document.getElementById('btnFiltrar')?.addEventListener('click', cargarTabla);
-    document.getElementById('btnLimpiar')?.addEventListener('click', () => window.location.href = window.location.pathname);
-    document.getElementById('searchInput')?.addEventListener('keypress', e => e.key === 'Enter' && cargarTabla());
-    document.getElementById('troncoFilter')?.addEventListener('change', cargarTabla);
-    
     // Crear carrera
     document.getElementById('saveCarreraBtn')?.addEventListener('click', function() {
         const nombre = document.getElementById('nombre').value;
@@ -889,6 +1097,7 @@
         const formData = {
             nombre: nombre,
             tronco_id: document.getElementById('tronco_id').value,
+            calificacion_minima: document.getElementById('calificacion_minima').value || null,
             id_asignatura_1: document.getElementById('id_asignatura_1').value,
             id_asignatura_2: document.getElementById('id_asignatura_2').value,
             id_asignatura_3: document.getElementById('id_asignatura_3').value
@@ -958,6 +1167,7 @@
         const formData = {
             nombre: nombre,
             tronco_id: document.getElementById('edit_tronco_id').value,
+            calificacion_minima: document.getElementById('edit_calificacion_minima').value || null,
             id_asignatura_1: document.getElementById('edit_id_asignatura_1').value,
             id_asignatura_2: document.getElementById('edit_id_asignatura_2').value,
             id_asignatura_3: document.getElementById('edit_id_asignatura_3').value

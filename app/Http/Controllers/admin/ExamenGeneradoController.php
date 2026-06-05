@@ -14,7 +14,6 @@ use Carbon\Carbon;
 
 class ExamenGeneradoController extends Controller
 {
-    // ==================== MÉTODOS PRINCIPALES ====================
     public function index(Request $request)
     {
         $query = ExamenGenerado::query();
@@ -52,24 +51,28 @@ class ExamenGeneradoController extends Controller
             }
         }
         
-        // 🔍 Ordenamiento
-        switch ($request->get('orden', 'reciente')) {
-            case 'antiguo':
-                $query->orderBy('created_at', 'asc');
-                break;
-            case 'preguntas':
-                $query->orderBy('numero_preguntas', 'desc');
-                break;
-            case 'tiempo':
-                $query->orderBy('tiempo', 'desc');
-                break;
-            case 'reciente':
-            default:
-                $query->orderBy('created_at', 'desc');
-                break;
+        // 🆕 ORDENAMIENTO POR COLUMNAS (dinámico)
+        $ordenCampo = $request->get('orden_campo', 'id');
+        $ordenDireccion = $request->get('orden_direccion', 'desc');
+        
+        // Mapeo de campos permitidos para ordenamiento
+        $ordenPermitido = [
+            'id' => 'id',
+            'tipo_examen' => 'tipo_examen',
+            'numero_preguntas' => 'numero_preguntas',
+            'tiempo' => 'tiempo',
+            'created_at' => 'created_at'
+        ];
+        
+        // Aplicar ordenamiento por columna si existe en el mapa
+        if (array_key_exists($ordenCampo, $ordenPermitido)) {
+            $query->orderBy($ordenPermitido[$ordenCampo], $ordenDireccion);
+        } else {
+            // Fallback: ordenar por ID descendente
+            $query->orderBy('id', 'desc');
         }
         
-        $examenes = $query->paginate(15);
+        $examenes = $query->paginate(15)->appends($request->except('page'));
         
         // 📊 ESTADÍSTICAS PARA LAS TARJETAS
         $totalExamenes = ExamenGenerado::count();
@@ -77,7 +80,7 @@ class ExamenGeneradoController extends Controller
         // Contadores por tipo de examen
         $examenesMateria = ExamenGenerado::where('tipo_examen', 'Materia')->count();
         $examenesSimulacion = ExamenGenerado::where('tipo_examen', 'Simulación')->count();
-        $examenesGeneral = ExamenGenerado::where('tipo_examen', 'General del curso')->count();
+        $examenesGeneral = ExamenGenerado::where('tipo_examen', 'Curso')->count();
         
         // Estadísticas adicionales
         $totalPreguntasAsignadas = ApoyoPregunta::count();
@@ -98,7 +101,9 @@ class ExamenGeneradoController extends Controller
             'promedioPreguntas',
             'promedioTiempo',
             'tipos_examen',
-            'areas'
+            'areas',
+            'ordenCampo',
+            'ordenDireccion'
         ));
     }
 

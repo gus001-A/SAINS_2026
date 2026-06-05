@@ -81,7 +81,7 @@
                             </label>
                             <select name="estatus" class="form-select form-select-lg @error('estatus') is-invalid @enderror" required>
                                 <option value="">Seleccionar estatus</option>
-                                <option value="activo" {{ old('estatus') == 'activo' ? 'selected' : '' }}>Activo</option>
+                                <option value="activo" {{ old('estatus', 'activo') == 'activo' ? 'selected' : '' }}>Activo</option>
                                 <option value="inactivo" {{ old('estatus') == 'inactivo' ? 'selected' : '' }}>Inactivo</option>
                                 <option value="expirado" {{ old('estatus') == 'expirado' ? 'selected' : '' }}>Expirado</option>
                             </select>
@@ -95,9 +95,10 @@
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-calendar-alt text-primary me-1"></i> Fecha de Expiración
                             </label>
-                            <input type="datetime-local" name="fecha_expiracion" id="fecha_expiracion" 
+                            <input type="date" name="fecha_expiracion" id="fecha_expiracion" 
                                    class="form-control form-control-lg @error('fecha_expiracion') is-invalid @enderror" 
-                                   value="{{ old('fecha_expiracion') }}">
+                                   value="{{ old('fecha_expiracion') }}"
+                                   min="{{ date('Y-m-d') }}">
                             @error('fecha_expiracion')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -216,15 +217,125 @@
                     <button type="button" class="btn btn-secondary px-5 py-3" id="prevBtn" style="display: none;">
                         <i class="fas fa-arrow-left me-2"></i> Anterior
                     </button>
-                    <button type="button" class="btn btn-primary px-5 py-3" id="nextBtn">
-                        Siguiente <i class="fas fa-arrow-right ms-2"></i>
-                    </button>
-                    <button type="submit" class="btn btn-save px-5 py-3" id="submitBtn" style="display: none;">
-                        <i class="fas fa-save me-2"></i> Guardar Cupón
-                    </button>
+                    <div class="d-flex gap-3">
+                        <button type="button" class="btn btn-primary px-5 py-3" id="nextBtn">
+                            Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                        <button type="submit" class="btn btn-save px-5 py-3" id="submitBtn" style="display: none;">
+                            <i class="fas fa-save me-2"></i> Guardar Cupón
+                        </button>
+                    </div>
                     <a href="{{ route('admin.cupones.index') }}" class="btn btn-cancel px-4 py-3">
                         <i class="fas fa-times me-2"></i> Cancelar
                     </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Generación Masiva de Cupones -->
+<div class="modal fade" id="modalGenerarMasivo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 p-4" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-white bg-opacity-20 p-2">
+                        <i class="fas fa-layer-group text-white fa-lg"></i>
+                    </div>
+                    <h5 class="modal-title text-white fw-bold">Generación Masiva de Cupones</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.cupones.masivo') }}" method="POST" id="formGenerarMasivo">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Genere múltiples cupones de una sola vez. Todos los cupones tendrán la misma configuración.
+                    </div>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-hashtag text-primary me-1"></i> Cantidad de Cupones <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-transparent"><i class="fas fa-ticket-alt text-primary"></i></span>
+                                <input type="number" name="cantidad" id="cantidad_cupones" class="form-control" 
+                                       value="10" min="1" max="100" required>
+                            </div>
+                            <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Máximo 100 cupones por lote</small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-circle-info text-primary me-1"></i> Estatus <span class="text-danger">*</span>
+                            </label>
+                            <select name="estatus" class="form-select form-select-lg" required>
+                                <option value="activo" selected>Activo</option>
+                                <option value="inactivo">Inactivo</option>
+                                <option value="expirado">Expirado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-percent text-primary me-1"></i> Tipo de Descuento <span class="text-danger">*</span>
+                            </label>
+                            <select name="tipo_descuento" id="tipo_descuento_masivo" class="form-select form-select-lg" required>
+                                <option value="porcentaje">Porcentaje (%)</option>
+                                <option value="cantidad_fija">Cantidad fija ($)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-dollar-sign text-primary me-1"></i> Valor del Descuento <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-transparent" id="simbolo_masivo">%</span>
+                                <input type="number" name="valor_descuento" id="valor_descuento_masivo" 
+                                       class="form-control" value="10" step="1" min="1" required>
+                            </div>
+                            <small class="text-muted" id="ayuda_masivo"><i class="fas fa-info-circle me-1"></i>Ingrese el porcentaje de descuento (máximo 100%)</small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-calendar-alt text-primary me-1"></i> Fecha de Expiración
+                            </label>
+                            <input type="date" name="fecha_expiracion" id="fecha_expiracion_masivo" 
+                                   class="form-control form-control-lg" min="{{ date('Y-m-d') }}">
+                            <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Dejar en blanco si no expira</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Previsualización -->
+                    <div class="mt-4 p-3 bg-light rounded-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="fas fa-chart-line text-primary"></i>
+                            <strong>Resumen de generación:</strong>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <small>Cupones a generar:</small>
+                                <span class="fw-bold d-block" id="preview_cantidad">10</span>
+                            </div>
+                            <div class="col-6">
+                                <small>Códigos únicos:</small>
+                                <span class="fw-bold d-block text-success">✓ Automáticos</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-secondary px-4 py-2 rounded-pill" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success px-4 py-2 rounded-pill" id="btnGenerarMasivo">
+                        <i class="fas fa-layer-group me-2"></i>Generar Cupones
+                    </button>
                 </div>
             </form>
         </div>
@@ -450,6 +561,7 @@
 @endpush
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     let currentStep = 1;
     const totalSteps = 3;
@@ -464,16 +576,14 @@
         return codigo;
     }
     
-    // Formatear fecha para mostrar
+    // Formatear fecha para mostrar (solo fecha)
     function formatearFecha(fecha) {
         if (!fecha) return 'Sin fecha de expiración';
         const date = new Date(fecha);
-        return date.toLocaleString('es-MX', {
+        return date.toLocaleDateString('es-MX', {
             year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
+            month: 'long',
+            day: 'numeric'
         });
     }
     
@@ -691,6 +801,132 @@
         const btnSubmit = document.getElementById('submitBtn');
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Guardando...';
+    });
+    
+    // ========== GENERACIÓN MASIVA DE CUPONES ==========
+    const tipoMasivo = document.getElementById('tipo_descuento_masivo');
+    const valorMasivo = document.getElementById('valor_descuento_masivo');
+    const simboloMasivo = document.getElementById('simbolo_masivo');
+    const ayudaMasivo = document.getElementById('ayuda_masivo');
+    const cantidadInput = document.getElementById('cantidad_cupones');
+    const previewCantidad = document.getElementById('preview_cantidad');
+    
+    // Actualizar preview de cantidad
+    if (cantidadInput) {
+        cantidadInput.addEventListener('input', function() {
+            previewCantidad.textContent = this.value;
+        });
+    }
+    
+    // Cambiar símbolo según tipo de descuento en el modal
+    if (tipoMasivo) {
+        tipoMasivo.addEventListener('change', function() {
+            if (this.value === 'porcentaje') {
+                simboloMasivo.innerHTML = '%';
+                ayudaMasivo.innerHTML = '<i class="fas fa-info-circle me-1"></i>Ingrese el porcentaje de descuento (máximo 100%)';
+                valorMasivo.placeholder = 'Ejemplo: 20';
+                valorMasivo.max = 100;
+                valorMasivo.step = 1;
+                valorMasivo.value = Math.min(valorMasivo.value, 100);
+            } else {
+                simboloMasivo.innerHTML = '$';
+                ayudaMasivo.innerHTML = '<i class="fas fa-info-circle me-1"></i>Ingrese el monto fijo del descuento';
+                valorMasivo.placeholder = 'Ejemplo: 50.00';
+                valorMasivo.max = null;
+                valorMasivo.step = 0.01;
+            }
+        });
+    }
+    
+    // Validación del formulario masivo
+    document.getElementById('formGenerarMasivo')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const cantidad = parseInt(document.getElementById('cantidad_cupones').value);
+        const tipo = tipoMasivo.value;
+        const valor = parseFloat(valorMasivo.value);
+        
+        if (isNaN(cantidad) || cantidad < 1 || cantidad > 100) {
+            Swal.fire('Error', 'La cantidad debe ser entre 1 y 100 cupones', 'error');
+            return false;
+        }
+        
+        if (isNaN(valor) || valor <= 0) {
+            Swal.fire('Error', 'Ingrese un valor de descuento válido', 'error');
+            return false;
+        }
+        
+        if (tipo === 'porcentaje' && valor > 100) {
+            Swal.fire('Error', 'El porcentaje no puede ser mayor a 100%', 'error');
+            return false;
+        }
+        
+        const fechaExpiracion = document.getElementById('fecha_expiracion_masivo').value;
+        const fechaTexto = fechaExpiracion ? new Date(fechaExpiracion).toLocaleDateString('es-MX') : 'Sin fecha de expiración';
+        
+        Swal.fire({
+            title: '¿Confirmar generación masiva?',
+            html: `<p>Se generarán <strong class="text-primary">${cantidad} cupones</strong> con las siguientes características:</p>
+                   <div class="text-start bg-light p-3 rounded-3" style="background: #f8f9fa;">
+                       <div class="mb-2"><strong>Tipo:</strong> ${tipo === 'porcentaje' ? 'Porcentaje (%)' : 'Cantidad fija ($)'}</div>
+                       <div class="mb-2"><strong>Valor:</strong> ${tipo === 'porcentaje' ? valor + '%' : '$' + valor.toFixed(2)}</div>
+                       <div class="mb-2"><strong>Estatus:</strong> ${document.querySelector('select[name="estatus"]').value}</div>
+                       <div><strong>Fecha expiración:</strong> ${fechaTexto}</div>
+                   </div>
+                   <p class="mt-3 text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Esta acción no se puede deshacer</p>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-check me-2"></i>Sí, generar',
+            cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const btn = document.getElementById('btnGenerarMasivo');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generando...';
+                
+                const form = document.getElementById('formGenerarMasivo');
+                const formData = new FormData(form);
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            html: `<i class="fas fa-check-circle fa-3x text-success mb-3 d-block"></i>
+                                   <p>Se generaron <strong class="text-success">${data.generados}</strong> cupones correctamente</p>
+                                   <p class="text-muted small mt-2">Redirigiendo al listado...</p>`,
+                            icon: 'success',
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+                        
+                        setTimeout(() => {
+                            window.location.href = '{{ route("admin.cupones.index") }}';
+                        }, 3000);
+                    } else {
+                        Swal.fire('Error', data.message || 'Error al generar los cupones', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-layer-group me-2"></i>Generar Cupones';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'Ocurrió un error al generar los cupones', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-layer-group me-2"></i>Generar Cupones';
+                });
+            }
+        });
     });
     
     // Inicializar

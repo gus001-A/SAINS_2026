@@ -10,24 +10,21 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CuponController extends Controller
 {
     // ==================== MÉTODOS PRINCIPALES ====================
     
-    // Listar todos los cupones (gestión)
     public function index(Request $request)
     {
+        // Obtener todos los cupones con relaciones
         $query = Cupon::with(['usuarioGenero', 'usuarioUso']);
         
         // Filtro por búsqueda
         if ($request->filled('search')) {
-            $query->where('codigo', 'LIKE', '%' . $request->search . '%');
-        }
-        
-        // Filtro por estado
-        if ($request->filled('estatus')) {
-            $query->where('estatus', $request->estatus);
+            $search = $request->search;
+            $query->where('codigo', 'LIKE', '%' . $search . '%');
         }
         
         // Filtro por tipo de descuento
@@ -35,7 +32,12 @@ class CuponController extends Controller
             $query->where('tipo_descuento', $request->tipo_descuento);
         }
         
-        // Filtro por expiración (nuevo)
+        // Filtro por estado
+        if ($request->filled('estatus')) {
+            $query->where('estatus', $request->estatus);
+        }
+        
+        // Filtro por expiración (opcional)
         if ($request->filled('expiracion_filter')) {
             switch ($request->expiracion_filter) {
                 case 'expirados':
@@ -56,14 +58,109 @@ class CuponController extends Controller
             }
         }
         
-        $cupones = $query->orderBy('id', 'desc')->paginate(15);
+        // Obtener todos los cupones (sin paginar aún)
+        $cuponesCollection = $query->get();
         
-        // Estadísticas
+        // Agregar campos calculados a cada cupón
+        foreach ($cuponesCollection as $cupon) {
+            $cupon->expirado = $cupon->fecha_expiracion && now()->greaterThan($cupon->fecha_expiracion);
+            $cupon->proximo_expiracion = $cupon->fecha_expiracion && now()->diffInDays($cupon->fecha_expiracion, false) <= 7 && now()->diffInDays($cupon->fecha_expiracion, false) >= 0;
+            $cupon->dias_restantes = $cupon->fecha_expiracion ? now()->diffInDays($cupon->fecha_expiracion, false) : null;
+            
+            // Obtener nombre del generador para ordenamiento
+            $nombreGenerador = 'Sistema';
+            if ($cupon->usuarioGenero) {
+                if ($cupon->usuarioGenero->estudiante) {
+                    $nombreGenerador = $cupon->usuarioGenero->estudiante->nombre_completo ?? $cupon->usuarioGenero->correo;
+                } elseif ($cupon->usuarioGenero->administrador) {
+                    $nombreGenerador = $cupon->usuarioGenero->administrador->nombre_completo ?? $cupon->usuarioGenero->correo;
+                } else {
+                    $nombreGenerador = $cupon->usuarioGenero->correo;
+                }
+            }
+            $cupon->nombre_generador = $nombreGenerador;
+        }
+        
+        // ORDENAMIENTO
+        $ordenCampo = $request->get('orden_campo', 'id');
+        $ordenDireccion = $request->get('orden_direccion', 'desc');
+        
+        // Ordenar la colección según el campo seleccionado
+        if ($ordenCampo == 'id') {
+            $cuponesCollection = $ordenDireccion == 'asc' 
+                ? $cuponesCollection->sortBy('id') 
+                : $cuponesCollection->sortByDesc('id');
+        } 
+        elseif ($ordenCampo == 'codigo') {
+            $cuponesCollection = $ordenDireccion == 'asc' 
+                ? $cuponesCollection->sortBy('codigo') 
+                : $cuponesCollection->sortByDesc('codigo');
+        }
+        elseif ($ordenCampo == 'descuento') {
+            $cuponesCollection = $ordenDireccion == 'asc' 
+                ? $cuponesCollection->sortBy('valor_descuento') 
+                : $cuponesCollection->sortByDesc('valor_descuento');
+        }
+        elseif ($ordenCampo == 'generador') {
+            $cuponesCollection = $ordenDireccion == 'asc' 
+                ? $cuponesCollection->sortBy('nombre_generador') 
+                : $cuponesCollection->sortByDesc('nombre_generador');
+        }
+        elseif ($ordenCampo == 'fecha_creacion') {
+            $cuponesCollection = $ordenDireccion == 'asc' 
+                ? $cuponesCollection->sortBy('fecha_genero') 
+                : $cuponesCollection->sortByDesc('fecha_genero');
+        }
+        elseif ($ordenCampo == 'fecha_expiracion') {
+            $cuponesCollection = $ordenDireccion == 'asc' 
+                ? $cuponesCollection->sortBy(function($item) {
+                    return $item->fecha_expiracion ? $item->fecha_expiracion->timestamp : PHP_INT_MAX;
+                }) 
+                : $cuponesCollection->sortByDesc(function($item) {
+                    return $item->fecha_expiracion ? $item->fecha_expiracion->timestamp : 0;
+                });
+        }
+        elseif ($ordenCampo == 'estado') {
+            $cuponesCollection = $ordenDireccion == 'asc' 
+                ? $cuponesCollection->sortBy(function($item) {
+                    if ($item->usado) return 4;
+                    if ($item->expirado) return 3;
+                    if ($item->estatus == 'inactivo') return 2;
+                    return 1;
+                }) 
+                : $cuponesCollection->sortByDesc(function($item) {
+                    if ($item->usado) return 4;
+                    if ($item->expirado) return 3;
+                    if ($item->estatus == 'inactivo') return 2;
+                    return 1;
+                });
+        }
+        
+        // Paginar la colección manualmente
+        $perPage = 15;
+        $currentPage = $request->get('page', 1);
+        $currentItems = $cuponesCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        
+        $cupones = new LengthAwarePaginator(
+            $currentItems,
+            $cuponesCollection->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+        
+        // Estadísticas para las tarjetas
         $totalCupones = Cupon::count();
         $cuponesUsados = Cupon::where('usado', 1)->count();
-        $cuponesActivos = Cupon::where('estatus', 'activo')->count();
-        $cuponesExpirados = Cupon::where('estatus', 'expirado')->count();
-        $cuponesVencidos = Cupon::where('fecha_expiracion', '<', now())->count(); // Nuevo
+        $cuponesActivos = Cupon::where('estatus', 'activo')
+            ->where('usado', 0)
+            ->where(function($q) {
+                $q->whereNull('fecha_expiracion')->orWhere('fecha_expiracion', '>=', now());
+            })->count();
+        $cuponesExpirados = Cupon::where(function($q) {
+            $q->where('estatus', 'expirado')->orWhere('fecha_expiracion', '<', now());
+        })->count();
+        $cuponesVencidos = Cupon::where('fecha_expiracion', '<', now())->count();
         
         return view('administrador.cupones.index', compact(
             'cupones', 
@@ -71,7 +168,9 @@ class CuponController extends Controller
             'cuponesUsados', 
             'cuponesActivos',
             'cuponesExpirados',
-            'cuponesVencidos' // Nuevo
+            'cuponesVencidos',
+            'ordenCampo',
+            'ordenDireccion'
         ));
     }
 
@@ -93,7 +192,7 @@ class CuponController extends Controller
             'estatus' => 'required|in:activo,inactivo,expirado',
             'tipo_descuento' => 'required|in:porcentaje,cantidad_fija',
             'valor_descuento' => 'required|numeric|min:0',
-            'fecha_expiracion' => 'nullable|date|after_or_equal:today', // Nueva validación
+            'fecha_expiracion' => 'nullable|date|after_or_equal:today',
         ]);
 
         try {
@@ -101,6 +200,11 @@ class CuponController extends Controller
             
             if ($request->tipo_descuento == 'porcentaje' && $request->valor_descuento > 100) {
                 throw new \Exception('El porcentaje de descuento no puede ser mayor a 100%');
+            }
+            
+            // ✅ Validación extra por si acaso (evita race conditions)
+            if (Cupon::where('codigo', $request->codigo)->exists()) {
+                throw new \Exception('El código ya existe, por favor regenera el código');
             }
             
             $cupon = Cupon::create([
@@ -111,7 +215,7 @@ class CuponController extends Controller
                 'estatus' => $request->estatus,
                 'fecha_genero' => now(),
                 'fecha_uso' => null,
-                'fecha_expiracion' => $request->fecha_expiracion, // Nuevo campo
+                'fecha_expiracion' => $request->fecha_expiracion,
                 'tipo_descuento' => $request->tipo_descuento,
                 'valor_descuento' => $request->valor_descuento,
             ]);
@@ -136,7 +240,6 @@ class CuponController extends Controller
         try {
             $cupon = Cupon::with(['usuarioGenero', 'usuarioUso'])->findOrFail($id);
             
-            // Formatear los datos para la respuesta JSON
             $data = [
                 'id' => $cupon->id,
                 'codigo' => $cupon->codigo,
@@ -144,10 +247,10 @@ class CuponController extends Controller
                 'estatus' => $cupon->estatus,
                 'tipo_descuento' => $cupon->tipo_descuento,
                 'valor_descuento' => $cupon->valor_descuento,
-                'fecha_genero' => $cupon->fecha_genero,
-                'fecha_uso' => $cupon->fecha_uso,
-                'fecha_expiracion' => $cupon->fecha_expiracion, // Nuevo campo
-                'esta_expirado' => $cupon->isExpired(), // Nuevo campo
+                'fecha_genero' => $cupon->fecha_genero ? $cupon->fecha_genero->format('d/m/Y') : null,
+                'fecha_uso' => $cupon->fecha_uso ? $cupon->fecha_uso->format('d/m/Y') : null,
+                'fecha_expiracion' => $cupon->fecha_expiracion ? $cupon->fecha_expiracion->format('d/m/Y') : null,
+                'esta_expirado' => $cupon->isExpired(),
                 'usuario_genero' => $cupon->usuarioGenero ? [
                     'id' => $cupon->usuarioGenero->id,
                     'name' => $this->getUserName($cupon->usuarioGenero),
@@ -193,7 +296,7 @@ class CuponController extends Controller
             'usado' => 'required|boolean',
             'tipo_descuento' => 'required|in:porcentaje,cantidad_fija',
             'valor_descuento' => 'required|numeric|min:0',
-            'fecha_expiracion' => 'nullable|date', // Nueva validación
+            'fecha_expiracion' => 'nullable|date|after_or_equal:today',
         ]);
 
         try {
@@ -203,6 +306,10 @@ class CuponController extends Controller
                 throw new \Exception('El porcentaje de descuento no puede ser mayor a 100%');
             }
             
+            if (Cupon::where('codigo', $request->codigo)->where('id', '!=', $id)->exists()) {
+                throw new \Exception('El código ya existe en otro cupón');
+            }
+            
             $data = [
                 'codigo' => $request->codigo,
                 'usuario_genero' => $request->usuario_genero,
@@ -210,16 +317,14 @@ class CuponController extends Controller
                 'usado' => $request->usado,
                 'tipo_descuento' => $request->tipo_descuento,
                 'valor_descuento' => $request->valor_descuento,
-                'fecha_expiracion' => $request->fecha_expiracion, // Nuevo campo
+                'fecha_expiracion' => $request->fecha_expiracion,
             ];
             
-            // Si se marca como usado pero no tiene fecha de uso
             if ($request->usado == 1 && !$cupon->fecha_uso) {
                 $data['fecha_uso'] = now();
                 $data['usuario_uso'] = auth()->id();
             }
             
-            // Si se marca como no usado, limpiar fecha de uso y usuario que lo usó
             if ($request->usado == 0) {
                 $data['fecha_uso'] = null;
                 $data['usuario_uso'] = null;
@@ -265,12 +370,18 @@ class CuponController extends Controller
     public function regenerarCodigo(Request $request, $id = null)
     {
         try {
-            $nuevoCodigo = $this->generarCodigoUnico();
-            
-            if ($id) {
-                $cupon = Cupon::findOrFail($id);
-                $cupon->update(['codigo' => $nuevoCodigo]);
+            if ($id === null) {
+                $nuevoCodigo = $this->generarCodigoUnico();
+                return response()->json([
+                    'success' => true,
+                    'codigo' => $nuevoCodigo,
+                    'message' => 'Código generado exitosamente'
+                ]);
             }
+            
+            $cupon = Cupon::findOrFail($id);
+            $nuevoCodigo = $this->generarCodigoUnico();
+            $cupon->update(['codigo' => $nuevoCodigo]);
             
             return response()->json([
                 'success' => true,
@@ -279,6 +390,7 @@ class CuponController extends Controller
             ]);
             
         } catch (\Exception $e) {
+            Log::error('Error en regenerarCodigo: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al regenerar el código: ' . $e->getMessage()
@@ -286,14 +398,87 @@ class CuponController extends Controller
         }
     }
 
+    // ==================== GENERACIÓN MASIVA ====================
+    
+    // Generar cupones masivos
+    public function generarMasivo(Request $request)
+    {
+        $request->validate([
+            'cantidad' => 'required|integer|min:1|max:100',
+            'estatus' => 'required|in:activo,inactivo,expirado',
+            'tipo_descuento' => 'required|in:porcentaje,cantidad_fija',
+            'valor_descuento' => 'required|numeric|min:0',
+            'fecha_expiracion' => 'nullable|date|after_or_equal:today',
+        ]);
+
+        try {
+            DB::beginTransaction();
+            
+            if ($request->tipo_descuento == 'porcentaje' && $request->valor_descuento > 100) {
+                throw new \Exception('El porcentaje de descuento no puede ser mayor a 100%');
+            }
+            
+            $generados = 0;
+            $codigosGenerados = [];
+            
+            for ($i = 0; $i < $request->cantidad; $i++) {
+                do {
+                    $codigo = strtoupper(Str::random(15));
+                } while (Cupon::where('codigo', $codigo)->exists() || in_array($codigo, $codigosGenerados));
+                
+                $codigosGenerados[] = $codigo;
+                
+                Cupon::create([
+                    'codigo' => $codigo,
+                    'usado' => 0,
+                    'usuario_uso' => null,
+                    'usuario_genero' => auth()->id(),
+                    'estatus' => $request->estatus,
+                    'fecha_genero' => now(),
+                    'fecha_uso' => null,
+                    'fecha_expiracion' => $request->fecha_expiracion,
+                    'tipo_descuento' => $request->tipo_descuento,
+                    'valor_descuento' => $request->valor_descuento,
+                ]);
+                
+                $generados++;
+            }
+            
+            DB::commit();
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'generados' => $generados,
+                    'message' => "Se generaron {$generados} cupones correctamente"
+                ]);
+            }
+            
+            return redirect()->route('admin.cupones.index')
+                ->with('success', "Se generaron {$generados} cupones correctamente");
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al generar cupones masivos: ' . $e->getMessage());
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->with('error', 'Error al generar cupones: ' . $e->getMessage());
+        }
+    }
+
     // ==================== MÉTODOS ADICIONALES ====================
     
-    // Obtener nombre del usuario (accesorio)
     private function getUserName($user)
     {
         if (!$user) return 'N/A';
         
-        // Si el usuario tiene relación con administrador o estudiante
         if ($user->administrador) {
             return $user->administrador->nombre_completo ?? $user->correo;
         }
@@ -305,68 +490,19 @@ class CuponController extends Controller
         return $user->correo;
     }
     
-    // Generar código único automático
-    private function generarCodigoUnico()
+    private function generarCodigoUnico($intentos = 0)
     {
-        do {
-            $codigo = strtoupper(Str::random(15));
-        } while (Cupon::where('codigo', $codigo)->exists());
+        if ($intentos >= 10) {
+            throw new \Exception('No se pudo generar un código único después de varios intentos');
+        }
+        
+        $codigo = strtoupper(Str::random(15));
+        
+        if (Cupon::where('codigo', $codigo)->exists()) {
+            return $this->generarCodigoUnico($intentos + 1);
+        }
         
         return $codigo;
-    }
-    
-    // Generar cupones masivos
-    public function generarMasivo(Request $request)
-    {
-        $request->validate([
-            'cantidad' => 'required|integer|min:1|max:100',
-            'estatus' => 'required|in:activo,inactivo,expirado',
-            'tipo_descuento' => 'required|in:porcentaje,cantidad_fija',
-            'valor_descuento' => 'required|numeric|min:0',
-            'fecha_expiracion' => 'nullable|date|after_or_equal:today', // Nueva validación
-        ]);
-        
-        try {
-            DB::beginTransaction();
-            
-            if ($request->tipo_descuento == 'porcentaje' && $request->valor_descuento > 100) {
-                throw new \Exception('El porcentaje de descuento no puede ser mayor a 100%');
-            }
-            
-            $generados = 0;
-            
-            for ($i = 0; $i < $request->cantidad; $i++) {
-                do {
-                    $codigo = strtoupper(Str::random(15));
-                } while (Cupon::where('codigo', $codigo)->exists());
-                
-                Cupon::create([
-                    'codigo' => $codigo,
-                    'usado' => 0,
-                    'usuario_uso' => null,
-                    'usuario_genero' => auth()->id(),
-                    'estatus' => $request->estatus,
-                    'fecha_genero' => now(),
-                    'fecha_uso' => null,
-                    'fecha_expiracion' => $request->fecha_expiracion, // Nuevo campo
-                    'tipo_descuento' => $request->tipo_descuento,
-                    'valor_descuento' => $request->valor_descuento,
-                ]);
-                
-                $generados++;
-            }
-            
-            DB::commit();
-            
-            return redirect()->route('admin.cupones.index')
-                ->with('success', "Se generaron {$generados} cupones correctamente");
-                
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error al generar cupones masivos: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Error al generar cupones: ' . $e->getMessage());
-        }
     }
     
     // Marcar cupón como usado manualmente
@@ -395,6 +531,21 @@ class CuponController extends Controller
                 ->with('error', 'Error al marcar el cupón como usado');
         }
     }
+
+    /**
+     * Muestra el formulario de generación masiva de cupones
+     */
+    public function generarMasivoForm()
+    {
+        try {
+            // No intentes cargar ningún cupón aquí, solo la vista
+            return view('administrador.cupones.generar-masivo');
+        } catch (\Exception $e) {
+            Log::error('Error al cargar formulario masivo: ' . $e->getMessage());
+            return redirect()->route('admin.cupones.index')
+                ->with('error', 'Error al cargar el formulario: ' . $e->getMessage());
+        }
+}
     
     // Exportar cupones a CSV
     public function exportar(Request $request)
@@ -414,7 +565,6 @@ class CuponController extends Controller
         $filename = 'cupones_' . date('Y-m-d_His') . '.csv';
         $handle = fopen('php://temp', 'w+');
         
-        // Actualizar encabezados del CSV
         fputcsv($handle, ['ID', 'Código', 'Estado', 'Usado', 'Tipo Descuento', 'Valor Descuento', 'Generado por', 'Usado por', 'Fecha Generación', 'Fecha Uso', 'Fecha Expiración', '¿Expirado?']);
         
         foreach ($cupones as $cupon) {
@@ -427,10 +577,10 @@ class CuponController extends Controller
                 $cupon->tipo_descuento == 'porcentaje' ? $cupon->valor_descuento . '%' : '$' . number_format($cupon->valor_descuento, 2),
                 $cupon->usuarioGenero?->correo ?? 'N/A',
                 $cupon->usuarioUso?->correo ?? 'N/A',
-                $cupon->fecha_genero?->format('d/m/Y H:i') ?? 'N/A',
-                $cupon->fecha_uso?->format('d/m/Y H:i') ?? 'N/A',
-                $cupon->fecha_expiracion?->format('d/m/Y H:i') ?? 'Sin expiración', // Nuevo campo
-                $cupon->isExpired() ? 'Sí' : 'No', // Nuevo campo
+                $cupon->fecha_genero?->format('d/m/Y') ?? 'N/A',
+                $cupon->fecha_uso?->format('d/m/Y') ?? 'N/A',
+                $cupon->fecha_expiracion?->format('d/m/Y') ?? 'Sin expiración',
+                $cupon->isExpired() ? 'Sí' : 'No',
             ]);
         }
         
@@ -443,11 +593,10 @@ class CuponController extends Controller
             ->header('Content-Disposition', "attachment; filename={$filename}");
     }
     
-    // NUEVO MÉTODO: Actualizar automáticamente el estatus basado en expiración
+    // Actualizar automáticamente el estatus basado en expiración
     public function actualizarEstatusPorExpiracion()
     {
         try {
-            // Actualizar cupones expirados que no están usados
             $actualizados = Cupon::where('usado', 0)
                 ->where('fecha_expiracion', '<', now())
                 ->where('estatus', 'activo')

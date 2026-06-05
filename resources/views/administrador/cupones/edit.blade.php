@@ -92,9 +92,10 @@
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-calendar-alt text-primary me-1"></i> Fecha de Expiración
                             </label>
-                            <input type="datetime-local" name="fecha_expiracion" id="fecha_expiracion" 
+                            <input type="date" name="fecha_expiracion" id="fecha_expiracion" 
                                    class="form-control form-control-lg @error('fecha_expiracion') is-invalid @enderror" 
-                                   value="{{ old('fecha_expiracion', $cupon->fecha_expiracion ? \Carbon\Carbon::parse($cupon->fecha_expiracion)->format('Y-m-d\TH:i') : '') }}">
+                                   value="{{ old('fecha_expiracion', $cupon->fecha_expiracion ? \Carbon\Carbon::parse($cupon->fecha_expiracion)->format('Y-m-d') : '') }}"
+                                   min="{{ date('Y-m-d') }}">
                             @error('fecha_expiracion')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -140,7 +141,7 @@
                             </label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text bg-transparent"><i class="fas fa-calendar text-primary"></i></span>
-                                <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($cupon->fecha_genero)->format('d/m/Y H:i') }}" disabled>
+                                <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($cupon->fecha_genero)->format('d/m/Y') }}" disabled>
                             </div>
                         </div>
                         
@@ -535,16 +536,14 @@
         return codigo;
     }
     
-    // Formatear fecha para mostrar
+    // Formatear fecha para mostrar (solo fecha)
     function formatearFecha(fecha) {
         if (!fecha) return 'Sin fecha de expiración';
         const date = new Date(fecha);
-        return date.toLocaleString('es-MX', {
+        return date.toLocaleDateString('es-MX', {
             year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
+            month: 'long',
+            day: 'numeric'
         });
     }
     

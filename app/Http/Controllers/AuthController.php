@@ -128,14 +128,12 @@ class AuthController extends Controller
     // Cerrar sesión
     public function logout(Request $request)
     {
-        // Limpiar sesión manualmente
         session()->forget(['MM_Username', 'MM_UserGroup', 'user_id', 'user_nombre', 'user_rol']);
         
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // Redirigir al login con mensaje SweetAlert vía sesión flash
         return redirect()->route('home')->with('success', 'Sesión cerrada correctamente');
     }
 }

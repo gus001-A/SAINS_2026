@@ -12,12 +12,13 @@ class ExamenRealizado extends Model
 
     protected $fillable = [
         'estudiante', 'fecha_inicio', 'hora_inicio', 'fecha_fin',
-        'hora_fin', 'tiempo', 'calificacion', 'examen', 'intento'
+        'hora_fin', 'tiempo', 'calificacion', 'examen', 'intento', 'respuestas'
     ];
 
     protected $casts = [
         'fecha_inicio' => 'date',
         'fecha_fin' => 'date',
+        'respuestas' => 'array'
     ];
 
     public function estudianteRel()
@@ -30,25 +31,24 @@ class ExamenRealizado extends Model
         return $this->belongsTo(ExamenGenerado::class, 'examen', 'id');
     }
 
-
     // Agrega esto a tu modelo ExamenRealizado
-public function getEstudianteNombreAttribute()
-{
-    if ($this->relationLoaded('estudianteRel') && $this->estudianteRel) {
-        return trim(($this->estudianteRel->nombre ?? '') . ' ' . ($this->estudianteRel->paterno ?? ''));
+    public function getEstudianteNombreAttribute()
+    {
+        if ($this->relationLoaded('estudianteRel') && $this->estudianteRel) {
+            return trim(($this->estudianteRel->nombre ?? '') . ' ' . ($this->estudianteRel->paterno ?? ''));
+        }
+        
+        $estudiante = Estudiante::find($this->estudiante);
+        return $estudiante ? trim(($estudiante->nombre ?? '') . ' ' . ($estudiante->paterno ?? '')) : 'Estudiante #' . $this->estudiante;
     }
-    
-    $estudiante = Estudiante::find($this->estudiante);
-    return $estudiante ? trim(($estudiante->nombre ?? '') . ' ' . ($estudiante->paterno ?? '')) : 'Estudiante #' . $this->estudiante;
-}
 
-public function getExamenTituloAttribute()
-{
-    if ($this->relationLoaded('examenGenerado') && $this->examenGenerado) {
-        return $this->examenGenerado->titulo ?? 'Examen #' . $this->examen;
+    public function getExamenTituloAttribute()
+    {
+        if ($this->relationLoaded('examenGenerado') && $this->examenGenerado) {
+            return $this->examenGenerado->titulo ?? 'Examen #' . $this->examen;
+        }
+        
+        $examen = ExamenGenerado::find($this->examen);
+        return $examen ? ($examen->titulo ?? 'Examen #' . $this->examen) : 'Examen #' . $this->examen;
     }
-    
-    $examen = ExamenGenerado::find($this->examen);
-    return $examen ? ($examen->titulo ?? 'Examen #' . $this->examen) : 'Examen #' . $this->examen;
-}
 }

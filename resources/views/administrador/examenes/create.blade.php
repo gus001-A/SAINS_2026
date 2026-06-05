@@ -60,9 +60,9 @@
                             </label>
                             <select name="tipo_examen" class="form-select form-select-lg @error('tipo_examen') is-invalid @enderror" required>
                                 <option value="">Seleccionar tipo</option>
-                                <option value="Materia" {{ old('tipo_examen') == 'Materia' ? 'selected' : '' }}>📚 Materia</option>
-                                <option value="General del curso" {{ old('tipo_examen') == 'General del curso' ? 'selected' : '' }}>🎓 General del curso</option>
-                                <option value="Simulación" {{ old('tipo_examen') == 'Simulación' ? 'selected' : '' }}>🎯 Simulación</option>
+                                <option value="Materia" {{ old('tipo_examen') == 'Materia' ? 'selected' : '' }}>Materia</option>
+                                <option value="Curso" {{ old('tipo_examen') == 'Curso' ? 'selected' : '' }}> General del curso</option>
+                                <option value="Simulación" {{ old('tipo_examen') == 'Simulación' ? 'selected' : '' }}> Simulación</option>
                             </select>
                             @error('tipo_examen')
                                 <div class="invalid-feedback">{{ $message }}</div>

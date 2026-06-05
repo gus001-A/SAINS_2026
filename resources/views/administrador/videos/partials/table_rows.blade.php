@@ -1,7 +1,7 @@
 @forelse($videos as $video)
 <tr class="fade-in">
-    <td class="fw-semibold">
-        <span class="text-muted">#</span>{{ $video->id }}
+    <td class="fw-bold" style="color: #667eea; font-size: 0.95rem;">
+        #{{ $video->id }}
     </td>
     <td>
         <div class="video-info">
@@ -9,45 +9,58 @@
                 <i class="fas fa-play"></i>
             </div>
             <div class="video-detalles">
-                <div class="video-titulo">{{ Str::limit($video->titulo, 45) }}</div>
-                <div class="video-tema">{{ Str::limit($video->tema, 35) }}</div>
+                <span class="video-titulo">{{ Str::limit($video->titulo, 50) }}</span>
+                <span class="video-tema">{{ Str::limit($video->tema, 40) }}</span>
             </div>
         </div>
     </td>
     <td>
-        <div class="d-flex flex-column gap-1">
-            <span class="badge bg-light text-dark d-inline-flex align-items-center gap-1" style="width: fit-content;">
-                <i class="fas fa-book" style="color: #667eea;"></i> {{ Str::limit($video->materia, 35) }}
-            </span>
-        </div>
+        <span class="badge-materia">
+            <i class="fas fa-book me-1"></i> {{ Str::limit($video->materia, 35) }}
+        </span>
     </td>
     <td class="text-center">
         @if($video->duracion)
-            <span class="badge-progresos">
+            <span class="badge-count badge-duration">
                 <i class="fas fa-clock me-1"></i> {{ $video->duracion }}
             </span>
         @else
-            <span class="badge-sin-recurso">
+            <span class="badge-count badge-empty">
                 <i class="fas fa-ban me-1"></i> Sin duración
             </span>
         @endif
     </td>
     <td class="text-center">
-        <span class="badge {{ $video->plan ? 'badge-gratuito' : 'badge-premium' }}">
-            <i class="fas {{ $video->plan ? 'fa-gratipay' : 'fa-crown' }} me-1"></i>
-            {{ $video->plan ? 'Gratuito' : 'Premium' }}
-        </span>
+        @if($video->plan)
+            <span class="badge-count badge-gratuito">
+                <i class="fas fa-gratipay me-1"></i> Gratuito
+            </span>
+        @else
+            <span class="badge-count badge-premium">
+                <i class="fas fa-crown me-1"></i> Premium
+            </span>
+        @endif
     </td>
     <td class="text-center">
         <div class="d-flex justify-content-center gap-2">
-            <a href="{{ route('admin.videos.show', $video->id) }}" class="btn-accion btn-ver" title="Ver detalles">
-                <i class="fas fa-eye me-1"></i>Ver
+            <a href="{{ route('admin.videos.show', $video->id) }}" 
+               class="btn-action btn-view"
+               data-tooltip="Ver detalles">
+                <i class="fas fa-eye"></i>
+                <span class="d-none d-md-inline">Ver</span>
             </a>
-            <a href="{{ route('admin.videos.edit', $video->id) }}" class="btn-accion btn-editar" title="Editar video">
-                <i class="fas fa-edit me-1"></i>Editar
+            <a href="{{ route('admin.videos.edit', $video->id) }}" 
+               class="btn-action btn-edit"
+               data-tooltip="Editar video">
+                <i class="fas fa-edit"></i>
+                <span class="d-none d-md-inline">Editar</span>
             </a>
-            <button type="button" onclick="confirmarEliminar('{{ route('admin.videos.destroy', $video->id) }}', '{{ addslashes($video->titulo) }}')" class="btn-accion btn-eliminar" title="Eliminar video">
-                <i class="fas fa-trash-alt me-1"></i>Eliminar
+            <button type="button" 
+                    onclick="confirmarEliminar('{{ route('admin.videos.destroy', $video->id) }}', '{{ addslashes($video->titulo) }}')" 
+                    class="btn-action btn-delete"
+                    data-tooltip="Eliminar video">
+                <i class="fas fa-trash-alt"></i>
+                <span class="d-none d-md-inline">Eliminar</span>
             </button>
         </div>
     </td>
@@ -55,14 +68,14 @@
 @empty
 <tr>
     <td colspan="6" class="text-center py-5">
-        <div class="text-center">
-            <div class="mb-3">
-                <i class="fas fa-video-slash fa-4x text-muted opacity-25"></i>
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-video-slash"></i>
             </div>
-            <h6 class="text-muted mb-2">No hay videos registrados</h6>
-            <p class="text-muted small mb-3">Comienza creando tu primer video educativo</p>
-            <a href="{{ route('admin.videos.create') }}" class="btn btn-primary-custom">
-                <i class="fas fa-plus me-2"></i>Crear primer video
+            <h5 class="empty-state-title">No hay videos registrados</h5>
+            <p class="empty-state-text">Comienza creando tu primer video educativo</p>
+            <a href="{{ route('admin.videos.create') }}" class="btn btn-primary-custom px-4 py-2 mt-2">
+                <i class="fas fa-plus-circle me-2"></i>Crear primer video
             </a>
         </div>
     </td>

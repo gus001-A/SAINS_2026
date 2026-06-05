@@ -4,343 +4,86 @@
 
 @section('content')
 <div class="dashboard-container">
-    
+
     <!-- ========== HERO SECTION ========== -->
-    <div class="hero-section mb-5">
-        <div class="hero-content">
-            <div class="hero-left">
-                <div class="hero-badge">
-                    @if(isset($estudiante) && $estudiante && $estudiante->plan_activo)
-                        <i class="fas fa-crown me-2"></i> Plan Activo
-                    @else
-                        <i class="fas fa-graduation-cap me-2"></i> Estudiante Registrado
-                    @endif
+    <div class="hero-premium">
+        <div class="hero-premium-bg">
+            <div class="hero-premium-gradient"></div>
+            <div class="hero-premium-particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+        </div>
+        <div class="hero-premium-content">
+            <div class="hero-premium-left">
+                <div class="hero-premium-badge">
+                    <span class="badge-dot"></span>
+                    <span>Curso completo</span>
                 </div>
-                <h1 class="hero-title">
-                    Contenido Educativo 📚
+                <h1 class="hero-premium-title">
+                    Domina el examen<br>
+                    <span class="hero-premium-highlight">de admisión</span>
                 </h1>
-                <p class="hero-subtitle">
-                    Prepárate con nuestro material de estudio completo
+                <p class="hero-premium-description">
+                    Prepárate con el contenido más completo y actualizado.
+                    Más de 2.5 horas de video, ejercicios prácticos y simuladores.
                 </p>
-                @if(isset($estudiante) && $estudiante && $estudiante->plan_activo)
-                <div class="hero-stats">
-                    <div class="hero-stat">
-                        <span class="hero-stat-value" id="heroLecciones">0</span>
-                        <span class="hero-stat-label">Lecciones</span>
+                <div class="hero-premium-stats">
+                    <div class="hero-premium-stat">
+                        <div class="stat-number" id="totalLessons">0</div>
+                        <div class="stat-label">Lecciones</div>
                     </div>
-                    <div class="hero-stat-divider"></div>
-                    <div class="hero-stat">
-                        <span class="hero-stat-value">6</span>
-                        <span class="hero-stat-label">Módulos</span>
+                    <div class="hero-premium-stat">
+                        <div class="stat-number">6</div>
+                        <div class="stat-label">Módulos</div>
                     </div>
-                    <div class="hero-stat-divider"></div>
-                    <div class="hero-stat">
-                        <span class="hero-stat-value" id="heroHoras">0</span>
-                        <span class="hero-stat-label">Horas de contenido</span>
+                    <div class="hero-premium-stat">
+                        <div class="stat-number" id="totalHours">0</div>
+                        <div class="stat-label">Horas de contenido</div>
                     </div>
                 </div>
-                @endif
-            </div>
-            <div class="hero-right">
-                <div class="hero-avatar">
-                    @if(isset($estudiante) && $estudiante && $estudiante->foto)
-                        <img src="{{ Storage::url($estudiante->foto) }}" alt="Foto">
-                    @else
-                        <i class="fas fa-graduation-cap"></i>
-                    @endif
+                <div class="hero-premium-actions">
+                    <button class="hero-premium-btn primary" onclick="window.scrollTo({top: 600, behavior: 'smooth'})">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Comenzar ahora</span>
+                    </button>
+                    <button class="hero-premium-btn secondary" onclick="irAClasesPremium()">
+                        <i class="fas fa-crown"></i>
+                        <span>Clases premium</span>
+                    </button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- ========== CURSOS BÁSICOS GRATUITOS ========== -->
-    <div class="section-header">
-        <div class="section-title-wrapper">
-            <i class="fas fa-graduation-cap section-icon"></i>
-            <div>
-                <h3 class="section-title">Contenido del Curso</h3>
-                <p class="section-subtitle">Material completo para tu preparación</p>
-            </div>
-        </div>
-        <span class="badge-modern success">Acceso Completo</span>
-    </div>
-
-    <div class="accordion-container">
-        <!-- Módulo 1 -->
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                <div class="accordion-header-left">
-                    <div class="accordion-icon" style="background: linear-gradient(135deg, #4361ee, #3a0ca3);">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div>
-                        <h4>Módulo 1: Introducción y Preparación</h4>
-                        <p>Conoce la estructura del examen y las mejores estrategias</p>
-                    </div>
-                </div>
-                <div class="accordion-badge">
-                    <span>2 lecciones</span>
-                    <i class="fas fa-chevron-down accordion-arrow"></i>
-                </div>
-            </div>
-            <div class="accordion-body">
-                <div class="videos-grid">
-                    <div class="video-card" data-video-id="366659859" data-video-title="Recomendaciones previas">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/366659859.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
-                            </div>
+            <div class="hero-premium-right">
+                <div class="hero-premium-card">
+                    <div class="card-glow"></div>
+                    <div class="card-content">
+                        <div class="card-icon">
+                            <i class="fas fa-chalkboard-user"></i>
                         </div>
-                        <div class="video-details">
-                            <h5>Recomendaciones previas al examen</h5>
-                            <p>Consejos y estrategias antes del examen</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 15:30 min</span>
-                                <span><i class="fas fa-signal"></i> Principiante</span>
-                            </div>
+                        <div class="card-text">
+                            <p>Contenido actualizado</p>
+                            <span>Preparación completa para el examen</span>
                         </div>
-                    </div>
-                    <div class="video-card" data-video-id="384619978" data-video-title="Formato del examen">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/384619978.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
+                        <div class="card-features">
+                            <div class="card-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>9+ lecciones en video</span>
                             </div>
-                        </div>
-                        <div class="video-details">
-                            <h5>Formato del examen de admisión</h5>
-                            <p>Conoce la estructura del examen</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 12:45 min</span>
-                                <span><i class="fas fa-signal"></i> Principiante</span>
+                            <div class="card-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Material descargable</span>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Módulo 2 -->
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                <div class="accordion-header-left">
-                    <div class="accordion-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
-                        <i class="fas fa-book-reader"></i>
-                    </div>
-                    <div>
-                        <h4>Módulo 2: Comprensión Lectora</h4>
-                        <p>Mejora tus habilidades de lectura y comprensión</p>
-                    </div>
-                </div>
-                <div class="accordion-badge">
-                    <span>2 lecciones</span>
-                    <i class="fas fa-chevron-down accordion-arrow"></i>
-                </div>
-            </div>
-            <div class="accordion-body">
-                <div class="videos-grid">
-                    <div class="video-card" data-video-id="360944019" data-video-title="Comprensión lectora 1">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/360944019.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
+                            <div class="card-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Ejercicios prácticos</span>
                             </div>
-                        </div>
-                        <div class="video-details">
-                            <h5>Comprensión lectora - Parte 1</h5>
-                            <p>Técnicas básicas de comprensión de textos</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 18:30 min</span>
-                                <span><i class="fas fa-signal"></i> Intermedio</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="video-card" data-video-id="360944782" data-video-title="Comprensión lectora 2">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/360944782.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                        <div class="video-details">
-                            <h5>Comprensión lectora - Parte 2</h5>
-                            <p>Estrategias de lectura avanzada</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 16:45 min</span>
-                                <span><i class="fas fa-signal"></i> Intermedio</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Módulo 3 -->
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                <div class="accordion-header-left">
-                    <div class="accordion-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
-                        <i class="fas fa-calculator"></i>
-                    </div>
-                    <div>
-                        <h4>Módulo 3: Pensamiento Matemático</h4>
-                        <p>Desarrolla tus habilidades matemáticas</p>
-                    </div>
-                </div>
-                <div class="accordion-badge">
-                    <span>1 lección</span>
-                    <i class="fas fa-chevron-down accordion-arrow"></i>
-                </div>
-            </div>
-            <div class="accordion-body">
-                <div class="videos-grid">
-                    <div class="video-card" data-video-id="356291521" data-video-title="Pensamiento matemático">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/356291521.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                        <div class="video-details">
-                            <h5>Pensamiento matemático</h5>
-                            <p>Desarrolla tus habilidades matemáticas</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 22:15 min</span>
-                                <span><i class="fas fa-signal"></i> Intermedio</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Módulo 4 -->
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                <div class="accordion-header-left">
-                    <div class="accordion-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                    <div>
-                        <h4>Módulo 4: Pensamiento Analítico</h4>
-                        <p>Potencia tu capacidad de análisis y razonamiento</p>
-                    </div>
-                </div>
-                <div class="accordion-badge">
-                    <span>1 lección</span>
-                    <i class="fas fa-chevron-down accordion-arrow"></i>
-                </div>
-            </div>
-            <div class="accordion-body">
-                <div class="videos-grid">
-                    <div class="video-card" data-video-id="362617177" data-video-title="Pensamiento analítico">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/362617177.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                        <div class="video-details">
-                            <h5>Pensamiento analítico</h5>
-                            <p>Desarrolla tu capacidad de análisis</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 20:00 min</span>
-                                <span><i class="fas fa-signal"></i> Avanzado</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Módulo 5 -->
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                <div class="accordion-header-left">
-                    <div class="accordion-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
-                        <i class="fas fa-language"></i>
-                    </div>
-                    <div>
-                        <h4>Módulo 5: Lenguaje y Gramática</h4>
-                        <p>Mejora tu redacción y conocimiento del idioma</p>
-                    </div>
-                </div>
-                <div class="accordion-badge">
-                    <span>2 lecciones</span>
-                    <i class="fas fa-chevron-down accordion-arrow"></i>
-                </div>
-            </div>
-            <div class="accordion-body">
-                <div class="videos-grid">
-                    <div class="video-card" data-video-id="356512619" data-video-title="Lenguaje escrito">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/356512619.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                        <div class="video-details">
-                            <h5>Lenguaje escrito</h5>
-                            <p>Mejora tu redacción y ortografía</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 14:20 min</span>
-                                <span><i class="fas fa-signal"></i> Intermedio</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="video-card" data-video-id="357903613" data-video-title="Estructura de la lengua">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/357903613.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                        <div class="video-details">
-                            <h5>Estructura de la lengua</h5>
-                            <p>Gramática y sintaxis esencial</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 19:15 min</span>
-                                <span><i class="fas fa-signal"></i> Avanzado</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Módulo 6 -->
-        <div class="accordion-item">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-                <div class="accordion-header-left">
-                    <div class="accordion-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
-                        <i class="fas fa-language"></i>
-                    </div>
-                    <div>
-                        <h4>Módulo 6: Inglés para el Examen</h4>
-                        <p>Vocabulario y comprensión básica del inglés</p>
-                    </div>
-                </div>
-                <div class="accordion-badge">
-                    <span>1 lección</span>
-                    <i class="fas fa-chevron-down accordion-arrow"></i>
-                </div>
-            </div>
-            <div class="accordion-body">
-                <div class="videos-grid">
-                    <div class="video-card" data-video-id="383565235" data-video-title="Inglés">
-                        <div class="video-thumb">
-                            <img src="https://vumbnail.com/383565235.jpg" alt="Video">
-                            <div class="video-play-overlay">
-                                <i class="fas fa-play"></i>
-                            </div>
-                        </div>
-                        <div class="video-details">
-                            <h5>Inglés para el examen</h5>
-                            <p>Vocabulario y comprensión básica</p>
-                            <div class="video-metadata">
-                                <span><i class="far fa-clock"></i> 25:30 min</span>
-                                <span><i class="fas fa-signal"></i> Principiante</span>
+                            <div class="card-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Simuladores incluidos</span>
                             </div>
                         </div>
                     </div>
@@ -349,101 +92,441 @@
         </div>
     </div>
 
-    <!-- ========== BOTÓN PARA ADQUIRIR EL CURSO ========== -->
-    <div class="premium-access-card mt-4">
-        <div class="premium-access-content">
-            <div class="premium-access-icon">
+    <!-- ========== BANNER CLASES PREMIUM ========== -->
+    <div class="premium-banner-premium">
+        <div class="premium-banner-premium-content">
+            <div class="banner-icon">
                 <i class="fas fa-gem"></i>
             </div>
-            <div class="premium-access-text">
-                <h3>🎓 Curso Completo SAINS</h3>
-                <p>Accede a todas las lecciones, material descargable y simuladores por solo $800 MXN</p>
+            <div class="banner-info">
+                <h4>🎓 Curso completo SAINS</h4>
+                <p>6 módulos · 9+ lecciones · Simuladores · Material descargable</p>
             </div>
-            @if(isset($estudiante) && $estudiante && $estudiante->plan_activo)
-                <a href="{{ route('estudiante.clases-premium') }}" class="premium-access-btn active">
-                    <i class="fas fa-crown me-2"></i>Acceder al Curso
-                    <i class="fas fa-arrow-right ms-2"></i>
-                </a>
-            @else
-                <button class="premium-access-btn locked" onclick="mostrarModalCurso()">
-                    <i class="fas fa-shopping-cart me-2"></i>Adquirir Curso Completo ($800 MXN)
-                    <i class="fas fa-graduation-cap ms-2"></i>
-                </button>
-            @endif
+            <button class="banner-btn" onclick="irAClasesPremium()">
+                Ir a clases premium <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== MÓDULOS DEL CURSO ========== -->
+    <div class="modules-wrapper">
+        <div class="modules-header-premium">
+            <div class="modules-header-left">
+                <div class="modules-header-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div>
+                    <h2>Plan de estudios</h2>
+                    <p>6 módulos diseñados para cubrir todas las áreas del examen</p>
+                </div>
+            </div>
+            <div class="modules-header-right">
+                <div class="modules-badge-premium">
+                    <i class="fas fa-check-circle"></i>
+                    <span>6 módulos disponibles</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modules-timeline">
+            <!-- Módulo 1 -->
+            <div class="timeline-module">
+                <div class="timeline-marker">
+                    <div class="marker-dot"></div>
+                    <div class="marker-line"></div>
+                </div>
+                <div class="module-card-premium">
+                    <div class="module-card-header" onclick="toggleModule(this)">
+                        <div class="module-card-left">
+                            <div class="module-card-number">01</div>
+                            <div class="module-card-info">
+                                <h3>Introducción y Preparación</h3>
+                                <p>Conoce la estructura del examen y las mejores estrategias</p>
+                            </div>
+                        </div>
+                        <div class="module-card-right">
+                            <div class="module-badge-info">
+                                <i class="fas fa-video"></i>
+                                <span>2 lecciones</span>
+                            </div>
+                            <i class="fas fa-chevron-down module-card-toggle"></i>
+                        </div>
+                    </div>
+                    <div class="module-card-body">
+                        <div class="lessons-premium-grid">
+                            <div class="lesson-premium-card" data-video-id="366659859"
+                                data-video-title="Recomendaciones previas" data-duration="15:30"
+                                data-level="Principiante">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/366659859.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">15:30</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Recomendaciones previas al examen</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 15 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Principiante</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                            <div class="lesson-premium-card" data-video-id="384619978"
+                                data-video-title="Formato del examen" data-duration="12:45" data-level="Principiante">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/384619978.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">12:45</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Formato del examen de admisión</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 12 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Principiante</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo 2 -->
+            <div class="timeline-module">
+                <div class="timeline-marker">
+                    <div class="marker-dot"></div>
+                    <div class="marker-line"></div>
+                </div>
+                <div class="module-card-premium">
+                    <div class="module-card-header" onclick="toggleModule(this)">
+                        <div class="module-card-left">
+                            <div class="module-card-number">02</div>
+                            <div class="module-card-info">
+                                <h3>Comprensión Lectora</h3>
+                                <p>Mejora tus habilidades de lectura y comprensión</p>
+                            </div>
+                        </div>
+                        <div class="module-card-right">
+                            <div class="module-badge-info">
+                                <i class="fas fa-video"></i>
+                                <span>2 lecciones</span>
+                            </div>
+                            <i class="fas fa-chevron-down module-card-toggle"></i>
+                        </div>
+                    </div>
+                    <div class="module-card-body">
+                        <div class="lessons-premium-grid">
+                            <div class="lesson-premium-card" data-video-id="360944019"
+                                data-video-title="Comprensión lectora 1" data-duration="18:30" data-level="Intermedio">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/360944019.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">18:30</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Comprensión lectora - Parte 1</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 18 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Intermedio</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                            <div class="lesson-premium-card" data-video-id="360944782"
+                                data-video-title="Comprensión lectora 2" data-duration="16:45" data-level="Intermedio">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/360944782.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">16:45</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Comprensión lectora - Parte 2</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 16 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Intermedio</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo 3 -->
+            <div class="timeline-module">
+                <div class="timeline-marker">
+                    <div class="marker-dot"></div>
+                    <div class="marker-line"></div>
+                </div>
+                <div class="module-card-premium">
+                    <div class="module-card-header" onclick="toggleModule(this)">
+                        <div class="module-card-left">
+                            <div class="module-card-number">03</div>
+                            <div class="module-card-info">
+                                <h3>Pensamiento Matemático</h3>
+                                <p>Desarrolla tus habilidades matemáticas</p>
+                            </div>
+                        </div>
+                        <div class="module-card-right">
+                            <div class="module-badge-info">
+                                <i class="fas fa-video"></i>
+                                <span>1 lección</span>
+                            </div>
+                            <i class="fas fa-chevron-down module-card-toggle"></i>
+                        </div>
+                    </div>
+                    <div class="module-card-body">
+                        <div class="lessons-premium-grid">
+                            <div class="lesson-premium-card" data-video-id="356291521"
+                                data-video-title="Pensamiento matemático" data-duration="22:15" data-level="Intermedio">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/356291521.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">22:15</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Pensamiento matemático</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 22 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Intermedio</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo 4 -->
+            <div class="timeline-module">
+                <div class="timeline-marker">
+                    <div class="marker-dot"></div>
+                    <div class="marker-line"></div>
+                </div>
+                <div class="module-card-premium">
+                    <div class="module-card-header" onclick="toggleModule(this)">
+                        <div class="module-card-left">
+                            <div class="module-card-number">04</div>
+                            <div class="module-card-info">
+                                <h3>Pensamiento Analítico</h3>
+                                <p>Potencia tu capacidad de análisis y razonamiento</p>
+                            </div>
+                        </div>
+                        <div class="module-card-right">
+                            <div class="module-badge-info">
+                                <i class="fas fa-video"></i>
+                                <span>1 lección</span>
+                            </div>
+                            <i class="fas fa-chevron-down module-card-toggle"></i>
+                        </div>
+                    </div>
+                    <div class="module-card-body">
+                        <div class="lessons-premium-grid">
+                            <div class="lesson-premium-card" data-video-id="362617177"
+                                data-video-title="Pensamiento analítico" data-duration="20:00" data-level="Avanzado">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/362617177.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">20:00</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Pensamiento analítico</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 20 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Avanzado</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo 5 -->
+            <div class="timeline-module">
+                <div class="timeline-marker">
+                    <div class="marker-dot"></div>
+                    <div class="marker-line"></div>
+                </div>
+                <div class="module-card-premium">
+                    <div class="module-card-header" onclick="toggleModule(this)">
+                        <div class="module-card-left">
+                            <div class="module-card-number">05</div>
+                            <div class="module-card-info">
+                                <h3>Lenguaje y Gramática</h3>
+                                <p>Mejora tu redacción y conocimiento del idioma</p>
+                            </div>
+                        </div>
+                        <div class="module-card-right">
+                            <div class="module-badge-info">
+                                <i class="fas fa-video"></i>
+                                <span>2 lecciones</span>
+                            </div>
+                            <i class="fas fa-chevron-down module-card-toggle"></i>
+                        </div>
+                    </div>
+                    <div class="module-card-body">
+                        <div class="lessons-premium-grid">
+                            <div class="lesson-premium-card" data-video-id="356512619"
+                                data-video-title="Lenguaje escrito" data-duration="14:20" data-level="Intermedio">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/356512619.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">14:20</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Lenguaje escrito</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 14 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Intermedio</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                            <div class="lesson-premium-card" data-video-id="357903613"
+                                data-video-title="Estructura de la lengua" data-duration="19:15" data-level="Avanzado">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/357903613.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">19:15</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Estructura de la lengua</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 19 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Avanzado</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo 6 -->
+            <div class="timeline-module">
+                <div class="timeline-marker">
+                    <div class="marker-dot"></div>
+                </div>
+                <div class="module-card-premium">
+                    <div class="module-card-header" onclick="toggleModule(this)">
+                        <div class="module-card-left">
+                            <div class="module-card-number">06</div>
+                            <div class="module-card-info">
+                                <h3>Inglés para el Examen</h3>
+                                <p>Vocabulario y comprensión básica del inglés</p>
+                            </div>
+                        </div>
+                        <div class="module-card-right">
+                            <div class="module-badge-info">
+                                <i class="fas fa-video"></i>
+                                <span>1 lección</span>
+                            </div>
+                            <i class="fas fa-chevron-down module-card-toggle"></i>
+                        </div>
+                    </div>
+                    <div class="module-card-body">
+                        <div class="lessons-premium-grid">
+                            <div class="lesson-premium-card" data-video-id="383565235" data-video-title="Inglés"
+                                data-duration="25:30" data-level="Principiante">
+                                <div class="lesson-premium-thumb">
+                                    <img src="https://vumbnail.com/383565235.jpg" alt="Lección">
+                                    <div class="lesson-premium-overlay">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="lesson-premium-duration">25:30</div>
+                                </div>
+                                <div class="lesson-premium-info">
+                                    <h4>Inglés para el examen</h4>
+                                    <div class="lesson-premium-meta">
+                                        <span><i class="far fa-clock"></i> 25 min</span>
+                                        <span><i class="fas fa-chart-line"></i> Principiante</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-premium-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
 </div>
 
-<!-- ========== MODAL DE VIDEO - TAMAÑO PERFECTO ========== -->
+<!-- ========== MODAL DE VIDEO ========== -->
 <div class="modal fade" id="videoModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content video-modal-content-custom">
-            <div class="modal-header video-modal-header-custom">
-                <div class="video-title-custom">
-                    <i class="fas fa-play-circle"></i>
-                    <span id="videoModalTitleText">Reproduciendo video</span>
+        <div class="modal-content video-modal-premium">
+            <div class="modal-header video-modal-premium-header">
+                <div class="video-modal-premium-title">
+                    <div class="video-modal-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="video-modal-info">
+                        <span id="videoTitle">Reproduciendo video</span>
+                        <div class="video-modal-meta">
+                            <span><i class="far fa-clock"></i> <span id="videoDuration">0:00</span></span>
+                            <span><i class="fas fa-chart-line"></i> <span id="videoLevel">Principiante</span></span>
+                        </div>
+                    </div>
                 </div>
-                <div class="video-controls-custom">
-                    <button type="button" class="video-btn-custom" id="fullscreenVideoBtn" title="Pantalla completa">
+                <div class="video-modal-actions">
+                    <button class="video-modal-action" id="fullscreenBtn" title="Pantalla completa">
                         <i class="fas fa-expand"></i>
                     </button>
-                    <button type="button" class="video-btn-custom close-video-btn" data-bs-dismiss="modal" title="Cerrar">
+                    <button class="video-modal-action close-video" data-bs-dismiss="modal" title="Cerrar">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>
             <div class="modal-body p-0">
-                <div class="video-wrapper-custom" id="videoWrapperCustom">
-                    <iframe id="videoIframe" src="" frameborder="0" 
-                            allow="autoplay; fullscreen; picture-in-picture" 
-                            allowfullscreen></iframe>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ========== MODAL DE COMPRA DEL CURSO (ÚNICO PLAN: $800) ========== -->
-<div class="modal fade" id="modalCompraCurso" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content-custom">
-            <div class="modal-header-custom">
-                <div class="modal-header-left">
-                    <i class="fas fa-crown"></i>
-                    <div>
-                        <h5>Acceso Completo al Curso</h5>
-                        <p>Obtén todo el contenido educativo por solo $800 MXN</p>
+                <div class="video-premium-container" id="videoContainer">
+                    <div class="video-premium-loading" id="videoLoading">
+                        <div class="loading-spinner-premium"></div>
+                        <p>Cargando video...</p>
                     </div>
-                </div>
-                <button type="button" class="modal-close" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body-custom p-4">
-                <div class="single-plan-container">
-                    <div class="plan-card-unico">
-                        <div class="plan-icon-wrapper">
-                            <i class="fas fa-graduation-cap"></i>
-                        </div>
-                        <h3>Curso Completo SAINS</h3>
-                        <div class="plan-price">$800 <span>MXN</span></div>
-                        <ul>
-                            <li><i class="fas fa-check"></i> <strong>6 Módulos Completos</strong> (Matemáticas, Lectura, etc.)</li>
-                            <li><i class="fas fa-check"></i> <strong>9+ Lecciones</strong> en video</li>
-                            <li><i class="fas fa-check"></i> Material descargable y guías de estudio</li>
-                            <li><i class="fas fa-check"></i> Acceso de por vida</li>
-                            <li><i class="fas fa-check"></i> Simuladores y ejercicios prácticos</li>
-                            <li><i class="fas fa-check"></i> Certificado de finalización</li>
-                        </ul>
-                        <button class="btn-comprar-curso" onclick="comprarCurso()">
-                            <i class="fas fa-shopping-cart me-2"></i>Obtener Acceso Ahora - $800
-                            <i class="fas fa-arrow-right ms-2"></i>
-                        </button>
-                        <p class="pago-seguro-text">
-                            <i class="fas fa-lock"></i> Pago 100% seguro
-                        </p>
-                    </div>
+                    <iframe id="videoFrame" src="" frameborder="0" allow="autoplay; fullscreen; picture-in-picture"
+                        allowfullscreen></iframe>
                 </div>
             </div>
         </div>
@@ -451,397 +534,648 @@
 </div>
 
 <style>
-/* ========== ESTILOS MODERNOS ========== */
-
+/* ========== ESTILOS ========== */
 .dashboard-container {
-    padding: 0;
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 24px;
 }
 
-/* Hero Section */
-.hero-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 28px;
-    padding: 2rem;
+/* Hero */
+.hero-premium {
     position: relative;
+    border-radius: 40px;
+    overflow: hidden;
+    margin-bottom: 40px;
+}
+
+.hero-premium-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
     overflow: hidden;
 }
 
-.hero-section::before {
-    content: '';
+.hero-premium-gradient {
     position: absolute;
-    top: -30%;
-    right: -10%;
-    width: 60%;
-    height: 160%;
-    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
-    transform: rotate(15deg);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 30% 50%, rgba(102, 126, 234, 0.3), transparent);
 }
 
-.hero-content {
+.hero-premium-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation: float 15s infinite;
+}
+
+.particle:nth-child(1) {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.particle:nth-child(2) {
+    top: 60%;
+    left: 20%;
+    animation-delay: 2s;
+    width: 6px;
+    height: 6px;
+}
+
+.particle:nth-child(3) {
+    top: 30%;
+    left: 80%;
+    animation-delay: 4s;
+}
+
+.particle:nth-child(4) {
+    top: 70%;
+    left: 70%;
+    animation-delay: 1s;
+    width: 3px;
+    height: 3px;
+}
+
+.particle:nth-child(5) {
+    top: 85%;
+    left: 40%;
+    animation-delay: 3s;
+    width: 5px;
+    height: 5px;
+}
+
+.particle:nth-child(6) {
+    top: 10%;
+    left: 50%;
+    animation-delay: 5s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0) translateX(0);
+        opacity: 0.3;
+    }
+
+    50% {
+        transform: translateY(-30px) translateX(20px);
+        opacity: 0.8;
+    }
+}
+
+.hero-premium-content {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 2rem;
-    position: relative;
-    z-index: 1;
+    padding: 60px;
+    gap: 60px;
+    z-index: 2;
 }
 
-.hero-left {
+.hero-premium-left {
     flex: 1;
 }
 
-.hero-badge {
+.hero-premium-badge {
     display: inline-flex;
     align-items: center;
-    background: rgba(255,255,255,0.2);
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     padding: 6px 16px;
-    border-radius: 50px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: white;
-    margin-bottom: 1rem;
+    border-radius: 100px;
+    margin-bottom: 24px;
 }
 
-.hero-title {
-    font-size: 2rem;
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+.hero-premium-badge span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #cbd5e1;
+}
+
+.hero-premium-title {
+    font-size: 3rem;
     font-weight: 800;
     color: white;
-    margin-bottom: 0.75rem;
+    margin-bottom: 20px;
+    line-height: 1.2;
 }
 
-.hero-subtitle {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.9);
-    margin-bottom: 1.5rem;
+.hero-premium-highlight {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-premium-description {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin-bottom: 32px;
     max-width: 500px;
 }
 
-.hero-stats {
+.hero-premium-stats {
     display: flex;
-    gap: 2rem;
-    margin-top: 1rem;
+    gap: 40px;
+    margin-bottom: 40px;
 }
 
-.hero-stat {
+.hero-premium-stat {
     text-align: center;
 }
 
-.hero-stat-value {
-    display: block;
-    font-size: 1.75rem;
+.stat-number {
+    font-size: 2rem;
     font-weight: 800;
     color: white;
 }
 
-.hero-stat-label {
+.stat-label {
     font-size: 0.7rem;
-    color: rgba(255,255,255,0.7);
+    color: #94a3b8;
 }
 
-.hero-stat-divider {
-    width: 1px;
-    background: rgba(255,255,255,0.3);
-}
-
-.hero-right {
-    width: 100px;
-    height: 100px;
-}
-
-.hero-avatar {
-    width: 100px;
-    height: 100px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 30px;
+.hero-premium-actions {
     display: flex;
+    gap: 16px;
+}
+
+.hero-premium-btn {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
+    gap: 10px;
+    padding: 12px 28px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+}
+
+.hero-premium-btn.primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.hero-premium-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+}
+
+.hero-premium-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hero-premium-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.hero-premium-right {
+    width: 320px;
+}
+
+.hero-premium-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 32px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
 }
 
-.hero-avatar i {
+.card-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.2), transparent);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.card-content {
+    position: relative;
+    text-align: center;
+    z-index: 1;
+}
+
+.card-icon {
     font-size: 3rem;
     color: white;
+    margin-bottom: 20px;
 }
 
-.hero-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* Section Header */
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.section-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.section-icon {
-    font-size: 1.5rem;
-    color: #667eea;
-}
-
-.section-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    margin: 0;
-    color: #1e293b;
-}
-
-.section-subtitle {
-    font-size: 0.8rem;
-    color: #64748b;
-    margin: 0;
-}
-
-.badge-modern {
-    background: #e2e8f0;
-    padding: 0.3rem 1rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
+.card-text p {
+    font-size: 0.9rem;
     font-weight: 600;
-    color: #475569;
+    color: white;
+    margin-bottom: 6px;
 }
 
-.badge-modern.success {
-    background: #d1fae5;
-    color: #065f46;
+.card-text span {
+    font-size: 0.7rem;
+    color: #94a3b8;
 }
 
-/* Premium Access Card */
-.premium-access-card {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    border-radius: 24px;
-    overflow: hidden;
-    margin: 2rem 0;
+.card-features {
+    margin-top: 24px;
+    text-align: left;
 }
 
-.premium-access-content {
-    padding: 1.5rem 2rem;
+.card-feature {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 0.75rem;
+    color: #cbd5e1;
 }
 
-.premium-access-icon {
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, #ffc107, #ff9800);
-    border-radius: 20px;
+.card-feature i {
+    color: #10b981;
+    font-size: 0.8rem;
+    width: 18px;
+}
+
+/* Premium Banner */
+.premium-banner-premium {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border-radius: 24px;
+    margin-bottom: 48px;
+    border: 1px solid #fde68a;
+}
+
+.premium-banner-premium-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.banner-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(245, 158, 11, 0.15);
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
-    color: #1a1a2e;
+    font-size: 1.5rem;
+    color: #d97706;
 }
 
-.premium-access-text {
+.banner-info {
     flex: 1;
 }
 
-.premium-access-text h3 {
-    color: white;
-    font-size: 1.3rem;
+.banner-info h4 {
+    font-size: 1rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 4px;
+    color: #0f172a;
 }
 
-.premium-access-text p {
-    color: rgba(255,255,255,0.8);
-    margin-bottom: 0;
-    font-size: 0.85rem;
+.banner-info p {
+    font-size: 0.75rem;
+    color: #64748b;
 }
 
-.premium-access-btn {
-    background: linear-gradient(135deg, #ffc107, #ff9800);
+.banner-btn {
+    background: white;
     border: none;
-    border-radius: 50px;
-    padding: 0.8rem 1.8rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    transition: all 0.3s;
-    white-space: nowrap;
+    padding: 10px 24px;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #d97706;
+    cursor: pointer;
+    transition: all 0.2s;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    cursor: pointer;
+    gap: 8px;
 }
 
-.premium-access-btn.active {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-}
-
-.premium-access-btn.locked {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-}
-
-.premium-access-btn:hover {
+.banner-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255,193,7,0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.premium-access-btn.active:hover {
-    box-shadow: 0 8px 20px rgba(16,185,129,0.3);
-}
-
-/* Accordion */
-.accordion-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.accordion-item {
+/* Modules Wrapper */
+.modules-wrapper {
     background: white;
-    border-radius: 16px;
-    overflow: hidden;
+    border-radius: 32px;
     border: 1px solid #e2e8f0;
+    overflow: hidden;
 }
 
-.accordion-header {
+.modules-header-premium {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.25rem;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.accordion-header:hover {
+    padding: 28px 32px;
     background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
-.accordion-header-left {
+.modules-header-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 16px;
 }
 
-.accordion-icon {
-    width: 45px;
-    height: 45px;
-    border-radius: 12px;
+.modules-header-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
     color: white;
-    flex-shrink: 0;
+    font-size: 1.3rem;
 }
 
-.accordion-header-left h4 {
-    font-size: 0.9rem;
+.modules-header-left h2 {
+    font-size: 1.2rem;
     font-weight: 700;
-    margin-bottom: 0.25rem;
-    color: #1e293b;
+    margin-bottom: 4px;
+    color: #0f172a;
 }
 
-.accordion-header-left p {
-    font-size: 0.7rem;
+.modules-header-left p {
+    font-size: 0.8rem;
     color: #64748b;
-    margin: 0;
 }
 
-.accordion-badge {
+.modules-badge-premium {
+    background: #e8f0fe;
+    padding: 8px 18px;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.modules-badge-premium i {
+    margin-right: 8px;
+    color: #10b981;
+}
+
+/* Timeline */
+.modules-timeline {
+    padding: 20px 0;
+}
+
+.timeline-module {
+    position: relative;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 40px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    z-index: 1;
+}
+
+.marker-dot {
+    position: absolute;
+    top: 32px;
+    left: -5px;
+    width: 12px;
+    height: 12px;
+    background: #667eea;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.marker-line {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    width: 2px;
+    height: calc(100% - 50px);
+    background: linear-gradient(to bottom, #667eea, #e2e8f0);
+}
+
+.timeline-module:last-child .marker-line {
+    display: none;
+}
+
+/* Module Card */
+.module-card-premium {
+    margin-left: 80px;
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.module-card-premium:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.module-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.module-card-header:hover {
+    background: #f8fafc;
+}
+
+.module-card-left {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex-shrink: 0;
+    gap: 16px;
 }
 
-.accordion-badge span {
-    background: #e2e8f0;
-    padding: 0.25rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #475569;
+.module-card-number {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.accordion-arrow {
+.module-card-info h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #0f172a;
+}
+
+.module-card-info p {
     font-size: 0.75rem;
+    color: #64748b;
+}
+
+.module-card-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.module-badge-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.module-badge-info i {
+    color: #667eea;
+}
+
+.module-card-toggle {
     color: #94a3b8;
     transition: transform 0.3s;
+    font-size: 0.9rem;
 }
 
-.accordion-item.active .accordion-arrow {
+.module-card-premium.open .module-card-toggle {
     transform: rotate(180deg);
 }
 
-.accordion-body {
+.module-card-body {
     display: none;
-    padding: 1rem 1.25rem;
-    border-top: 1px solid #e2e8f0;
+    padding: 20px 24px;
     background: #fafbfc;
+    border-top: 1px solid #e2e8f0;
 }
 
-.accordion-item.active .accordion-body {
+.module-card-premium.open .module-card-body {
     display: block;
 }
 
-/* Videos Grid */
-.videos-grid {
+/* Lessons Grid */
+.lessons-premium-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
 }
 
-.video-card {
+.lesson-premium-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
     background: white;
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 16px;
     cursor: pointer;
     transition: all 0.3s;
     border: 1px solid #e2e8f0;
 }
 
-.video-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+.lesson-premium-card:hover {
+    transform: translateX(8px);
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
 }
 
-.video-thumb {
+.lesson-premium-thumb {
     position: relative;
-    height: 140px;
+    width: 100px;
+    height: 65px;
+    border-radius: 12px;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
-.video-thumb img {
+.lesson-premium-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s;
 }
 
-.video-card:hover .video-thumb img {
-    transform: scale(1.05);
-}
-
-.video-play-overlay {
+.lesson-premium-overlay {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 45px;
-    height: 45px;
-    background: rgba(0,0,0,0.7);
+    width: 30px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.7);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -850,121 +1184,145 @@
     transition: opacity 0.3s;
 }
 
-.video-card:hover .video-play-overlay {
+.lesson-premium-card:hover .lesson-premium-overlay {
     opacity: 1;
 }
 
-.video-play-overlay i {
+.lesson-premium-overlay i {
     color: white;
-    font-size: 1rem;
+    font-size: 0.7rem;
     margin-left: 2px;
 }
 
-.video-details {
-    padding: 0.75rem;
+.lesson-premium-duration {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: white;
 }
 
-.video-details h5 {
+.lesson-premium-info {
+    flex: 1;
+}
+
+.lesson-premium-info h4 {
     font-size: 0.85rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-    color: #1e293b;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #0f172a;
 }
 
-.video-details p {
-    font-size: 0.65rem;
-    color: #64748b;
-    margin-bottom: 0.5rem;
-}
-
-.video-metadata {
+.lesson-premium-meta {
     display: flex;
-    gap: 0.75rem;
+    gap: 12px;
     font-size: 0.6rem;
     color: #94a3b8;
 }
 
-.video-metadata i {
-    margin-right: 0.2rem;
+.lesson-premium-meta i {
+    margin-right: 4px;
 }
 
-/* ========== MODAL DE VIDEO ========== */
-.modal-xl {
-    max-width: 1000px;
+.lesson-premium-arrow {
+    color: #cbd5e1;
+    transition: all 0.2s;
 }
 
-@media (min-width: 992px) {
-    .modal-xl {
-        max-width: 1000px;
-    }
+.lesson-premium-card:hover .lesson-premium-arrow {
+    color: #667eea;
+    transform: translateX(4px);
 }
 
-.video-modal-content-custom {
-    background: #0f0f0f;
-    border-radius: 20px;
+/* Modal Video */
+.video-modal-premium {
+    background: #0a0a0a;
+    border-radius: 24px;
     overflow: hidden;
     border: none;
 }
 
-.video-modal-header-custom {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    padding: 1rem 1.5rem;
+.video-modal-premium-header {
+    background: #1a1a2e;
+    padding: 20px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid #2a2a3e;
 }
 
-.video-title-custom {
+.video-modal-premium-title {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 18px;
 }
 
-.video-title-custom i {
-    font-size: 1.3rem;
-    color: #ffc107;
-}
-
-.video-title-custom span {
-    color: white;
-    font-weight: 600;
-    font-size: 1rem;
-}
-
-.video-controls-custom {
+.video-modal-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 14px;
     display: flex;
-    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
 }
 
-.video-btn-custom {
-    background: rgba(255,255,255,0.1);
+.video-modal-icon i {
+    font-size: 1.2rem;
+    color: white;
+}
+
+.video-modal-info span {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.video-modal-meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 4px;
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.video-modal-meta i {
+    margin-right: 4px;
+}
+
+.video-modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.video-modal-action {
+    background: rgba(255, 255, 255, 0.08);
     border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     color: white;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
 }
 
-.video-btn-custom:hover {
-    background: rgba(255,255,255,0.2);
+.video-modal-action:hover {
+    background: rgba(255, 255, 255, 0.15);
     transform: scale(1.05);
 }
 
-.close-video-btn:hover {
-    background: #dc2626;
-}
-
-.video-wrapper-custom {
+.video-premium-container {
     position: relative;
     width: 100%;
     padding-bottom: 56.25%;
     background: #000;
 }
 
-.video-wrapper-custom iframe {
+.video-premium-container iframe {
     position: absolute;
     top: 0;
     left: 0;
@@ -973,355 +1331,270 @@
     border: none;
 }
 
-/* Fullscreen mode */
-.video-wrapper-custom:fullscreen {
-    padding-bottom: 0;
-    height: 100vh;
-}
-
-.video-wrapper-custom:fullscreen iframe {
-    height: 100vh;
-}
-
-/* ========== MODAL DE COMPRA - ESTILOS ========== */
-.modal-content-custom {
-    background: white;
-    border-radius: 24px;
-    overflow: hidden;
-}
-
-.modal-header-custom {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    padding: 1rem 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-header-left {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.modal-header-left i {
-    font-size: 1.3rem;
-    color: white;
-}
-
-.modal-header-left h5 {
-    color: white;
-    font-weight: 600;
-    margin: 0;
-}
-
-.modal-header-left p {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.8);
-    margin: 0;
-}
-
-.modal-close {
-    background: rgba(255,255,255,0.2);
-    border: none;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    color: white;
-    transition: all 0.3s;
-}
-
-.modal-close:hover {
-    background: rgba(255,255,255,0.3);
-    transform: scale(1.05);
-}
-
-.modal-body-custom {
-    padding: 1.5rem;
-}
-
-/* Tarjeta de compra única */
-.single-plan-container {
-    display: flex;
-    justify-content: center;
-}
-
-.plan-card-unico {
-    background: linear-gradient(135deg, #f8fafc, #ffffff);
-    border-radius: 28px;
-    padding: 2rem 1.8rem;
-    text-align: center;
+.video-premium-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    border: 1px solid rgba(102,126,234,0.2);
-    transition: all 0.3s;
-    box-shadow: 0 12px 24px -12px rgba(0,0,0,0.1);
+    height: 100%;
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 10;
 }
 
-body.dark-mode .plan-card-unico {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border-color: rgba(102,126,234,0.3);
-}
-
-.plan-icon-wrapper {
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+.loading-spinner-premium {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(102, 126, 234, 0.2);
+    border-top-color: #667eea;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    font-size: 2rem;
-    color: #667eea;
+    animation: spin 1s linear infinite;
 }
 
-.plan-card-unico h3 {
-    font-size: 1.3rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: #1e293b;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-body.dark-mode .plan-card-unico h3 {
-    color: #f1f5f9;
-}
-
-.plan-card-unico .plan-price {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: #667eea;
-    margin: 1rem 0;
-}
-
-.plan-card-unico .plan-price span {
-    font-size: 0.8rem;
-    font-weight: 400;
-    color: #64748b;
-}
-
-.plan-card-unico ul {
-    list-style: none;
-    padding: 0;
-    margin: 1.5rem 0;
-    text-align: left;
-}
-
-.plan-card-unico ul li {
-    font-size: 0.85rem;
-    margin-bottom: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    color: #334155;
-}
-
-body.dark-mode .plan-card-unico ul li {
-    color: #cbd5e1;
-}
-
-.plan-card-unico ul li i {
-    color: #10b981;
-    font-size: 0.9rem;
-    width: 20px;
-}
-
-.btn-comprar-curso {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    border: none;
-    width: 100%;
-    padding: 0.9rem;
-    border-radius: 50px;
-    font-weight: 700;
-    color: white;
-    font-size: 1rem;
-    transition: all 0.3s;
-    margin-top: 0.5rem;
-    cursor: pointer;
-}
-
-.btn-comprar-curso:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(102,126,234,0.4);
-}
-
-.pago-seguro-text {
-    font-size: 0.7rem;
-    color: #64748b;
-    margin-top: 1rem;
-    margin-bottom: 0;
-}
-
-body.dark-mode .pago-seguro-text {
+.video-premium-loading p {
     color: #94a3b8;
+    font-size: 0.85rem;
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
-    .plans-grid {
+@media (max-width: 968px) {
+    .hero-premium-content {
+        flex-direction: column;
+        text-align: center;
+        padding: 40px;
+    }
+
+    .hero-premium-right {
+        width: 100%;
+        max-width: 350px;
+    }
+
+    .hero-premium-stats {
+        justify-content: center;
+    }
+
+    .hero-premium-actions {
+        justify-content: center;
+    }
+
+    .timeline-marker {
+        left: 20px;
+    }
+
+    .module-card-premium {
+        margin-left: 50px;
+    }
+
+    .lessons-premium-grid {
         grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 768px) {
-    .hero-title {
-        font-size: 1.5rem;
+    .dashboard-container {
+        padding: 16px;
     }
-    
-    .hero-stats {
-        gap: 1rem;
+
+    .hero-premium-title {
+        font-size: 2rem;
     }
-    
-    .hero-stat-value {
-        font-size: 1.25rem;
-    }
-    
-    .hero-right {
-        display: none;
-    }
-    
-    .section-header {
+
+    .modules-header-premium {
         flex-direction: column;
         align-items: flex-start;
     }
-    
-    .premium-access-content {
+
+    .module-card-header {
         flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .module-card-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .module-card-body {
+        padding: 16px;
+    }
+
+    .lesson-premium-card {
+        flex-wrap: wrap;
+    }
+
+    .lesson-premium-thumb {
+        width: 100%;
+        height: 140px;
+    }
+
+    .video-modal-premium-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+        padding: 16px 20px;
+    }
+
+    .video-modal-premium-title {
+        width: 100%;
+    }
+
+    .video-modal-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .card-features {
         text-align: center;
     }
-    
-    .modal-xl {
-        margin: 1rem;
-        max-width: calc(100% - 2rem);
-    }
-    
-    .plan-card-unico {
-        padding: 1.5rem;
+
+    .card-feature {
+        justify-content: center;
     }
 }
 
 /* Dark Mode */
-body.dark-mode .accordion-item,
-body.dark-mode .video-card,
-body.dark-mode .modal-content-custom:not(.video-modal-content-custom) {
+body.dark-mode .modules-wrapper {
     background: #1e293b;
     border-color: #334155;
 }
 
-body.dark-mode .accordion-header-left h4,
-body.dark-mode .video-details h5,
-body.dark-mode .section-title {
+body.dark-mode .modules-header-premium {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+body.dark-mode .modules-header-left h2,
+body.dark-mode .module-card-info h3,
+body.dark-mode .lesson-premium-info h4 {
     color: #f1f5f9;
 }
 
-body.dark-mode .accordion-header-left p,
-body.dark-mode .video-details p,
-body.dark-mode .section-subtitle {
+body.dark-mode .modules-header-left p,
+body.dark-mode .module-card-info p,
+body.dark-mode .lesson-premium-meta {
     color: #94a3b8;
 }
 
-body.dark-mode .accordion-body {
+body.dark-mode .module-card-premium {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-mode .module-card-body {
     background: #0f172a;
-    border-top-color: #334155;
+    border-color: #334155;
 }
 
-body.dark-mode .accordion-header:hover {
+body.dark-mode .lesson-premium-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-mode .lesson-premium-card:hover {
     background: #0f172a;
 }
 
-body.dark-mode .accordion-badge span {
-    background: #334155;
-    color: #94a3b8;
-}
-
-body.dark-mode .badge-modern {
-    background: #334155;
-    color: #94a3b8;
-}
-
-body.dark-mode .badge-modern.success {
-    background: rgba(16,185,129,0.2);
-    color: #34d399;
+body.dark-mode .modules-badge-premium {
+    background: #1e3a8a;
+    color: #bfdbfe;
 }
 </style>
 @endsection
 
 @push('scripts')
 <script>
-    function toggleAccordion(element) {
-        const accordion = element.closest('.accordion-item');
-        accordion.classList.toggle('active');
-    }
-    
-    function actualizarEstadisticas() {
-        // Calcular total de lecciones
-        const totalLecciones = document.querySelectorAll('.video-card').length;
-        const heroLecciones = document.getElementById('heroLecciones');
-        if (heroLecciones) heroLecciones.innerText = totalLecciones;
-        
-        // Calcular horas totales aproximadas (estimado)
-        const horasTotales = 2.5; // Aproximadamente 2.5 horas de contenido
-        const heroHoras = document.getElementById('heroHoras');
-        if (heroHoras) heroHoras.innerText = horasTotales;
-    }
-    
-    function reproducirVideo(videoId, titulo) {
-        const modalElement = document.getElementById('videoModal');
-        const titleSpan = document.getElementById('videoModalTitleText');
-        const iframe = document.getElementById('videoIframe');
-        
-        titleSpan.textContent = titulo;
-        iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0&badge=0`;
-        
-        const modal = new bootstrap.Modal(modalElement, {
-            backdrop: 'static',
-            keyboard: true
-        });
-        modal.show();
-        
-        modalElement.addEventListener('hidden.bs.modal', function() {
-            iframe.src = '';
-        }, { once: true });
-    }
-    
-    // Pantalla completa para el video
-    document.getElementById('fullscreenVideoBtn')?.addEventListener('click', function() {
-        const container = document.getElementById('videoWrapperCustom');
-        if (container.requestFullscreen) {
-            container.requestFullscreen();
-        } else if (container.webkitRequestFullscreen) {
-            container.webkitRequestFullscreen();
-        } else if (container.msRequestFullscreen) {
-            container.msRequestFullscreen();
-        }
+function toggleModule(element) {
+    const module = element.closest('.module-card-premium');
+    module.classList.toggle('open');
+}
+
+function actualizarEstadisticas() {
+    const totalLecciones = document.querySelectorAll('.lesson-premium-card').length;
+    document.getElementById('totalLessons').innerText = totalLecciones;
+    document.getElementById('totalHours').innerText = 2.5;
+}
+
+function mostrarLoading(show) {
+    const loading = document.getElementById('videoLoading');
+    const iframe = document.getElementById('videoFrame');
+    if (loading) loading.style.display = show ? 'flex' : 'none';
+    if (iframe) iframe.style.display = show ? 'none' : 'block';
+}
+
+function reproducirVideo(videoId, titulo, duracion, nivel) {
+    const modalElement = document.getElementById('videoModal');
+    const titleSpan = document.getElementById('videoTitle');
+    const durationSpan = document.getElementById('videoDuration');
+    const levelSpan = document.getElementById('videoLevel');
+    const iframe = document.getElementById('videoFrame');
+
+    titleSpan.textContent = titulo;
+    durationSpan.textContent = duracion;
+    levelSpan.textContent = nivel;
+
+    mostrarLoading(true);
+
+    const videoUrl = `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0&badge=0`;
+
+    iframe.src = videoUrl;
+
+    iframe.onload = function() {
+        mostrarLoading(false);
+    };
+
+    const modal = new bootstrap.Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: true
     });
-    
-    // Muestra el modal de compra del curso único
-    function mostrarModalCurso() {
-        const modal = new bootstrap.Modal(document.getElementById('modalCompraCurso'));
-        modal.show();
+    modal.show();
+
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        iframe.src = '';
+    }, {
+        once: true
+    });
+}
+
+function irAClasesPremium() {
+    window.location.href = "{{ route('estudiante.clases-premium') }}";
+}
+
+document.getElementById('fullscreenBtn')?.addEventListener('click', function() {
+    const container = document.getElementById('videoContainer');
+    if (container.requestFullscreen) {
+        container.requestFullscreen();
+    } else if (container.webkitRequestFullscreen) {
+        container.webkitRequestFullscreen();
+    } else if (container.msRequestFullscreen) {
+        container.msRequestFullscreen();
     }
-    
-    // Función de compra - Usando tu ruta existente checkout
-    function comprarCurso() {
-        // Cerrar el modal actual
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalCompraCurso'));
-        if (modal) modal.hide();
-        
-        // Redirigir directamente a tu página de checkout
-        window.location.href = "{{ route('estudiante.checkout') }}";
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        actualizarEstadisticas();
-        
-        document.querySelectorAll('.video-card').forEach(video => {
-            const videoId = video.dataset.videoId;
-            const videoTitle = video.dataset.videoTitle;
-            
-            video.addEventListener('click', function() {
-                reproducirVideo(videoId, videoTitle);
-            });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarEstadisticas();
+
+    document.querySelectorAll('.lesson-premium-card').forEach(lesson => {
+        const videoId = lesson.dataset.videoId;
+        const videoTitle = lesson.dataset.videoTitle;
+        const duration = lesson.dataset.duration;
+        const level = lesson.dataset.level;
+
+        lesson.addEventListener('click', function(e) {
+            e.stopPropagation();
+            reproducirVideo(videoId, videoTitle, duration, level);
         });
     });
+});
 </script>
 @endpush

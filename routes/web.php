@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\InteraccionCallCenterController;
 use App\Http\Controllers\Admin\AsignaturaController;
 use App\Http\Controllers\Admin\CarreraController;
 use App\Http\Controllers\Admin\VideoController;
+use App\Http\Controllers\Admin\ExamenRealizadoController;
 use App\Http\Controllers\Admin\ClaseController;
 use App\Http\Controllers\Alumno\AlumnoController;
 use Illuminate\Support\Facades\Mail;
@@ -154,19 +155,23 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::delete('/{id}', [PreguntaController::class, 'destroyPregunta'])->name('destroy');
     });
     
-    // ========== GESTIÓN DE CUPONES ==========
     Route::prefix('cupones')->name('cupones.')->group(function () {
+        // ========== RUTAS ESTÁTICAS (primero) ==========
         Route::get('/', [CuponController::class, 'index'])->name('index');
         Route::get('/crear', [CuponController::class, 'create'])->name('create');
         Route::post('/', [CuponController::class, 'store'])->name('store');
         Route::post('/regenerar', [CuponController::class, 'regenerarCodigo'])->name('regenerar');
+        Route::post('/masivo', [CuponController::class, 'generarMasivo'])->name('masivo');
+        Route::get('/generar-masivo', [CuponController::class, 'generarMasivoForm'])->name('generar-masivo'); // ⬅️ IMPORTANTE: antes de /{id}
+
+        // ========== RUTAS CON PARÁMETROS (después) ==========
         Route::get('/{id}', [CuponController::class, 'show'])->name('show');
         Route::get('/{id}/editar', [CuponController::class, 'edit'])->name('edit');
         Route::put('/{id}', [CuponController::class, 'update'])->name('update');
         Route::delete('/{id}', [CuponController::class, 'destroy'])->name('destroy');
         Route::post('/{id}/regenerar', [CuponController::class, 'regenerarCodigo'])->name('regenerar.id');
     });
-    
+        
     // ========== GESTIÓN DE PAGOS ==========
     Route::prefix('pagos')->name('pagos.')->group(function () {
         // PRIMERO: Rutas estáticas
@@ -187,6 +192,13 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::put('/{id}/cambiar-estado', [PagoController::class, 'cambiarEstado'])->name('cambiar.estado');
     });
     
+    Route::prefix('examenes-realizados')->name('examenes-realizados.')->group(function () {
+        Route::get('/', [ExamenRealizadoController::class, 'index'])->name('index');
+        Route::get('/estadisticas', [ExamenRealizadoController::class, 'estadisticas'])->name('estadisticas'); // 👈 NUEVA RUTA
+        Route::get('/{id}', [ExamenRealizadoController::class, 'show'])->name('show');
+        Route::delete('/{id}', [ExamenRealizadoController::class, 'destroy'])->name('destroy');
+    });
+
     // ========== GESTIÓN DE EXÁMENES ==========
     Route::prefix('examenes')->name('examenes.')->group(function () {
         // PRIMERO: Todas las rutas ESTÁTICAS
@@ -225,10 +237,10 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
     Route::prefix('asignaturas')->name('asignaturas.')->group(function () {
         Route::get('/', [AsignaturaController::class, 'index'])->name('index');
         Route::get('/create', [AsignaturaController::class, 'create'])->name('create');
-        Route::get('/{id}/edit', [AsignaturaController::class, 'edit'])->name('edit');
+        Route::get('/{asignatura}/edit', [AsignaturaController::class, 'edit'])->name('edit');  // Cambiado {id} a {asignatura}
         Route::post('/', [AsignaturaController::class, 'store'])->name('store');
-        Route::put('/{id}', [AsignaturaController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AsignaturaController::class, 'destroy'])->name('destroy');
+        Route::put('/{asignatura}', [AsignaturaController::class, 'update'])->name('update');  // Cambiado {id} a {asignatura}
+        Route::delete('/{asignatura}', [AsignaturaController::class, 'destroy'])->name('destroy');  // Cambiado {id} a {asignatura}
         Route::get('/api/all', [AsignaturaController::class, 'getAsignaturasApi'])->name('api.all');
         Route::post('/api/verificar', [AsignaturaController::class, 'verificarAsignatura'])->name('api.verificar');
     });
@@ -244,7 +256,7 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::get('/api/all', [CarreraController::class, 'getCarrerasApi'])->name('api.all');
     });
     
-    // ========== GESTIÓN DE VIDEOS (SOLO UNA VEZ) ==========
+    // ========== GESTIÓN DE VIDEOS ==========
     Route::prefix('videos')->name('videos.')->group(function () {
         Route::get('/', [VideoController::class, 'index'])->name('index');
         Route::get('/create', [VideoController::class, 'create'])->name('create');
@@ -265,6 +277,7 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::get('/{id}', [ClaseController::class, 'show'])->name('show');
         Route::delete('/{id}', [ClaseController::class, 'destroy'])->name('destroy');
         Route::get('/api/by-asignatura/{asignaturaId}', [ClaseController::class, 'getClasesByAsignaturaApi'])->name('api.by-asignatura');
+        Route::get('/siguiente-numero/{asignaturaId}', [ClaseController::class, 'getSiguienteNumero'])->name('siguiente-numero');
     });
     
     // ========== PERFIL ==========
@@ -328,4 +341,26 @@ Route::middleware(['auth'])->prefix('estudiante')->name('estudiante.')->group(fu
     Route::get('/api/estadisticas', [AlumnoController::class, 'getEstadisticas'])->name('api.estadisticas');
     Route::get('/api/ultimos-examenes', [AlumnoController::class, 'getUltimosExamenes'])->name('api.ultimos-examenes');
     Route::get('/api/tiempo-estudio', [AlumnoController::class, 'getTiempoEstudio'])->name('api.tiempo-estudio');
+    
+    Route::get('/recomendaciones', [AlumnoController::class, 'getRecomendacionesUniversidades'])->name('recomendaciones');
+    Route::get('/progreso-api', [AlumnoController::class, 'getProgresoEstudiante'])->name('progreso-api');
+    Route::get('/clase-recursos/{claseId}', [AlumnoController::class, 'getRecursosClase'])->name('clase.recursos');
+    Route::get('/universidades', [AlumnoController::class, 'getUniversidades'])->name('universidades');
+
+    Route::post('/validar-cupon', [AlumnoController::class, 'validarCupon'])->name('validar.cupon');
+    Route::get('checkout-pendiente/{pagoId?}', [AlumnoController::class, 'checkoutPendiente'])->name('checkout-pendiente');
+    Route::post('/pago/mercadopago/crear', [App\Http\Controllers\Alumno\AlumnoController::class, 'crearPreferenciaMercadoPago'])
+        ->name('pago.mercadopago.crear');
+    
+    Route::get('/pago/mercadopago/success', [App\Http\Controllers\Alumno\AlumnoController::class, 'pagoExitoMercadoPago'])
+        ->name('pago.mercadopago.success');
+    
+    Route::get('/pago/mercadopago/failure', [App\Http\Controllers\Alumno\AlumnoController::class, 'pagoFallidoMercadoPago'])
+        ->name('pago.mercadopago.failure');
+    
+    Route::get('/pago/mercadopago/pending', [App\Http\Controllers\Alumno\AlumnoController::class, 'pagoPendienteMercadoPago'])
+        ->name('pago.mercadopago.pending');
+    
+    Route::post('/pago/mercadopago/webhook', [App\Http\Controllers\Alumno\AlumnoController::class, 'webhookMercadoPago'])
+        ->name('pago.mercadopago.webhook');
 });

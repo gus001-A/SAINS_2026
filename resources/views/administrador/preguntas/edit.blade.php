@@ -36,6 +36,10 @@
                         <div class="step-counter">2</div>
                         <div class="step-name">Opciones de Respuesta</div>
                     </div>
+                    <div class="stepper-item" data-step="3">
+                        <div class="step-counter">3</div>
+                        <div class="step-name">Justificación</div>
+                    </div>
                 </div>
                 
                 <!-- Step 1: Información General -->
@@ -141,6 +145,56 @@
                             @enderror
                             <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Segunda opción incorrecta (opcional)</small>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Justificación -->
+                <div class="step-content" data-step="3" style="display: none;">
+                    <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+                        <div class="rounded-circle p-3" style="background: linear-gradient(135deg, rgba(76,175,80,0.1), rgba(33,150,243,0.1));">
+                            <i class="fas fa-file-alt fa-2x" style="color: #4caf50;"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-semibold">Justificación de la Respuesta</h4>
+                            <p class="text-muted small mb-0">Explique por qué la respuesta es correcta</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-lightbulb text-warning me-1"></i> Justificación
+                            </label>
+                            <textarea name="justificacion" id="justificacion" 
+                                      class="form-control form-control-lg @error('justificacion') is-invalid @enderror" 
+                                      rows="6" 
+                                      placeholder="Ej: La respuesta es correcta porque...&#10;&#10;Explique detalladamente el razonamiento detrás de la respuesta correcta. Esto ayudará a los estudiantes a comprender mejor el tema.">{{ old('justificacion', $pregunta->justificacion) }}</textarea>
+                            @error('justificacion')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                La justificación se mostrará al estudiante después de responder la pregunta. 
+                                Si se deja vacío, se mostrará un mensaje genérico indicando la respuesta correcta.
+                            </small>
+                        </div>
+                        
+                        @if($pregunta->justificacion)
+                            <div class="col-12">
+                                <div class="alert alert-success border-0 rounded-4" role="alert">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>Vista previa:</strong> Actualmente hay una justificación guardada. Puedes modificarla o dejarla como está.
+                                </div>
+                            </div>
+                        @else
+                            <div class="col-12">
+                                <div class="alert alert-info border-0 rounded-4" role="alert">
+                                    <i class="fas fa-tip me-2"></i>
+                                    <strong>Consejo:</strong> Una buena justificación debe explicar el razonamiento, 
+                                    mencionar conceptos clave y ayudar al estudiante a entender por qué esa es la respuesta correcta.
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
                 
@@ -374,13 +428,24 @@
             transform: translateX(0);
         }
     }
+    
+    /* Alert styles */
+    .alert-info {
+        background: linear-gradient(135deg, rgba(33,150,243,0.1), rgba(33,150,243,0.05));
+        border-left: 4px solid #2196f3;
+    }
+    
+    .alert-success {
+        background: linear-gradient(135deg, rgba(76,175,80,0.1), rgba(76,175,80,0.05));
+        border-left: 4px solid #4caf50;
+    }
 </style>
 @endpush
 
 @push('scripts')
 <script>
     let currentStep = 1;
-    const totalSteps = 2;
+    const totalSteps = 3;
     
     // Validar paso actual
     function validarPaso(step) {

@@ -1,26 +1,30 @@
 @forelse($interacciones as $interaccion)
-<tr class="animate__animated animate__fadeInUp animate__fast" style="animation-delay: {{ $loop->index * 0.03 }}s;">
-    <td class="px-3 py-2" data-label="ID">
-        <span class="fw-bold" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 0.9rem;">#{{ $interaccion->id }}</span>
+<tr class="animate__animated animate__fadeInUp" style="animation-delay: {{ $loop->index * 0.02 }}s;">
+    <td class="px-4 py-3" data-label="ID">
+        <span class="fw-bold" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; color: transparent;">
+            #{{ $interaccion->id }}
+        </span>
     </td>
     
-    <td class="px-3 py-2" data-label="Fecha/Hora">
+    <td class="px-4 py-3" data-label="Fecha/Hora">
         @if($interaccion->fecha_contacto)
             <div class="fecha-info">
                 <span class="fecha-fecha">{{ \Carbon\Carbon::parse($interaccion->fecha_contacto)->format('d/m/Y') }}</span>
-                <span class="fecha-hora">
-                    <i class="far fa-clock fa-xs me-1"></i>
-                    {{ $interaccion->hora_contacto ? \Carbon\Carbon::parse($interaccion->hora_contacto)->format('h:i A') : 'N/A' }}
-                </span>
+                @if($interaccion->hora_contacto)
+                    <span class="fecha-hora">
+                        <i class="far fa-clock fa-xs me-1"></i>
+                        {{ \Carbon\Carbon::parse($interaccion->hora_contacto)->format('h:i A') }}
+                    </span>
+                @endif
             </div>
         @else
             <span class="text-muted">—</span>
         @endif
     </td>
     
-    <td class="px-3 py-2" data-label="Administrador">
+    <td class="px-4 py-3" data-label="Administrador">
         <div class="usuario-info">
-            <div class="avatar-mini" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+            <div class="avatar-mini">
                 {{ substr($interaccion->admin_nombre_completo ?? 'A', 0, 1) }}
             </div>
             <div class="usuario-detalles">
@@ -32,7 +36,7 @@
         </div>
     </td>
     
-    <td class="px-3 py-2" data-label="Estudiante">
+    <td class="px-4 py-3" data-label="Estudiante">
         <div class="usuario-info">
             <div class="avatar-mini" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">
                 {{ substr($interaccion->est_nombre_completo ?? 'E', 0, 1) }}
@@ -46,7 +50,7 @@
         </div>
     </td>
     
-    <td class="px-3 py-2 text-center" data-label="Tipo">
+    <td class="px-4 py-3 text-center" data-label="Tipo">
         @php
             $tipoClasses = [
                 'llamada' => 'badge-llamada',
@@ -67,17 +71,17 @@
         </span>
     </td>
     
-    <td class="px-3 py-2" data-label="Motivo">
+    <td class="px-4 py-3" data-label="Motivo">
         <span class="motivo-texto" title="{{ $interaccion->motivo_contacto ?? 'N/A' }}">
-            {{ Str::limit($interaccion->motivo_contacto ?? 'N/A', 35) }}
+            {{ Str::limit($interaccion->motivo_contacto ?? 'N/A', 40) }}
         </span>
     </td>
     
-    <td class="px-3 py-2 text-center" data-label="Estado">
+    <td class="px-4 py-3 text-center" data-label="Estado">
         @php
             $estadoClasses = [
                 'pendiente' => 'badge-pendiente',
-                'en_proceso' => 'badge-en_proceso',
+                'en_proceso' => 'badge-en-proceso',
                 'finalizado' => 'badge-finalizado'
             ];
             $estadoClass = $estadoClasses[$interaccion->estado_seguimiento] ?? 'badge-pendiente';
@@ -94,7 +98,7 @@
         </span>
     </td>
     
-    <td class="px-3 py-2" data-label="Próximo Contacto">
+    <td class="px-4 py-3" data-label="Próximo Contacto">
         @if($interaccion->proximo_contacto)
             <div class="fecha-info">
                 <span class="fecha-fecha">{{ \Carbon\Carbon::parse($interaccion->proximo_contacto)->format('d/m/Y') }}</span>
@@ -110,8 +114,8 @@
         @endif
     </td>
     
-    <td class="px-3 py-2 text-center" data-label="Acciones">
-        <div class="d-flex gap-1 justify-content-center">
+    <td class="px-4 py-3 text-center" data-label="Acciones">
+        <div class="d-flex gap-2 justify-content-center">
             <button onclick="verInteraccion({{ $interaccion->id }})" 
                     class="btn-accion btn-ver" 
                     title="Ver detalles">
@@ -133,14 +137,12 @@
 @empty
 <tr>
     <td colspan="9" class="text-center py-5">
-        <div class="d-flex flex-column align-items-center gap-3 animate__animated animate__fadeIn">
-            <div class="rounded-circle p-4" style="background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);">
-                <i class="fas fa-phone-slash fa-4x" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; color: transparent;"></i>
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-phone-slash"></i>
             </div>
-            <div>
-                <h5 class="text-muted mb-2">✨ No hay interacciones registradas</h5>
-                <p class="text-muted small">Comienza registrando la primera interacción con un estudiante</p>
-            </div>
+            <h5 class="empty-state-title">✨ No hay interacciones registradas</h5>
+            <p class="empty-state-text">Comienza registrando la primera interacción con un estudiante</p>
             <a href="{{ route('admin.callcenter.create') }}" class="btn btn-primary-custom px-4 py-2">
                 <i class="fas fa-plus-circle me-2"></i>Registrar primera interacción
             </a>

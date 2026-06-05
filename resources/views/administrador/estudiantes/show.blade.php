@@ -109,10 +109,11 @@
                 </div>
             </div>
 
-            <div class="row g-4">
+            <!-- SECCIÓN 1: INFORMACIÓN DE CATÁLOGOS (Fija, misma altura) -->
+            <div class="row g-4 mb-4">
                 <!-- Información Personal -->
-                <div class="col-md-6">
-                    <div class="info-section">
+                <div class="col-md-4">
+                    <div class="info-section h-100">
                         <h5 class="fw-bold text-primary mb-3">
                             <i class="fas fa-user-circle me-2"></i>Información Personal
                         </h5>
@@ -142,23 +143,27 @@
                     </div>
                 </div>
 
-                <!-- Información Académica -->
-                <div class="col-md-6">
-                    <div class="info-section">
+                <!-- Información Académica (Escuela Procedencia) -->
+                <div class="col-md-4">
+                    <div class="info-section h-100">
                         <h5 class="fw-bold text-primary mb-3">
-                            <i class="fas fa-graduation-cap me-2"></i>Información Académica
+                            <i class="fas fa-graduation-cap me-2"></i>Escuela de Procedencia
                         </h5>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>Escuela de procedencia:</label>
-                                <span>{{ $estudiante->escuelaProcedencia->centro_educativo ?? '—' }}</span>
+                                <label>Centro educativo:</label>
+                                <span class="text-wrap">{{ $estudiante->escuelaProcedencia->centro_educativo ?? '—' }}</span>
                             </div>
                             <div class="info-item">
-                                <label>Estado (Prepa):</label>
+                                <label>Clave:</label>
+                                <span>{{ $estudiante->escuelaProcedencia->clave ?? '—' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Estado:</label>
                                 <span>{{ $estudiante->escuelaProcedencia->estado ?? '—' }}</span>
                             </div>
                             <div class="info-item">
-                                <label>Municipio (Prepa):</label>
+                                <label>Municipio:</label>
                                 <span>{{ $estudiante->escuelaProcedencia->municipio ?? '—' }}</span>
                             </div>
                             <div class="info-item">
@@ -170,15 +175,19 @@
                 </div>
 
                 <!-- Universidad de Interés -->
-                <div class="col-md-6">
-                    <div class="info-section">
+                <div class="col-md-4">
+                    <div class="info-section h-100">
                         <h5 class="fw-bold text-primary mb-3">
                             <i class="fas fa-university me-2"></i>Universidad de Interés
                         </h5>
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Universidad:</label>
-                                <span>{{ $estudiante->universidadInteres->clave ?? '—' }} - {{ $estudiante->universidadInteres->direccion ?? '—' }}</span>
+                                <span class="text-wrap">{{ $estudiante->universidadInteres->clave ?? '—' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Dirección:</label>
+                                <span class="text-wrap">{{ $estudiante->universidadInteres->direccion ?? '—' }}</span>
                             </div>
                             <div class="info-item">
                                 <label>Estado:</label>
@@ -189,17 +198,16 @@
                                 <span>{{ $estudiante->universidadInteres->municipio ?? '—' }}</span>
                             </div>
                             <div class="info-item">
-                                <label>Tipo:</label>
-                                <span>{{ $estudiante->universidadInteres->tipo ?? '—' }}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Duración:</label>
-                                <span>{{ $estudiante->universidadInteres->duracion ?? '—' }}</span>
+                                <label>Tipo/Duración:</label>
+                                <span>{{ $estudiante->universidadInteres->tipo ?? '—' }} / {{ $estudiante->universidadInteres->duracion ?? '—' }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
+            <!-- SECCIÓN 2: ESTADÍSTICAS Y PROGRESO (Información que varía) -->
+            <div class="row g-4">
                 <!-- Tiempo de Estudio -->
                 <div class="col-md-6">
                     <div class="info-section">
@@ -307,7 +315,37 @@
                                     <i class="fas fa-fire" style="color: #10b981;"></i>
                                 </div>
                                 <div>
-                                    <div class="stat-number">{{ $ultimaActividad ?? '—' }}</div>
+                                    <div class="stat-number" 
+                                        @if(isset($fechaUltimaActividad) && $fechaUltimaActividad)
+                                            title="{{ $fechaUltimaActividad instanceof \Carbon\Carbon ? $fechaUltimaActividad->format('d/m/Y H:i:s') : $fechaUltimaActividad }}"
+                                            data-bs-toggle="tooltip"
+                                        @endif
+                                    >
+                                        @if(isset($fechaUltimaActividad) && $fechaUltimaActividad instanceof \Carbon\Carbon)
+                                            @php
+                                                $fecha = $fechaUltimaActividad;
+                                                $ahora = \Carbon\Carbon::now();
+                                                $diferenciaDias = $fecha->diffInDays($ahora);
+                                                
+                                                if($diferenciaDias == 0) {
+                                                    // Hoy: mostrar "Hoy a las HH:MM"
+                                                    echo 'Hoy a las ' . $fecha->format('H:i');
+                                                } elseif($diferenciaDias == 1) {
+                                                    // Ayer: mostrar "Ayer a las HH:MM"
+                                                    echo 'Ayer a las ' . $fecha->format('H:i');
+                                                } elseif($diferenciaDias <= 7) {
+                                                    // Esta semana: mostrar "Día a las HH:MM"
+                                                    \Carbon\Carbon::setLocale('es');
+                                                    echo ucfirst($fecha->isoFormat('dddd')) . ' a las ' . $fecha->format('H:i');
+                                                } else {
+                                                    // Más de una semana: mostrar fecha completa
+                                                    echo $fecha->format('d/m/Y H:i');
+                                                }
+                                            @endphp
+                                        @else
+                                            {{ $ultimaActividad ?? '—' }}
+                                        @endif
+                                    </div>
                                     <div class="stat-label">Última actividad</div>
                                 </div>
                             </div>
@@ -316,7 +354,7 @@
                 </div>
 
                 <!-- Estadísticas por Tipo de Examen -->
-                <div class="col-12">
+                <div class="col-md-6">
                     <div class="info-section">
                         <h5 class="fw-bold text-primary mb-3">
                             <i class="fas fa-chart-pie me-2"></i>Estadísticas por Tipo de Examen
@@ -380,14 +418,38 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Resumen rápido de exámenes -->
+                        <div class="mt-3 pt-2 border-top">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Total de exámenes:</span>
+                                <strong class="fs-4">{{ $examenes->count() }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="text-muted">Promedio general:</span>
+                                <strong class="fs-4 {{ ($promedioCalificaciones ?? 0) >= 70 ? 'text-success' : 'text-danger' }}">
+                                    {{ number_format($promedioCalificaciones ?? 0, 1) }}%
+                                </strong>
+                            </div>
+                            <div class="progress mt-2" style="height: 8px;">
+                                @php
+                                    $anchoBarra = min(100, $promedioCalificaciones ?? 0);
+                                @endphp
+                                <div class="progress-bar {{ ($promedioCalificaciones ?? 0) >= 70 ? 'bg-success' : 'bg-danger' }}" 
+                                     style="width: {{ $anchoBarra }}%;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
+            <!-- SECCIÓN 3: TABLAS Y LISTADOS DETALLADOS -->
+            <div class="row g-4 mt-2">
                 <!-- Calificaciones de Exámenes -->
                 <div class="col-12">
                     <div class="info-section">
                         <h5 class="fw-bold text-primary mb-3">
-                            <i class="fas fa-file-alt me-2"></i>Calificaciones de Exámenes
+                            <i class="fas fa-file-alt me-2"></i>Detalle de Exámenes Realizados
                         </h5>
                         
                         @if($examenes->isNotEmpty())
@@ -444,22 +506,6 @@
                                     </tbody>
                                 </table>
                             </div>
-                            
-                            <div class="mt-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted">Promedio general:</span>
-                                    <strong class="fs-3 {{ ($promedioCalificaciones ?? 0) >= 70 ? 'text-success' : 'text-danger' }}">
-                                        {{ number_format($promedioCalificaciones ?? 0, 1) }}%
-                                    </strong>
-                                </div>
-                                <div class="progress mt-2" style="height: 10px;">
-                                    @php
-                                        $anchoBarra = min(100, $promedioCalificaciones ?? 0);
-                                    @endphp
-                                    <div class="progress-bar {{ ($promedioCalificaciones ?? 0) >= 70 ? 'bg-success' : 'bg-danger' }}" 
-                                         style="width: {{ $anchoBarra }}%;"></div>
-                                </div>
-                            </div>
                         @else
                             <div class="text-center py-4">
                                 <i class="fas fa-file-alt fa-3x text-muted opacity-25 mb-2"></i>
@@ -469,7 +515,7 @@
                     </div>
                 </div>
 
-                <!-- Progreso de Videos -->
+                <!-- Progreso de Videos y Videos Pendientes -->
                 <div class="col-md-6">
                     <div class="info-section">
                         <h5 class="fw-bold text-primary mb-3">
@@ -537,7 +583,6 @@
                     </div>
                 </div>
 
-                <!-- Videos Faltantes -->
                 <div class="col-md-6">
                     <div class="info-section">
                         <h5 class="fw-bold text-primary mb-3">
@@ -545,7 +590,7 @@
                         </h5>
                         
                         @if(isset($videosFaltantes) && $videosFaltantes->isNotEmpty())
-                            <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                            <div class="list-group list-group-flush" style="max-height: 350px; overflow-y: auto;">
                                 @foreach($videosFaltantes as $video)
                                     <div class="list-group-item bg-transparent px-0">
                                         <div class="d-flex justify-content-between align-items-center">
@@ -633,7 +678,7 @@
     .info-grid {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.75rem;
     }
     
     .info-item {
@@ -653,14 +698,22 @@
     .info-item label {
         font-weight: 600;
         color: #64748b;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         margin-bottom: 0;
+        min-width: 110px;
     }
     
     .info-item span {
         color: #1e293b;
         font-weight: 500;
         text-align: right;
+        max-width: 60%;
+        word-break: break-word;
+    }
+    
+    .text-wrap {
+        word-break: break-word;
+        white-space: normal;
     }
     
     /* Stats Cards */
@@ -896,7 +949,7 @@
     .grafica-barras {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.75rem;
     }
     
     .barra-item {
@@ -1123,6 +1176,16 @@
             height: 40px;
             font-size: 1.2rem;
         }
+        
+        .info-item label {
+            min-width: 90px;
+            font-size: 0.75rem;
+        }
+        
+        .info-item span {
+            font-size: 0.8rem;
+            max-width: 55%;
+        }
     }
 </style>
 @endpush
@@ -1147,5 +1210,11 @@
             confirmButtonColor: '#dc3545'
         });
     @endif
+    
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
 </script>
 @endpush

@@ -45,6 +45,22 @@
         </div>
     </div>
 
+    <!-- ========== SOLO AGREGAR ESTO - ADVERTENCIA PARA PLAN BÁSICO ========== -->
+    @if(!$estudiante->plan_activo && isset($intentosRestantes))
+    <div style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-left: 4px solid #f9ab00; border-radius: 12px; padding: 15px 20px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <i class="fas fa-info-circle" style="font-size: 24px; color: #f9ab00;"></i>
+            <div style="flex: 1;">
+                <strong>⚠️ Modo Básico</strong><br>
+                <small>Intentos restantes: {{ $intentosRestantes }} de 3 | Máximo {{ $maxPreguntas ?? 5 }} preguntas por simulador</small>
+            </div>
+            <a href="{{ route('estudiante.checkout') }}" style="background: #f9ab00; color: #000; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.85rem;">
+                <i class="fas fa-crown"></i> Mejorar Plan
+            </a>
+        </div>
+    </div>
+    @endif
+
     <!-- Selector de examen -->
     @if(isset($examenes) && count($examenes) > 1)
     <div class="exam-selector">
@@ -122,7 +138,51 @@
 
     <div id="preguntasContainer" class="questions-container">
         @if(isset($preguntas) && count($preguntas) > 0)
+            @php
+                function mezclarOpciones($pregunta) {
+                    $opciones = [];
+                    
+                    if ($pregunta->respuesta_correcta) {
+                        $opciones[] = [
+                            'texto' => $pregunta->respuesta_correcta,
+                            'tipo' => 'correcta',
+                            'valor' => 'correcta'
+                        ];
+                    }
+                    
+                    if ($pregunta->respuesta1) {
+                        $opciones[] = [
+                            'texto' => $pregunta->respuesta1,
+                            'tipo' => 'incorrecta1',
+                            'valor' => 'incorrecta1'
+                        ];
+                    }
+                    
+                    if ($pregunta->respuesta2) {
+                        $opciones[] = [
+                            'texto' => $pregunta->respuesta2,
+                            'tipo' => 'incorrecta2',
+                            'valor' => 'incorrecta2'
+                        ];
+                    }
+                    
+                    if ($pregunta->respuesta3) {
+                        $opciones[] = [
+                            'texto' => $pregunta->respuesta3,
+                            'tipo' => 'incorrecta3',
+                            'valor' => 'incorrecta3'
+                        ];
+                    }
+                    
+                    shuffle($opciones);
+                    return $opciones;
+                }
+            @endphp
+            
             @foreach($preguntas as $index => $pregunta)
+            @php
+                $opcionesMezcladas = mezclarOpciones($pregunta);
+            @endphp
             <div class="question-card" data-index="{{ $index }}" id="pregunta{{ $loop->iteration }}" style="display: {{ $index == 0 ? 'block' : 'none' }};">
                 <div class="question-header">
                     <div class="question-number">
@@ -139,36 +199,14 @@
                     <p>{{ $pregunta->pregunta }}</p>
                 </div>
                 
-                <div class="options-container">
-                    <label class="option-item" data-pregunta-id="{{ $pregunta->id }}" data-respuesta="correcta">
-                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="correcta" class="option-radio">
+                <div class="options-container" data-pregunta-id="{{ $pregunta->id }}">
+                    @foreach($opcionesMezcladas as $opcion)
+                    <label class="option-item" data-pregunta-id="{{ $pregunta->id }}" data-respuesta="{{ $opcion['valor'] }}">
+                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="{{ $opcion['valor'] }}" class="option-radio">
                         <span class="option-marker"></span>
-                        <span class="option-text">{{ $pregunta->respuesta_correcta }}</span>
+                        <span class="option-text">{{ $opcion['texto'] }}</span>
                     </label>
-                    
-                    @if($pregunta->respuesta1)
-                    <label class="option-item" data-pregunta-id="{{ $pregunta->id }}" data-respuesta="incorrecta1">
-                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="incorrecta1" class="option-radio">
-                        <span class="option-marker"></span>
-                        <span class="option-text">{{ $pregunta->respuesta1 }}</span>
-                    </label>
-                    @endif
-                    
-                    @if($pregunta->respuesta2)
-                    <label class="option-item" data-pregunta-id="{{ $pregunta->id }}" data-respuesta="incorrecta2">
-                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="incorrecta2" class="option-radio">
-                        <span class="option-marker"></span>
-                        <span class="option-text">{{ $pregunta->respuesta2 }}</span>
-                    </label>
-                    @endif
-                    
-                    @if($pregunta->respuesta3)
-                    <label class="option-item" data-pregunta-id="{{ $pregunta->id }}" data-respuesta="incorrecta3">
-                        <input type="radio" name="respuestas[{{ $pregunta->id }}]" value="incorrecta3" class="option-radio">
-                        <span class="option-marker"></span>
-                        <span class="option-text">{{ $pregunta->respuesta3 }}</span>
-                    </label>
-                    @endif
+                    @endforeach
                 </div>
             </div>
             @endforeach
@@ -747,10 +785,15 @@ body.dark-mode .nav-question-btn {
     let examenActualId = {{ $examen->id ?? 0 }};
     let recargando = false;
     
+    // Variables para validación de plan básico (con valores por defecto seguros)
+    let esUsuarioPremium = {{ isset($estudiante) && $estudiante->plan_activo ? 'true' : 'false' }};
+    let maxPreguntasBasico = {{ isset($maxPreguntas) ? $maxPreguntas : 5 }};
+    
     console.log('=== INICIALIZACIÓN ===');
     console.log('minutosTotales:', minutosTotales);
-    console.log('tiempoRestanteSegundos inicial:', tiempoRestanteSegundos);
     console.log('totalPreguntas:', totalPreguntas);
+    console.log('esUsuarioPremium:', esUsuarioPremium);
+    console.log('maxPreguntasBasico:', maxPreguntasBasico);
     
     // ========== TIMER ==========
     function iniciarTimer() {
@@ -888,12 +931,31 @@ body.dark-mode .nav-question-btn {
         }
     }
     
-    // ========== RESPUESTAS ==========
+    // ========== RESPUESTAS CON VALIDACIÓN PARA BÁSICO ==========
     function guardarRespuesta(preguntaId, valor) {
+        // Validar límite para usuarios básicos
+        if (!esUsuarioPremium) {
+            const respondidas = Object.keys(respuestasRegistradas).length;
+            // Si ya alcanzó el límite y no está editando una respuesta existente
+            if (respondidas >= maxPreguntasBasico && !respuestasRegistradas[preguntaId]) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Límite alcanzado',
+                    html: `Solo puedes responder máximo ${maxPreguntasBasico} preguntas en modo Básico.<br><br>
+                           <a href="{{ route('estudiante.checkout') }}" class="btn btn-warning" style="background: #f9ab00; color: #000; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                               <i class="fas fa-crown"></i> Actualizar a Premium
+                           </a>`,
+                    confirmButtonText: 'Aceptar'
+                });
+                return false;
+            }
+        }
+        
         respuestasRegistradas[preguntaId] = valor;
         actualizarProgreso();
         localStorage.setItem(`simulador_${examenActualId}_respuestas`, JSON.stringify(respuestasRegistradas));
         localStorage.setItem(`simulador_${examenActualId}_tiempo`, tiempoRestanteSegundos);
+        return true;
     }
     
     // ========== CAMBIAR EXAMEN ==========
@@ -925,6 +987,22 @@ body.dark-mode .nav-question-btn {
     // ========== FINALIZAR Y ENVIAR ==========
     function finalizarExamen() {
         const respondidas = Object.keys(respuestasRegistradas).length;
+        
+        // Validar límite para usuarios básicos
+        if (!esUsuarioPremium && respondidas > maxPreguntasBasico) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Límite excedido',
+                html: `Has respondido <strong>${respondidas}</strong> preguntas.<br>
+                       Los usuarios sin plan Premium solo pueden responder máximo <strong>${maxPreguntasBasico}</strong> preguntas.<br><br>
+                       <a href="{{ route('estudiante.checkout') }}" class="btn btn-warning" style="background: #f9ab00; color: #000; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                           <i class="fas fa-crown"></i> Actualizar a Premium
+                       </a>`,
+                confirmButtonText: 'Entendido'
+            });
+            return;
+        }
+        
         if (respondidas < totalPreguntas) {
             Swal.fire({
                 title: '⚠️ Preguntas sin responder',
@@ -952,15 +1030,8 @@ body.dark-mode .nav-question-btn {
             formData.append(`respuestas[${preguntaId}]`, valor);
         }
         
-        // Calcular tiempo utilizado en SEGUNDOS
         const tiempoLimiteSegundos = minutosTotales * 60;
         const tiempoUtilizadoSegundos = Math.max(0, tiempoLimiteSegundos - tiempoRestanteSegundos);
-        
-        console.log('========== ENVIANDO EXAMEN ==========');
-        console.log('minutosTotales:', minutosTotales);
-        console.log('tiempoLimiteSegundos:', tiempoLimiteSegundos);
-        console.log('tiempoRestanteSegundos:', tiempoRestanteSegundos);
-        console.log('tiempoUtilizadoSegundos:', tiempoUtilizadoSegundos);
         
         formData.append('tiempo_utilizado_segundos', tiempoUtilizadoSegundos);
         
@@ -1045,8 +1116,9 @@ body.dark-mode .nav-question-btn {
                 if (radio) {
                     const preguntaId = radio.name.match(/\[(.*?)\]/)[1];
                     radio.addEventListener('change', function() {
-                        document.querySelectorAll(`.option-item`).forEach(opt => opt.classList.remove('selected'));
-                        option.classList.add('selected');
+                        const container = this.closest('.options-container');
+                        container.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
+                        this.closest('.option-item').classList.add('selected');
                         guardarRespuesta(preguntaId, this.value);
                     });
                 }

@@ -11,8 +11,12 @@ class Pregunta extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'id_area', 'pregunta', 'respuesta_correcta',
-        'respuesta1', 'respuesta2'
+        'id_area', 
+        'pregunta', 
+        'respuesta_correcta',
+        'respuesta1', 
+        'respuesta2',
+        'justificacion'  
     ];
 
     // Relación con áreas
@@ -27,9 +31,17 @@ class Pregunta extends Model
         return $this->hasMany(ApoyoPregunta::class, 'pregunta', 'id');
     }
     
-    // ✅ CORREGIDO: Relación con exámenes usando la tabla correcta
     public function examenesGenerados()
     {
         return $this->belongsToMany(ExamenGenerado::class, 'apoyo_preguntas', 'pregunta', 'examen');
+    }
+    
+    // Método para obtener la justificación formateada (opcional pero útil)
+    public function getJustificacionFormateadaAttribute()
+    {
+        if (empty($this->justificacion)) {
+            return "La respuesta correcta es: {$this->respuesta_correcta}";
+        }
+        return $this->justificacion;
     }
 }

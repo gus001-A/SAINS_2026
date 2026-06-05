@@ -246,200 +246,273 @@ class EstudianteController extends Controller
     }
     
     public function show($id)
-{
-    // Buscar desde User con relación estudiante
-    $user = User::with(['estudiante.escuelaProcedencia', 'estudiante.universidadInteres', 'estudiante.pagos'])
-        ->findOrFail($id);
-    
-    if (!$user->estudiante) {
-        return redirect()->route('admin.estudiantes.index')
-            ->with('error', 'Estudiante no encontrado');
-    }
-    
-    $estudiante = $user->estudiante;
-    $usuario = $user;
-    
-    // ========== TIEMPO DE ESTUDIO ==========
-    $estadisticasTiempo = TiempoEstudio::getEstadisticasCompletas($estudiante->id);
-    
-    $tiempoTotalHoras = $estadisticasTiempo['total_horas'] ?? 0;
-    $tiempoTotalMinutos = $estadisticasTiempo['total_minutos'] ?? 0;
-    $totalSesiones = $estadisticasTiempo['total_sesiones'] ?? 0;
-    $diasActivos = $estadisticasTiempo['dias_estudiados'] ?? 0;
-    
-    // Última actividad
-    $ultimoRegistro = TiempoEstudio::where('estudiante_id', $estudiante->id)
-        ->whereNotNull('ultima_actividad')
-        ->orderBy('ultima_actividad', 'desc')
-        ->first();
-    $ultimaActividad = $ultimoRegistro ? $ultimoRegistro->ultima_actividad->diffForHumans() : '—';
-    
-    // Estudio diario últimos 7 días
-    $estudioDiario = TiempoEstudio::where('estudiante_id', $estudiante->id)
-        ->where('fecha', '>=', Carbon::now()->subDays(7))
-        ->orderBy('fecha', 'asc')
-        ->get()
-        ->map(function($item) {
-            $minutos = (int)($item->minutos_estudiados ?? 0);
-            $horas = $minutos > 0 ? round($minutos / 60, 1) : 0;
-            
-            return (object)[
-                'dia' => Carbon::parse($item->fecha)->format('D'),
-                'horas_estudiadas' => $horas,
-                'minutos_estudiados' => $minutos,
-                'segundos' => (int)($item->segundos_estudiados ?? 0)
-            ];
-        });
-    
-    if ($estudioDiario->isEmpty()) {
-        $estudioDiario = collect();
-        for ($i = 6; $i >= 0; $i--) {
-            $fecha = Carbon::now()->subDays($i);
-            $estudioDiario->push((object)[
-                'dia' => $fecha->format('D'),
-                'horas_estudiadas' => 0,
-                'minutos_estudiados' => 0,
-                'segundos' => 0
-            ]);
+    {
+        // Buscar desde User con relación estudiante
+        $user = User::with(['estudiante.escuelaProcedencia', 'estudiante.universidadInteres', 'estudiante.pagos'])
+            ->findOrFail($id);
+        
+        if (!$user->estudiante) {
+            return redirect()->route('admin.estudiantes.index')
+                ->with('error', 'Estudiante no encontrado');
         }
-    }
-    
-    // ========== EXÁMENES CON TIPOS DESDE ExamenGenerado ==========
-    $examenes = ExamenRealizado::where('estudiante', $estudiante->id)
-        ->with('examenGenerado') // Cargar la relación con ExamenGenerado
-        ->orderBy('fecha_fin', 'desc')
-        ->orderBy('hora_fin', 'desc')
-        ->get()
-        ->map(function($examenRealizado) {
-            $examenGen = $examenRealizado->examenGenerado;
-            $tipoExamen = $examenGen->tipo_examen ?? 'general';
-            $nombreReferencia = '';
+        
+        $estudiante = $user->estudiante;
+        $usuario = $user;
+        
+        // ========== TIEMPO DE ESTUDIO ==========
+        $estadisticasTiempo = TiempoEstudio::getEstadisticasCompletas($estudiante->id);
+        
+        $tiempoTotalHoras = $estadisticasTiempo['total_horas'] ?? 0;
+        $tiempoTotalMinutos = $estadisticasTiempo['total_minutos'] ?? 0;
+        $totalSesiones = $estadisticasTiempo['total_sesiones'] ?? 0;
+        $diasActivos = $estadisticasTiempo['dias_estudiados'] ?? 0;
+        
+        // ========== ÚLTIMA ACTIVIDAD (MEJORADO - MÚLTIPLES FUENTES) ==========
+        $ultimaActividad = '—';
+        $fechaUltimaActividad = null;
+        
+        // 1. Revisar tiempo de estudio
+        $ultimoTiempo = TiempoEstudio::where('estudiante_id', $estudiante->id)
+            ->whereNotNull('ultima_actividad')
+            ->orderBy('ultima_actividad', 'desc')
+            ->first();
+        
+        if ($ultimoTiempo && $ultimoTiempo->ultima_actividad) {
+            $fechaUltimaActividad = $ultimoTiempo->ultima_actividad;
+            $ultimaActividad = $ultimoTiempo->ultima_actividad->diffForHumans();
+        }
+        
+        // 2. Si no hay, revisar exámenes realizados
+        if ($ultimaActividad === '—') {
+            $ultimoExamen = ExamenRealizado::where('estudiante', $estudiante->id)
+                ->whereNotNull('fecha_fin')
+                ->orderBy('fecha_fin', 'desc')
+                ->first();
             
-            // Configurar según el tipo_examen del ExamenGenerado
-            switch (strtolower($tipoExamen)) {
-                case 'materia':
-                    $nombreReferencia = $examenGen->materia->nombre ?? 'Materia';
-                    $badgeColor = 'primary';
-                    $badgeIcon = 'fa-book';
-                    $tipoTexto = 'Por Materia';
-                    break;
-                    
-                case 'curso':
-                    $nombreReferencia = $examenGen->curso->nombre ?? 'Curso';
-                    $badgeColor = 'success';
-                    $badgeIcon = 'fa-graduation-cap';
-                    $tipoTexto = 'Por Curso';
-                    break;
-                    
-                case 'simulacion':
-                case 'simulación':
-                    $nombreReferencia = $examenGen->titulo ?? 'Simulación';
-                    $badgeColor = 'danger';
-                    $badgeIcon = 'fa-flask';
-                    $tipoTexto = 'Simulación';
-                    break;
-                    
-                default:
-                    $nombreReferencia = $examenGen->titulo ?? 'Examen';
-                    $badgeColor = 'secondary';
-                    $badgeIcon = 'fa-puzzle-piece';
-                    $tipoTexto = ucfirst($tipoExamen);
-                    break;
+            if ($ultimoExamen && $ultimoExamen->fecha_fin) {
+                $fechaUltimaActividad = Carbon::parse($ultimoExamen->fecha_fin);
+                $ultimaActividad = $fechaUltimaActividad->diffForHumans();
             }
-            
-            // Agregar propiedades al objeto
-            $examenRealizado->tipo_examen = $tipoExamen;
-            $examenRealizado->nombre_referencia = $nombreReferencia;
-            $examenRealizado->badge_color = $badgeColor;
-            $examenRealizado->badge_icon = $badgeIcon;
-            $examenRealizado->tipo_texto = $tipoTexto;
-            $examenRealizado->examen_nombre = $examenGen->titulo ?? 'Examen';
-            
-            return $examenRealizado;
-        });
-    
-    // Estadísticas por tipo de examen
-    $examenesPorTipo = [
-        'simulacion' => $examenes->filter(function($e) {
-            return in_array(strtolower($e->tipo_examen), ['simulacion', 'simulación']);
-        })->count(),
-        'materia' => $examenes->filter(function($e) {
-            return strtolower($e->tipo_examen) == 'materia';
-        })->count(),
-        'curso' => $examenes->filter(function($e) {
-            return strtolower($e->tipo_examen) == 'curso';
-        })->count(),
-    ];
-    
-    $promedioCalificaciones = $examenes->isNotEmpty() ? round($examenes->avg('calificacion')) : 0;
-    
-    // Promedio por tipo de examen
-    $promedioPorTipo = [
-        'simulacion' => $examenes->filter(function($e) {
-            return in_array(strtolower($e->tipo_examen), ['simulacion', 'simulación']);
-        })->isNotEmpty() ? round($examenes->filter(function($e) {
-            return in_array(strtolower($e->tipo_examen), ['simulacion', 'simulación']);
-        })->avg('calificacion')) : 0,
+        }
         
-        'materia' => $examenes->filter(function($e) {
-            return strtolower($e->tipo_examen) == 'materia';
-        })->isNotEmpty() ? round($examenes->filter(function($e) {
-            return strtolower($e->tipo_examen) == 'materia';
-        })->avg('calificacion')) : 0,
+        // 3. Si no hay, revisar progreso de videos
+        if ($ultimaActividad === '—') {
+            $ultimoVideo = ProgresoVideo::where('estudiante_id', $estudiante->id)
+                ->whereNotNull('fecha_visto')
+                ->orderBy('fecha_visto', 'desc')
+                ->first();
+            
+            if ($ultimoVideo && $ultimoVideo->fecha_visto) {
+                $fechaUltimaActividad = Carbon::parse($ultimoVideo->fecha_visto);
+                $ultimaActividad = $fechaUltimaActividad->diffForHumans();
+            }
+        }
         
-        'curso' => $examenes->filter(function($e) {
-            return strtolower($e->tipo_examen) == 'curso';
-        })->isNotEmpty() ? round($examenes->filter(function($e) {
-            return strtolower($e->tipo_examen) == 'curso';
-        })->avg('calificacion')) : 0,
-    ];
-    
-    // ========== PROGRESO DE VIDEOS ==========
-    $totalVideos = Video::count();
-    $progresosVideos = ProgresoVideo::where('estudiante_id', $estudiante->id)->get();
-    $vistosCompletos = $progresosVideos->where('completado', true)->count();
-    $videosEnProgreso = $progresosVideos->where('completado', false)->count();
-    $porcentajeProgreso = $totalVideos > 0 ? round(($vistosCompletos / $totalVideos) * 100) : 0;
-    
-    // Últimos videos vistos
-    $ultimosVideos = ProgresoVideo::where('estudiante_id', $estudiante->id)
-        ->with('video')
-        ->whereNotNull('fecha_visto')
-        ->orderBy('fecha_visto', 'desc')
-        ->limit(5)
-        ->get();
-    
-    // Videos que NO ha visto
-    $videosIdsVistos = $progresosVideos->pluck('video_id')->toArray();
-    $videosFaltantes = Video::whereNotIn('id', $videosIdsVistos)
-        ->orderBy('materia')
-        ->orderBy('tema')
-        ->get();
-    
-    $duracionEstimada = 3600;
-    
-    return view('administrador.estudiantes.show', compact(
-        'estudiante', 
-        'usuario',
-        'tiempoTotalHoras',
-        'tiempoTotalMinutos',
-        'estudioDiario',
-        'totalSesiones',
-        'ultimaActividad',
-        'diasActivos',
-        'examenes',
-        'examenesPorTipo',
-        'promedioPorTipo',
-        'promedioCalificaciones',
-        'totalVideos',
-        'vistosCompletos',
-        'videosEnProgreso',
-        'porcentajeProgreso',
-        'ultimosVideos',
-        'videosFaltantes',
-        'duracionEstimada'
-    ));
-}
+        // 4. Si no hay actividad, usar fecha de inscripción
+        if ($ultimaActividad === '—' && $estudiante->fecha_inscripcion) {
+            $fechaUltimaActividad = Carbon::parse($estudiante->fecha_inscripcion);
+            $ultimaActividad = 'Desde ' . $fechaUltimaActividad->format('d/m/Y');
+        }
+        
+        // Estudio diario últimos 7 días - CON DÍAS EN ESPAÑOL
+        $estudioDiario = TiempoEstudio::where('estudiante_id', $estudiante->id)
+            ->where('fecha', '>=', Carbon::now()->subDays(7))
+            ->orderBy('fecha', 'asc')
+            ->get()
+            ->map(function($item) {
+                $minutos = (int)($item->minutos_estudiados ?? 0);
+                $horas = $minutos > 0 ? round($minutos / 60, 1) : 0;
+                
+                // Convertir fecha a día de semana en ESPAÑOL
+                $fecha = Carbon::parse($item->fecha);
+                $diaEspanol = '';
+                
+                // Usar Carbon con locale 'es' para obtener el día en español
+                try {
+                    Carbon::setLocale('es');
+                    $diaEspanol = ucfirst($fecha->isoFormat('dddd'));
+                } catch (\Exception $e) {
+                    // Fallback manual si falla Carbon
+                    $diasMap = [
+                        'Monday' => 'Lunes',
+                        'Tuesday' => 'Martes', 
+                        'Wednesday' => 'Miércoles',
+                        'Thursday' => 'Jueves',
+                        'Friday' => 'Viernes',
+                        'Saturday' => 'Sábado',
+                        'Sunday' => 'Domingo',
+                        'Mon' => 'Lunes',
+                        'Tue' => 'Martes',
+                        'Wed' => 'Miércoles',
+                        'Thu' => 'Jueves',
+                        'Fri' => 'Viernes',
+                        'Sat' => 'Sábado',
+                        'Sun' => 'Domingo'
+                    ];
+                    $diaIngles = $fecha->format('l');
+                    $diaEspanol = $diasMap[$diaIngles] ?? $fecha->format('D');
+                }
+                
+                return (object)[
+                    'dia' => $diaEspanol,
+                    'horas_estudiadas' => $horas,
+                    'minutos_estudiados' => $minutos,
+                    'segundos' => (int)($item->segundos_estudiados ?? 0)
+                ];
+            });
+        
+        // Si no hay datos, generar últimos 7 días con ceros
+        if ($estudioDiario->isEmpty()) {
+            $estudioDiario = collect();
+            for ($i = 6; $i >= 0; $i--) {
+                $fecha = Carbon::now()->subDays($i);
+                Carbon::setLocale('es');
+                $diaEspanol = ucfirst($fecha->isoFormat('dddd'));
+                
+                $estudioDiario->push((object)[
+                    'dia' => $diaEspanol,
+                    'horas_estudiadas' => 0,
+                    'minutos_estudiados' => 0,
+                    'segundos' => 0
+                ]);
+            }
+        }
+        
+        // ========== EXÁMENES CON TIPOS DESDE ExamenGenerado ==========
+        $examenes = ExamenRealizado::where('estudiante', $estudiante->id)
+            ->with('examenGenerado')
+            ->orderBy('fecha_fin', 'desc')
+            ->orderBy('hora_fin', 'desc')
+            ->get()
+            ->map(function($examenRealizado) {
+                $examenGen = $examenRealizado->examenGenerado;
+                $tipoExamen = $examenGen->tipo_examen ?? 'general';
+                $nombreReferencia = '';
+                
+                switch (strtolower($tipoExamen)) {
+                    case 'materia':
+                        $nombreReferencia = $examenGen->materia->nombre ?? 'Materia';
+                        $badgeColor = 'primary';
+                        $badgeIcon = 'fa-book';
+                        $tipoTexto = 'Por Materia';
+                        break;
+                        
+                    case 'curso':
+                        $nombreReferencia = $examenGen->curso->nombre ?? 'Curso';
+                        $badgeColor = 'success';
+                        $badgeIcon = 'fa-graduation-cap';
+                        $tipoTexto = 'Por Curso';
+                        break;
+                        
+                    case 'simulacion':
+                    case 'simulación':
+                        $nombreReferencia = $examenGen->titulo ?? 'Simulación';
+                        $badgeColor = 'danger';
+                        $badgeIcon = 'fa-flask';
+                        $tipoTexto = 'Simulación';
+                        break;
+                        
+                    default:
+                        $nombreReferencia = $examenGen->titulo ?? 'Examen';
+                        $badgeColor = 'secondary';
+                        $badgeIcon = 'fa-puzzle-piece';
+                        $tipoTexto = ucfirst($tipoExamen);
+                        break;
+                }
+                
+                $examenRealizado->tipo_examen = $tipoExamen;
+                $examenRealizado->nombre_referencia = $nombreReferencia;
+                $examenRealizado->badge_color = $badgeColor;
+                $examenRealizado->badge_icon = $badgeIcon;
+                $examenRealizado->tipo_texto = $tipoTexto;
+                $examenRealizado->examen_nombre = $examenGen->titulo ?? 'Examen';
+                
+                return $examenRealizado;
+            });
+        
+        // Estadísticas por tipo de examen
+        $examenesPorTipo = [
+            'simulacion' => $examenes->filter(function($e) {
+                return in_array(strtolower($e->tipo_examen), ['simulacion', 'simulación']);
+            })->count(),
+            'materia' => $examenes->filter(function($e) {
+                return strtolower($e->tipo_examen) == 'materia';
+            })->count(),
+            'curso' => $examenes->filter(function($e) {
+                return strtolower($e->tipo_examen) == 'curso';
+            })->count(),
+        ];
+        
+        $promedioCalificaciones = $examenes->isNotEmpty() ? round($examenes->avg('calificacion')) : 0;
+        
+        // Promedio por tipo de examen
+        $promedioPorTipo = [
+            'simulacion' => $examenes->filter(function($e) {
+                return in_array(strtolower($e->tipo_examen), ['simulacion', 'simulación']);
+            })->isNotEmpty() ? round($examenes->filter(function($e) {
+                return in_array(strtolower($e->tipo_examen), ['simulacion', 'simulación']);
+            })->avg('calificacion')) : 0,
+            
+            'materia' => $examenes->filter(function($e) {
+                return strtolower($e->tipo_examen) == 'materia';
+            })->isNotEmpty() ? round($examenes->filter(function($e) {
+                return strtolower($e->tipo_examen) == 'materia';
+            })->avg('calificacion')) : 0,
+            
+            'curso' => $examenes->filter(function($e) {
+                return strtolower($e->tipo_examen) == 'curso';
+            })->isNotEmpty() ? round($examenes->filter(function($e) {
+                return strtolower($e->tipo_examen) == 'curso';
+            })->avg('calificacion')) : 0,
+        ];
+        
+        // ========== PROGRESO DE VIDEOS ==========
+        $totalVideos = Video::count();
+        $progresosVideos = ProgresoVideo::where('estudiante_id', $estudiante->id)->get();
+        $vistosCompletos = $progresosVideos->where('completado', true)->count();
+        $videosEnProgreso = $progresosVideos->where('completado', false)->count();
+        $porcentajeProgreso = $totalVideos > 0 ? round(($vistosCompletos / $totalVideos) * 100) : 0;
+        
+        // Últimos videos vistos
+        $ultimosVideos = ProgresoVideo::where('estudiante_id', $estudiante->id)
+            ->with('video')
+            ->whereNotNull('fecha_visto')
+            ->orderBy('fecha_visto', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Videos que NO ha visto
+        $videosIdsVistos = $progresosVideos->pluck('video_id')->toArray();
+        $videosFaltantes = Video::whereNotIn('id', $videosIdsVistos)
+            ->orderBy('materia')
+            ->orderBy('tema')
+            ->get();
+        
+        $duracionEstimada = 3600;
+        
+        return view('administrador.estudiantes.show', compact(
+            'estudiante', 
+            'usuario',
+            'tiempoTotalHoras',
+            'tiempoTotalMinutos',
+            'estudioDiario',
+            'totalSesiones',
+            'ultimaActividad',
+            'fechaUltimaActividad',
+            'diasActivos',
+            'examenes',
+            'examenesPorTipo',
+            'promedioPorTipo',
+            'promedioCalificaciones',
+            'totalVideos',
+            'vistosCompletos',
+            'videosEnProgreso',
+            'porcentajeProgreso',
+            'ultimosVideos',
+            'videosFaltantes',
+            'duracionEstimada'
+        ));
+    }
     /**
      * Obtiene los datos de un estudiante en formato JSON para el modal
      */

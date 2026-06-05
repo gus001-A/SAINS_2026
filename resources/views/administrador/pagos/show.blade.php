@@ -79,20 +79,6 @@
                     </div>
                     
                     <div class="col-md-6">
-                        <div class="info-card-modern">
-                            <div class="info-icon" style="background: #f39c1220;">
-                                <i class="fas fa-calendar-alt" style="color: #f39c12;"></i>
-                            </div>
-                            <div class="info-content">
-                                <span class="info-label">Fecha de Pago</span>
-                                <span class="info-value">
-                                    {{ $pago->fecha_pago ? \Carbon\Carbon::parse($pago->fecha_pago)->format('d/m/Y') : 'N/A' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
                         <div class="info-card-modern highlight-monto">
                             <div class="info-icon" style="background: #27ae6020;">
                                 <i class="fas fa-dollar-sign" style="color: #27ae60;"></i>
@@ -106,6 +92,19 @@
                     
                     <div class="col-md-6">
                         <div class="info-card-modern">
+                            <div class="info-icon" style="background: #f39c1220;">
+                                <i class="fas fa-calendar-alt" style="color: #f39c12;"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">Fecha del Pago</span>
+                                <span class="info-value">
+                                    {{ \Carbon\Carbon::parse($pago->fecha_pago)->format('d/m/Y H:i:s') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-card-modern">
                             <div class="info-icon" style="background: #3498db20;">
                                 <i class="fas fa-barcode" style="color: #3498db;"></i>
                             </div>
@@ -115,6 +114,33 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Tiempo de respuesta (solo si está aprobado) -->
+                    @if($pago->estatus == 'aprobado' && $pago->fecha_aprueba)
+                    <div class="col-md-6">
+                        <div class="info-card-modern">
+                            <div class="info-icon" style="background: #27ae6020;">
+                                <i class="fas fa-hourglass-half" style="color: #27ae60;"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">Tiempo de respuesta</span>
+                                <span class="info-value">
+                                    @php
+                                        $fechaSolicitud = \Carbon\Carbon::parse($pago->fecha_pago);
+                                        $fechaAprobacion = \Carbon\Carbon::parse($pago->fecha_aprueba);
+                                        $diferencia = $fechaSolicitud->diff($fechaAprobacion);
+                                        
+                                        $tiempoRespuesta = '';
+                                        if ($diferencia->d > 0) $tiempoRespuesta .= $diferencia->d . ' día(s) ';
+                                        if ($diferencia->h > 0) $tiempoRespuesta .= $diferencia->h . ' hora(s) ';
+                                        if ($diferencia->i > 0) $tiempoRespuesta .= $diferencia->i . ' minuto(s)';
+                                        if (empty($tiempoRespuesta)) $tiempoRespuesta = 'Menos de 1 minuto';
+                                    @endphp
+                                    <i class="fas fa-tachometer-alt me-1"></i> {{ $tiempoRespuesta }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                     
                     <div class="col-12">
                         <div class="info-card-modern">
@@ -249,7 +275,7 @@
                 @endif
             </div>
 
-            <!-- Tarjeta de Acciones Mejorada CON BOTONES DE APROBAR/RECHAZAR -->
+            <!-- Tarjeta de Acciones Mejorada -->
             <div class="card-modern p-4 hover-lift">
                 <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom-modern">
                     <div class="rounded-circle p-2" style="background: linear-gradient(135deg, #667eea20, #764ba220);">
@@ -323,7 +349,7 @@
     </div>
 </div>
 
-<!-- ========== MODAL DE RECHAZO MEJORADO - MÁS ANCHO ========== -->
+<!-- MODAL DE RECHAZO MEJORADO -->
 <div class="modal fade" id="modalMotivoRechazo" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content modal-modern modal-rechazo">
@@ -343,7 +369,6 @@
                 </div>
                 
                 <div class="modal-body p-4">
-                    <!-- Información del pago a rechazar -->
                     <div class="pago-info-card mb-4">
                         <div class="row g-3">
                             <div class="col-md-3 col-6">
@@ -367,13 +392,12 @@
                             <div class="col-md-2 col-6">
                                 <div class="info-item">
                                     <i class="fas fa-calendar text-muted"></i>
-                                    <span><strong>Fecha:</strong> {{ $pago->fecha_pago ? \Carbon\Carbon::parse($pago->fecha_pago)->format('d/m/Y') : 'N/A' }}</span>
+                                    <span><strong>Fecha Solicitud:</strong> {{ $pago->fecha_pago ? \Carbon\Carbon::parse($pago->fecha_pago)->format('d/m/Y H:i') : 'N/A' }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Motivos predefinidos - Grid de 2 columnas -->
                     <div class="motivos-predefinidos mb-4">
                         <label class="form-label fw-semibold mb-3">
                             <i class="fas fa-list me-2 text-primary"></i>Seleccione un motivo común:
@@ -412,7 +436,6 @@
                         </div>
                     </div>
                     
-                    <!-- Campo para motivo personalizado -->
                     <div class="motivo-custom">
                         <label class="form-label fw-semibold mb-2">
                             <i class="fas fa-pencil-alt me-2 text-primary"></i>O escriba su propio motivo:
@@ -663,7 +686,7 @@
         color: white;
     }
     
-    /* ========== MODAL DE RECHAZO MEJORADO ========== */
+    /* Modal de Rechazo */
     .modal-rechazo {
         overflow: hidden;
     }
@@ -1008,7 +1031,6 @@
         });
     }
     
-    // Confirmar aprobación
     function confirmarAprobacion(event) {
         event.preventDefault();
         
@@ -1032,36 +1054,30 @@
         return false;
     }
     
-    // Función para abrir el modal de rechazo mejorado
     function abrirModalRechazo(id) {
         pagoIdActual = id;
         document.getElementById('rechazoPagoId').innerHTML = id;
         document.getElementById('motivoRechazoTextarea').value = '';
         
-        // Resetear estilos de los botones de motivo
         document.querySelectorAll('.btn-motivo').forEach(btn => {
             btn.classList.remove('selected');
         });
         
-        // Configurar la acción del formulario
         const form = document.getElementById('formRechazo');
         form.action = `/administrador/pagos/${id}/rechazar`;
         
         new bootstrap.Modal(document.getElementById('modalMotivoRechazo')).show();
     }
     
-    // Seleccionar un motivo predefinido
     document.querySelectorAll('.btn-motivo').forEach(btn => {
         btn.addEventListener('click', function() {
             const motivo = this.getAttribute('data-motivo');
             const textarea = document.getElementById('motivoRechazoTextarea');
             textarea.value = motivo;
             
-            // Resaltar el botón seleccionado
             document.querySelectorAll('.btn-motivo').forEach(b => b.classList.remove('selected'));
             this.classList.add('selected');
             
-            // Animar el textarea
             textarea.style.transform = 'scale(1.02)';
             setTimeout(() => {
                 textarea.style.transform = '';
@@ -1084,7 +1100,6 @@
             return;
         }
         
-        // Asignar el motivo al input hidden
         document.getElementById('motivoRechazoInput').value = motivo;
         
         Swal.fire({

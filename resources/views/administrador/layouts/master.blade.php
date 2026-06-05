@@ -892,48 +892,75 @@
                 <img src="{{ asset('images/logo.png') }}" alt="SAINS Logo" class="logo-img">
             </a>
 
-            <div class="nav-menu" id="navMenu">
-                <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Dashboard</span>
-                </a>
-                
+            <div class="nav-menu" id="navMenu">                
                 <a class="nav-link {{ request()->routeIs('admin.estudiantes*') ? 'active' : '' }}" href="{{ route('admin.estudiantes.index') }}">
                     <i class="fas fa-users"></i>
-                    <span>Usuarios</span>
+                    <span>Estudiantes</span>
                 </a>
                 
-                <a class="nav-link {{ request()->routeIs('admin.examenes*') ? 'active' : '' }}" href="{{ route('admin.examenes.index') }}">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Exámenes</span>
-                </a>
-                
-                <a class="nav-link {{ request()->routeIs('admin.pagos*') ? 'active' : '' }}" href="{{ route('admin.pagos.index') }}">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Pagos</span>
-                </a>
-                
-                <a class="nav-link {{ request()->routeIs('admin.cupones*') ? 'active' : '' }}" href="{{ route('admin.cupones.index') }}">
-                    <i class="fas fa-ticket-alt"></i>
-                    <span>Cupones</span>
-                </a>
-                
-                <a class="nav-link {{ request()->routeIs('admin.administradores*') ? 'active' : '' }}" href="{{ route('admin.administradores.index') }}">
-                    <i class="fas fa-user-shield"></i>
-                    <span>Admins</span>
-                </a>
+                <!-- Grupo 2: EVALUACIÓN (Exámenes + Preguntas + Exámenes Realizados) -->
+                <div class="dropdown" id="evaluacionDropdown">
+                    <button class="nav-link dropdown-toggle {{ request()->routeIs('admin.examenes*') || request()->routeIs('admin.preguntas*') || request()->routeIs('admin.examenes-realizados*') ? 'active' : '' }}" type="button" id="evaluacionBtn">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Evaluación</span>
+                    </button>
+                    <div class="dropdown-menu-custom" id="evaluacionMenu">
+                        <a class="dropdown-item {{ request()->routeIs('admin.examenes.index') ? 'active' : '' }}" href="{{ route('admin.examenes.index') }}">
+                            <i class="fas fa-file-alt"></i> <span>Exámenes</span>
+                        </a>
+                        <a class="dropdown-item {{ request()->routeIs('admin.preguntas*') ? 'active' : '' }}" href="{{ route('admin.preguntas.index') }}">
+                            <i class="fas fa-question-circle"></i> <span>Preguntas</span>
+                        </a>
+                        <a class="dropdown-item {{ request()->routeIs('admin.examenes-realizados*') ? 'active' : '' }}" href="{{ route('admin.examenes-realizados.index') }}">
+                            <i class="fas fa-check-circle"></i> <span>Exámenes Realizados</span>
+                        </a>
+                    </div>
+                </div>
 
+                <!-- Grupo 3: FINANCIERO (Pagos + Cupones juntos) -->
+                <div class="dropdown" id="financieroDropdown">
+                    <button class="nav-link dropdown-toggle {{ request()->routeIs('admin.pagos*') || request()->routeIs('admin.cupones*') ? 'active' : '' }}" type="button" id="financieroBtn">
+                        <i class="fas fa-coins"></i>
+                        <span>Financiero</span>
+                    </button>
+                    <div class="dropdown-menu-custom" id="financieroMenu">
+                        <a class="dropdown-item {{ request()->routeIs('admin.pagos.index') ? 'active' : '' }}" href="{{ route('admin.pagos.index') }}">
+                            <i class="fas fa-credit-card"></i> <span>Pagos</span>
+                        </a>
+                        <a class="dropdown-item {{ request()->routeIs('admin.cupones*') ? 'active' : '' }}" href="{{ route('admin.cupones.index') }}">
+                            <i class="fas fa-ticket-alt"></i> <span>Cupones</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Grupo 4: Soporte -->
                 <a class="nav-link {{ request()->routeIs('admin.callcenter*') ? 'active' : '' }}" href="{{ route('admin.callcenter.index') }}">
                     <i class="fas fa-headset"></i>
                     <span>Call Center</span>
                 </a>
-   
-                <a class="nav-link {{ request()->routeIs('admin.preguntas*') ? 'active' : '' }}" href="{{ route('admin.preguntas.index') }}">
-                    <i class="fas fa-question-circle"></i>
-                    <span>Preguntas</span>
+
+                <a class="nav-link {{ request()->routeIs('admin.administradores*') ? 'active' : '' }}" href="{{ route('admin.administradores.index') }}">
+                    <i class="fas fa-user-shield"></i>
+                    <span>Admins</span>
                 </a>
                 
-                <!-- DROPDOWN CATÁLOGOS - SIN VIÑETAS -->
+                <!-- Grupo 5: INSTITUCIONES EDUCATIVAS (Preparatorias + Universidades) -->
+                <div class="dropdown" id="institucionesDropdown">
+                    <button class="nav-link dropdown-toggle {{ request()->routeIs('admin.preparatorias*') || request()->routeIs('admin.universidades*') ? 'active' : '' }}" type="button" id="institucionesBtn">
+                        <i class="fas fa-building-columns"></i>
+                        <span>Instituciones</span>
+                    </button>
+                    <div class="dropdown-menu-custom" id="institucionesMenu">
+                        <a class="dropdown-item {{ request()->routeIs('admin.preparatorias*') ? 'active' : '' }}" href="{{ route('admin.preparatorias.index') }}">
+                            <i class="fas fa-school"></i> <span>Preparatorias</span>
+                        </a>
+                        <a class="dropdown-item {{ request()->routeIs('admin.universidades*') ? 'active' : '' }}" href="{{ route('admin.universidades.index') }}">
+                            <i class="fas fa-university"></i> <span>Universidades</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Grupo 6: CATÁLOGOS ACADÉMICOS -->
                 <div class="dropdown" id="catalogosDropdown">
                     <button class="nav-link dropdown-toggle" type="button" id="catalogosBtn">
                         <i class="fas fa-database"></i>
@@ -945,12 +972,6 @@
                         </a>
                         <a class="dropdown-item {{ request()->routeIs('admin.carreras*') ? 'active' : '' }}" href="{{ route('admin.carreras.index') }}">
                             <i class="fas fa-graduation-cap"></i> <span>Carreras</span>
-                        </a>
-                        <a class="dropdown-item {{ request()->routeIs('admin.preparatorias*') ? 'active' : '' }}" href="{{ route('admin.preparatorias.index') }}">
-                            <i class="fas fa-school"></i> <span>Preparatorias</span>
-                        </a>
-                        <a class="dropdown-item {{ request()->routeIs('admin.universidades*') ? 'active' : '' }}" href="{{ route('admin.universidades.index') }}">
-                            <i class="fas fa-university"></i> <span>Universidades</span>
                         </a>
                         <a class="dropdown-item {{ request()->routeIs('admin.clases*') ? 'active' : '' }}" href="{{ route('admin.clases.index') }}">
                             <i class="fas fa-chalkboard"></i> <span>Clases</span>
@@ -1034,14 +1055,12 @@
         </div>
     </nav>
 
-    <!-- Timer de inactividad - SOLO PARA ESTUDIANTES -->
+    <!-- Timer de inactividad - PARA TODOS LOS USUARIOS AUTENTICADOS -->
     @auth
-        @if(auth()->user()->rol === 'estudiante')
-            <div class="inactivity-timer" id="inactivityTimer">
-                <i class="fas fa-hourglass-half"></i>
-                <span id="timerText">Sesión expirará en 5:00</span>
-            </div>
-        @endif
+        <div class="inactivity-timer" id="inactivityTimer">
+            <i class="fas fa-hourglass-half"></i>
+            <span id="timerText">Sesión expirará en 5:00</span>
+        </div>
     @endauth
 
     <div class="menu-overlay" id="menuOverlay"></div>
@@ -1068,11 +1087,11 @@
         let notificationAudio = null;
         let sonidoHabilitado = true;
         
-        // ========== SOLO PARA ESTUDIANTES - NO PARA ADMIN ==========
+        // ========== TEMPORIZADOR DE INACTIVIDAD (PARA TODOS LOS USUARIOS) ==========
         let inactivityTimer = null;
         let warningTimer = null;
-        let timeLeft = 30 * 60;
-        const TIMEOUT_MINUTES = 30;
+        let timeLeft = 30 * 60;          // 30 minutos en segundos
+        const TIMEOUT_MINUTES = 30;       // 30 minutos de inactividad total
         let warningShown = false;
         
         // ========== DETERMINAR SI ES ESTUDIANTE O ADMIN ==========
@@ -1084,10 +1103,9 @@
             const esAdmin = false;
         @endauth
         
-        // ========== FUNCIONES DE INACTIVIDAD (SOLO PARA ESTUDIANTES) ==========
+        // ========== FUNCIONES DE INACTIVIDAD ==========
         function resetInactivityTimer() {
-            if (!esEstudiante) return;
-            
+            // Reinicia el contador principal y el de advertencia
             timeLeft = TIMEOUT_MINUTES * 60;
             warningShown = false;
             
@@ -1100,13 +1118,13 @@
             if (inactivityTimer) clearTimeout(inactivityTimer);
             if (warningTimer) clearInterval(warningTimer);
             
+            // Programa la advertencia para cuando falten 5 minutos (es decir, a los 25 minutos)
             inactivityTimer = setTimeout(() => {
                 showInactivityWarning();
-            }, TIMEOUT_MINUTES * 60 * 1000);
+            }, (TIMEOUT_MINUTES - 5) * 60 * 1000);
         }
         
         function showInactivityWarning() {
-            if (!esEstudiante) return;
             if (warningShown) return;
             warningShown = true;
             
@@ -1161,13 +1179,16 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     resetInactivityTimer();
-                    fetch('{{ route("estudiante.heartbeat") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        }
-                    }).catch(e => console.log('Heartbeat error:', e));
+                    // Si es estudiante, enviamos heartbeat para mantener la sesión activa en backend
+                    if (esEstudiante) {
+                        fetch('{{ route("estudiante.heartbeat") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        }).catch(e => console.log('Heartbeat error:', e));
+                    }
                 } else {
                     cerrarSesionPorInactividad();
                 }
@@ -1175,8 +1196,6 @@
         }
         
         function cerrarSesionPorInactividad() {
-            if (!esEstudiante) return;
-            
             if (warningTimer) clearInterval(warningTimer);
             if (heartbeatInterval) clearInterval(heartbeatInterval);
             
@@ -1207,7 +1226,6 @@
         const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click', 'keydown'];
         
         function startInactivityTracking() {
-            if (!esEstudiante) return;
             resetInactivityTimer();
             activityEvents.forEach(event => {
                 document.addEventListener(event, resetInactivityTimer);
@@ -1240,8 +1258,7 @@
             }, 60000);
         }
         
-        // ========== NOTIFICACIONES DE PAGOS CON SONIDO MEJORADO ==========
-        
+        // ========== NOTIFICACIONES DE PAGOS (SOLO ADMIN) ==========
         function crearAudioNotificacion() {
             try {
                 notificationAudio = new Audio('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1c8e2e5c2b.mp3?filename=cash-register-199277.mp3');
@@ -1584,38 +1601,99 @@
             });
         });
         
-        function initCatalogosDropdown() {
+        function initAllDropdowns() {
+            // Dropdown de Evaluación
+            const evaluacionDropdown = document.getElementById('evaluacionDropdown');
+            const evaluacionBtn = document.getElementById('evaluacionBtn');
+            if (evaluacionDropdown && evaluacionBtn && window.innerWidth <= 900) {
+                const newBtn = evaluacionBtn.cloneNode(true);
+                evaluacionBtn.parentNode.replaceChild(newBtn, evaluacionBtn);
+                const newEvaluacionBtn = document.getElementById('evaluacionBtn');
+                if (newEvaluacionBtn) {
+                    newEvaluacionBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        evaluacionDropdown.classList.toggle('active');
+                    });
+                }
+            } else if (evaluacionDropdown && window.innerWidth > 900) {
+                evaluacionDropdown.classList.remove('active');
+            }
+            
+            // Dropdown de Financiero
+            const financieroDropdown = document.getElementById('financieroDropdown');
+            const financieroBtn = document.getElementById('financieroBtn');
+            if (financieroDropdown && financieroBtn && window.innerWidth <= 900) {
+                const newBtn = financieroBtn.cloneNode(true);
+                financieroBtn.parentNode.replaceChild(newBtn, financieroBtn);
+                const newFinancieroBtn = document.getElementById('financieroBtn');
+                if (newFinancieroBtn) {
+                    newFinancieroBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        financieroDropdown.classList.toggle('active');
+                    });
+                }
+            } else if (financieroDropdown && window.innerWidth > 900) {
+                financieroDropdown.classList.remove('active');
+            }
+            
+            // Dropdown de Instituciones
+            const institucionesDropdown = document.getElementById('institucionesDropdown');
+            const institucionesBtn = document.getElementById('institucionesBtn');
+            if (institucionesDropdown && institucionesBtn && window.innerWidth <= 900) {
+                const newBtn = institucionesBtn.cloneNode(true);
+                institucionesBtn.parentNode.replaceChild(newBtn, institucionesBtn);
+                const newInstitucionesBtn = document.getElementById('institucionesBtn');
+                if (newInstitucionesBtn) {
+                    newInstitucionesBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        institucionesDropdown.classList.toggle('active');
+                    });
+                }
+            } else if (institucionesDropdown && window.innerWidth > 900) {
+                institucionesDropdown.classList.remove('active');
+            }
+            
+            // Dropdown de Catálogos
             const catalogosDropdown = document.getElementById('catalogosDropdown');
             const catalogosBtn = document.getElementById('catalogosBtn');
-            
-            if (!catalogosDropdown || !catalogosBtn) return;
-            
-            if (window.innerWidth <= 900) {
-                catalogosBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    catalogosDropdown.classList.toggle('active');
-                });
-            } else {
+            if (catalogosDropdown && catalogosBtn && window.innerWidth <= 900) {
+                const newBtn = catalogosBtn.cloneNode(true);
+                catalogosBtn.parentNode.replaceChild(newBtn, catalogosBtn);
+                const newCatalogosBtn = document.getElementById('catalogosBtn');
+                if (newCatalogosBtn) {
+                    newCatalogosBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        catalogosDropdown.classList.toggle('active');
+                    });
+                }
+            } else if (catalogosDropdown && window.innerWidth > 900) {
                 catalogosDropdown.classList.remove('active');
             }
         }
         
-        initCatalogosDropdown();
+        initAllDropdowns();
         
-        let resizeTimer;
+        let resizeTimer2;
         window.addEventListener('resize', function() {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(function() {
+            clearTimeout(resizeTimer2);
+            resizeTimer2 = setTimeout(function() {
                 if (window.innerWidth > 900) {
                     closeMenu();
+                    const evaluacionDropdown = document.getElementById('evaluacionDropdown');
+                    if (evaluacionDropdown) evaluacionDropdown.classList.remove('active');
+                    const financieroDropdown = document.getElementById('financieroDropdown');
+                    if (financieroDropdown) financieroDropdown.classList.remove('active');
+                    const institucionesDropdown = document.getElementById('institucionesDropdown');
+                    if (institucionesDropdown) institucionesDropdown.classList.remove('active');
                     const catalogosDropdown = document.getElementById('catalogosDropdown');
-                    if (catalogosDropdown) {
-                        catalogosDropdown.classList.remove('active');
-                    }
+                    if (catalogosDropdown) catalogosDropdown.classList.remove('active');
                     document.body.style.overflow = '';
                 }
-                initCatalogosDropdown();
+                initAllDropdowns();
             }, 250);
         });
 
@@ -1696,9 +1774,11 @@
 
         // ========== INICIALIZAR ==========
         document.addEventListener('DOMContentLoaded', function() {
+            // Siempre iniciar tracking de inactividad para cualquier usuario autenticado
+            startInactivityTracking();
+            
             if (esEstudiante) {
                 iniciarHeartbeat();
-                startInactivityTracking();
             }
             if (esAdmin) {
                 iniciarNotificaciones();
