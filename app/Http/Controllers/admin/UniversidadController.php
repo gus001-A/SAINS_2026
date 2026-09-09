@@ -14,7 +14,10 @@ class UniversidadController extends Controller{
     public function index(Request $request){
         $search = $request->get('search');
         $estado = $request->get('estado');
-        
+        $municipio = $request->get('municipio');
+        $carreraId = $request->get('carrera_id');
+        $tipo = $request->get('tipo');
+
         // Consulta base para los filtros
         $query = Universidad::with('carrera')
             ->when($search, function($query, $search) {
@@ -26,6 +29,11 @@ class UniversidadController extends Controller{
             })
             ->when($estado, function($query, $estado) {
                 return $query->where('estado', $estado);
+            })
+            ->when($municipio, fn ($q, $municipio) => $q->where('municipio', 'LIKE', "%{$municipio}%"))
+            ->when($carreraId, fn ($q, $carreraId) => $q->where('carrera_id', $carreraId))
+            ->when($tipo, function($query, $tipo) {
+                return $query->where('tipo', $tipo);
             });
         
         // Paginación
@@ -55,30 +63,29 @@ class UniversidadController extends Controller{
         // Obtener estados únicos para filtros
         $estados = Universidad::select('estado')->distinct()->orderBy('estado')->pluck('estado');
         
-        return view('administrador.universidades.index', compact(
-            'universidades', 
-            'estados',
-            'totalUniversidades',
-            'publicas',
-            'privadas',
-            'autonomas',
-            'totalCarreras'
-        ));
+        return \Inertia\Inertia::render('Admin/Universidades/Index', [
+            'universidades' => $universidades,
+            'estados' => $estados,
+            'carreras' => Carrera::orderBy('nombre')->get(['id', 'nombre']),
+            'stats' => [
+                'total' => $totalUniversidades,
+                'publicas' => $publicas,
+                'privadas' => $privadas,
+                'autonomas' => $autonomas,
+            ],
+            'filters' => [
+                'search' => $search,
+                'estado' => $estado,
+                'municipio' => $municipio,
+                'carrera_id' => $carreraId ? (int) $carreraId : null,
+                'tipo' => $tipo,
+            ],
+        ]);
     }
-    /**
-     * Formulario para crear universidad
-     */
+
     public function create()
     {
-        // Obtener estados únicos desde la tabla preparatorias
-        $estados = Preparatoria::select('estado')
-            ->distinct()
-            ->orderBy('estado')
-            ->pluck('estado');
-        
-        $carreras = Carrera::orderBy('nombre')->get();
-        
-        return view('administrador.universidades.create', compact('estados', 'carreras'));
+        return redirect()->route('admin.universidades.index');
     }
     
     /**
@@ -90,7 +97,7 @@ class UniversidadController extends Controller{
             'estado' => 'required|string|max:100',
             'municipio' => 'required|string|max:100',
             'localidad' => 'nullable|string|max:100',
-            'carrera_id' => 'nullable|exists:carreras,id',
+            'carrera_id' => 'required|exists:carreras,id',
             'duracion' => 'nullable|string|max:50',
             'tipo' => 'nullable|string|max:50',
             'clave' => 'required|string|max:20|unique:universidades,clave',
@@ -107,10 +114,10 @@ class UniversidadController extends Controller{
             Universidad::create([
                 'estado' => $request->estado,
                 'municipio' => $request->municipio,
-                'localidad' => $localidad,
+                'localidad' => $localidad ?? '',
                 'carrera_id' => $request->carrera_id,
-                'duracion' => $request->duracion,
-                'tipo' => $request->tipo,
+                'duracion' => $request->duracion ?? '',
+                'tipo' => $request->tipo ?: 'PUBLICA',
                 'clave' => $request->clave,
                 'direccion' => $request->direccion,
             ]);
@@ -132,24 +139,12 @@ class UniversidadController extends Controller{
      */
     public function show($id)
     {
-        $universidad = Universidad::with('carrera')->findOrFail($id);
-        return view('administrador.universidades.show', compact('universidad'));
+        return redirect()->route('admin.universidades.index');
     }
-    
-    /**
-     * Formulario para editar universidad
-     */
+
     public function edit($id)
     {
-        $universidad = Universidad::findOrFail($id);
-        $carreras = Carrera::orderBy('nombre')->get();
-        
-        $estados = Preparatoria::select('estado')
-            ->distinct()
-            ->orderBy('estado')
-            ->pluck('estado');
-        
-        return view('administrador.universidades.edit', compact('universidad', 'carreras', 'estados'));
+        return redirect()->route('admin.universidades.index');
     }
     
     /**
@@ -163,7 +158,7 @@ class UniversidadController extends Controller{
             'estado' => 'required|string|max:100',
             'municipio' => 'required|string|max:100',
             'localidad' => 'nullable|string|max:100',
-            'carrera_id' => 'nullable|exists:carreras,id',
+            'carrera_id' => 'required|exists:carreras,id',
             'duracion' => 'nullable|string|max:50',
             'tipo' => 'nullable|string|max:50',
             'clave' => 'required|string|max:20|unique:universidades,clave,' . $id,
@@ -179,10 +174,10 @@ class UniversidadController extends Controller{
             $universidad->update([
                 'estado' => $request->estado,
                 'municipio' => $request->municipio,
-                'localidad' => $localidad,
+                'localidad' => $localidad ?? '',
                 'carrera_id' => $request->carrera_id,
-                'duracion' => $request->duracion,
-                'tipo' => $request->tipo,
+                'duracion' => $request->duracion ?? '',
+                'tipo' => $request->tipo ?: 'PUBLICA',
                 'clave' => $request->clave,
                 'direccion' => $request->direccion,
             ]);

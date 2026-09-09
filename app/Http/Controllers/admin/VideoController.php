@@ -8,6 +8,8 @@ use App\Models\Asignatura;
 use App\Models\ProgresoVideo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class VideoController extends Controller
 {
@@ -15,6 +17,8 @@ class VideoController extends Controller
     {
         $search = $request->get('search');
         $plan = $request->get('plan');
+        $materia = $request->get('materia');
+        $tema = $request->get('tema');
         
         // Obtener parámetros de ordenamiento
         $ordenCampo = $request->get('orden_campo', 'id');
@@ -30,36 +34,110 @@ class VideoController extends Controller
         $ordenDireccion = in_array($ordenDireccion, ['asc', 'desc']) ? $ordenDireccion : 'desc';
         
         $videos = Video::when($search, function($query, $search) {
-                return $query->where('titulo', 'like', "%{$search}%")
-                            ->orWhere('materia', 'like', "%{$search}%")
-                            ->orWhere('tema', 'like', "%{$search}%");
+                return $query->where(function($q) use ($search) {
+                    $q->where('titulo', 'like', "%{$search}%")
+                        ->orWhere('materia', 'like', "%{$search}%")
+                        ->orWhere('tema', 'like', "%{$search}%");
+                });
             })
+            ->when($materia, fn ($q, $materia) => $q->where('materia', $materia))
+            ->when($tema, fn ($q, $tema) => $q->where('tema', 'like', "%{$tema}%"))
             ->when($plan !== null && $plan !== '', function($query) use ($plan) {
                 return $query->where('plan', $plan);
             })
             ->orderBy($ordenCampo, $ordenDireccion)
             ->paginate(10);
-        
+
         // Mantener los parámetros de ordenamiento en la paginación
         $videos->appends([
             'orden_campo' => $ordenCampo,
             'orden_direccion' => $ordenDireccion,
             'search' => $search,
+            'materia' => $materia,
+            'tema' => $tema,
             'plan' => $plan
         ]);
         
         // Estadísticas
         $totalVideos = Video::count();
         $conProgresos = Video::has('progresos')->count();
-        $planGratuito = Video::where('plan', true)->count();
-        
-        return view('administrador.videos.index', compact('videos', 'totalVideos', 'conProgresos', 'planGratuito'));
+        $premium = Video::where('plan', true)->count();
+        $publicos = Video::where('plan', false)->count();
+
+        return \Inertia\Inertia::render('Admin/Videos/Index', [
+            'videos' => $videos,
+            'materias' => Asignatura::orderBy('nombre')->pluck('nombre'),
+            'stats' => [
+                'total' => $totalVideos,
+                'conProgresos' => $conProgresos,
+                'premium' => $premium,
+                'publicos' => $publicos,
+            ],
+            'filters' => [
+                'search' => $search,
+                'materia' => $materia,
+                'tema' => $tema,
+                'plan' => $plan === null || $plan === '' ? null : (int) $plan,
+            ],
+        ]);
     }
-    
+
+    /**
+     * Intenta obtener la duración de un video a partir de su enlace.
+     * Soporta Vimeo (oEmbed) y YouTube (lengthSeconds del HTML).
+     */
+    public function obtenerDuracion(Request $request)
+    {
+        $link = trim((string) $request->get('link'));
+
+        if ($link === '') {
+            return response()->json(['success' => false, 'message' => 'Falta el enlace del video'], 422);
+        }
+
+        try {
+            $segundos = null;
+
+            if (str_contains($link, 'vimeo.com')) {
+                // withoutVerifying: entornos WAMP locales no traen bundle CA para cURL
+                $res = Http::withoutVerifying()->timeout(8)->get('https://vimeo.com/api/oembed.json', ['url' => $link]);
+                if ($res->ok()) {
+                    $segundos = (int) $res->json('duration');
+                }
+            } elseif (str_contains($link, 'youtube.com') || str_contains($link, 'youtu.be')) {
+                $id = null;
+                if (preg_match('/[?&]v=([A-Za-z0-9_\-]{6,})/', $link, $m)) {
+                    $id = $m[1];
+                } elseif (preg_match('#youtu\.be/([A-Za-z0-9_\-]{6,})#', $link, $m)) {
+                    $id = $m[1];
+                }
+                if ($id) {
+                    $html = Http::withoutVerifying()->timeout(8)->get("https://www.youtube.com/watch?v={$id}")->body();
+                    if (preg_match('/"lengthSeconds":"(\d+)"/', $html, $m)) {
+                        $segundos = (int) $m[1];
+                    }
+                }
+            }
+
+            if (!$segundos || $segundos <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo obtener la duración automáticamente para este enlace.',
+                ], 200);
+            }
+
+            $duracion = sprintf('%02d:%02d:%02d', intdiv($segundos, 3600), intdiv($segundos % 3600, 60), $segundos % 60);
+
+            return response()->json(['success' => true, 'segundos' => $segundos, 'duracion' => $duracion]);
+
+        } catch (\Exception $e) {
+            Log::warning('obtenerDuracion falló: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al consultar el proveedor de video.'], 200);
+        }
+    }
+
     public function create()
     {
-        $asignaturas = Asignatura::orderBy('nombre')->get();
-        return view('administrador.videos.create', compact('asignaturas'));
+        return redirect()->route('admin.videos.index');
     }
     
     public function store(Request $request)
@@ -74,15 +152,15 @@ class VideoController extends Controller
         ]);
         
         try {
-            $video = Video::create([
+            Video::create([
                 'materia' => $request->materia,
                 'tema' => $request->tema,
                 'titulo' => $request->titulo,
                 'link' => $request->link,
-                'duracion' => $request->duracion,
-                'plan' => $request->has('plan') ? 1 : 0
+                'duracion' => $request->duracion ?: '00:00:00',
+                'plan' => $request->boolean('plan') ? 1 : 0,
             ]);
-            
+
             return redirect()->route('admin.videos.index')
                 ->with('success', 'Video creado exitosamente');
         } catch (\Exception $e) {
@@ -141,7 +219,7 @@ class VideoController extends Controller
             ]);
         }
         
-        return view('administrador.videos.show', compact('video', 'porcentajeCompletado', 'ultimosProgresos'));
+        return redirect()->route('admin.videos.index');
     }
     
     /**
@@ -178,9 +256,7 @@ class VideoController extends Controller
     
     public function edit($id)
     {
-        $video = Video::findOrFail($id);
-        $asignaturas = Asignatura::orderBy('nombre')->get();
-        return view('administrador.videos.edit', compact('video', 'asignaturas'));
+        return redirect()->route('admin.videos.index');
     }
     
     public function update(Request $request, $id)
@@ -201,8 +277,8 @@ class VideoController extends Controller
                 'tema' => $request->tema,
                 'titulo' => $request->titulo,
                 'link' => $request->link,
-                'duracion' => $request->duracion,
-                'plan' => $request->has('plan') ? 1 : 0
+                'duracion' => $request->duracion ?: '00:00:00',
+                'plan' => $request->boolean('plan') ? 1 : 0,
             ]);
             
             return redirect()->route('admin.videos.index')

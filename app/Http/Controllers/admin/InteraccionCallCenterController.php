@@ -19,109 +19,123 @@ class InteraccionCallCenterController extends Controller
     public function index(Request $request)
     {
         try {
-            // Obtener los parámetros de filtro
             $estado = $request->get('estado');
-            $fechaInicio = $request->get('fecha_inicio');
-            $fechaFin = $request->get('fecha_fin');
             $busqueda = $request->get('busqueda');
-            
-            // Construir la consulta con las relaciones necesarias
-            $interacciones = InteraccionCallCenter::with([
-                'administrador.administrador', 
-                'estudiante.estudiante'
-            ])
-            ->when($estado, function ($query, $estado) {
-                return $query->where('estado_seguimiento', $estado);
-            })
-            ->when($fechaInicio && $fechaFin, function ($query) use ($fechaInicio, $fechaFin) {
-                return $query->whereBetween('fecha_contacto', [$fechaInicio, $fechaFin]);
-            })
-            ->when($busqueda, function ($query) use ($busqueda) {
-                return $query->where(function ($q) use ($busqueda) {
-                    $q->whereHas('administrador', function ($subq) use ($busqueda) {
-                        $subq->where('name', 'like', "%{$busqueda}%")
-                            ->orWhereHas('administrador', function ($adminQuery) use ($busqueda) {
-                                $adminQuery->where('nombre', 'like', "%{$busqueda}%")
-                                    ->orWhere('apellido_paterno', 'like', "%{$busqueda}%")
-                                    ->orWhere('apellido_materno', 'like', "%{$busqueda}%");
-                            });
-                    })->orWhereHas('estudiante', function ($subq) use ($busqueda) {
-                        $subq->where('name', 'like', "%{$busqueda}%")
-                            ->orWhereHas('estudiante', function ($estQuery) use ($busqueda) {
-                                $estQuery->where('nombre', 'like', "%{$busqueda}%")
-                                    ->orWhere('paterno', 'like', "%{$busqueda}%")
-                                    ->orWhere('materno', 'like', "%{$busqueda}%");
-                            });
-                    })->orWhere('motivo_contacto', 'like', "%{$busqueda}%")
+
+            // Consulta base de interacciones (con filtros) para AGRUPAR por estudiante.
+            $base = InteraccionCallCenter::with(['administrador.administrador', 'estudiante.estudiante'])
+                ->when($estado, fn ($q) => $q->where('estado_seguimiento', $estado))
+                ->when($busqueda, function ($query) use ($busqueda) {
+                    $query->where(function ($q) use ($busqueda) {
+                        $q->whereHas('estudiante', function ($subq) use ($busqueda) {
+                            $subq->where('correo', 'like', "%{$busqueda}%")
+                                ->orWhereHas('estudiante', function ($estQuery) use ($busqueda) {
+                                    $estQuery->where('nombre', 'like', "%{$busqueda}%")
+                                        ->orWhere('paterno', 'like', "%{$busqueda}%")
+                                        ->orWhere('materno', 'like', "%{$busqueda}%");
+                                });
+                        })
+                        ->orWhere('motivo_contacto', 'like', "%{$busqueda}%")
                         ->orWhere('resultado', 'like', "%{$busqueda}%")
                         ->orWhere('nota', 'like', "%{$busqueda}%");
+                    });
                 });
-            })
-            ->orderBy('fecha_contacto', 'desc')
-            ->orderBy('hora_contacto', 'desc')
-            ->paginate(15);
-            
-            // Procesar nombres manualmente para asegurar que se muestren correctamente
-            foreach ($interacciones as $interaccion) {
-                // Nombre del administrador
-                if ($interaccion->administrador && $interaccion->administrador->administrador) {
-                    $interaccion->admin_nombre_completo = trim(
-                        ($interaccion->administrador->administrador->nombre ?? '') . ' ' . 
-                        ($interaccion->administrador->administrador->apellido_paterno ?? '') . ' ' . 
-                        ($interaccion->administrador->administrador->apellido_materno ?? '')
-                    );
-                } else {
-                    $interaccion->admin_nombre_completo = $interaccion->administrador->name ?? 'N/A';
-                }
-                
-                // Nombre del estudiante
-                if ($interaccion->estudiante && $interaccion->estudiante->estudiante) {
-                    $interaccion->est_nombre_completo = trim(
-                        ($interaccion->estudiante->estudiante->nombre ?? '') . ' ' . 
-                        ($interaccion->estudiante->estudiante->paterno ?? '') . ' ' . 
-                        ($interaccion->estudiante->estudiante->materno ?? '')
-                    );
-                } else {
-                    $interaccion->est_nombre_completo = $interaccion->estudiante->name ?? 'N/A';
-                }
-            }
-            
-            // Para los selects de filtros
-            $estadosSeguimiento = [
-                'pendiente' => 'Pendiente',
-                'en_proceso' => 'En Proceso',
-                'finalizado' => 'Finalizado'
+
+            // IDs de estudiante que tienen interacciones (ya filtradas), paginados.
+            $studentIdsPage = (clone $base)->without(['administrador', 'estudiante'])
+                ->select('id_estudiante')
+                ->selectRaw('MAX(fecha_contacto) as ultima_fecha')
+                ->groupBy('id_estudiante')
+                ->orderByDesc('ultima_fecha')
+                ->paginate(12);
+
+            $ids = collect($studentIdsPage->items())->pluck('id_estudiante');
+
+            // Todas las interacciones (filtradas) de esos estudiantes.
+            $interacciones = (clone $base)
+                ->whereIn('id_estudiante', $ids)
+                ->orderBy('fecha_contacto', 'desc')
+                ->orderBy('hora_contacto', 'desc')
+                ->get();
+
+            $nombreEst = function ($i) {
+                $e = optional($i->estudiante)->estudiante;
+                return $e
+                    ? trim("{$e->nombre} {$e->paterno} {$e->materno}")
+                    : (optional($i->estudiante)->correo ?? 'Estudiante #' . $i->id_estudiante);
+            };
+            $nombreAdmin = function ($i) {
+                $a = optional($i->administrador)->administrador;
+                return $a
+                    ? trim("{$a->nombre} {$a->apellido_paterno} {$a->apellido_materno}")
+                    : (optional($i->administrador)->correo ?? 'N/A');
+            };
+
+            $shape = fn ($i) => [
+                'id' => $i->id,
+                'id_estudiante' => $i->id_estudiante,
+                'admin' => $nombreAdmin($i),
+                'fecha_contacto' => $i->fecha_contacto ? \Carbon\Carbon::parse($i->fecha_contacto)->format('Y-m-d') : null,
+                'hora_contacto' => optional($i->hora_contacto)->format('H:i'),
+                'tipo_contacto' => $i->tipo_contacto,
+                'estado_seguimiento' => $i->estado_seguimiento,
+                'motivo_contacto' => $i->motivo_contacto,
+                'nota' => $i->nota,
+                'resultado' => $i->resultado,
+                'proximo_contacto' => $i->proximo_contacto ? \Carbon\Carbon::parse($i->proximo_contacto)->format('Y-m-d H:i') : null,
             ];
-            
-            $tiposContacto = [
-                'llamada' => 'Llamada',
-                'email' => 'Email',
-                'whatsapp' => 'WhatsApp'
-            ];
-            
-            // Calcular estadísticas para las tarjetas
-            $totalInteracciones = InteraccionCallCenter::count();
-            $pendientes = InteraccionCallCenter::where('estado_seguimiento', 'pendiente')->count();
-            $enProceso = InteraccionCallCenter::where('estado_seguimiento', 'en_proceso')->count();
-            $finalizados = InteraccionCallCenter::where('estado_seguimiento', 'finalizado')->count();
-            
-            return view('administrador.interacciones_call_center.index', compact(
-                'interacciones',
-                'estado',
-                'fechaInicio',
-                'fechaFin',
-                'busqueda',
-                'estadosSeguimiento',
-                'tiposContacto',
-                'totalInteracciones',
-                'pendientes',
-                'enProceso',
-                'finalizados'
-            ));
-            
+
+            // Agrupar por estudiante, respetando el orden de la página.
+            $porEstudiante = $interacciones->groupBy('id_estudiante');
+            $grupos = $ids->map(function ($sid) use ($porEstudiante, $shape, $nombreEst) {
+                $items = $porEstudiante->get($sid, collect());
+                $primera = $items->first();
+                return [
+                    'id_estudiante' => $sid,
+                    'estudiante' => $primera ? $nombreEst($primera) : 'Estudiante #' . $sid,
+                    'correo' => $primera ? optional($primera->estudiante)->correo : null,
+                    'total' => $items->count(),
+                    'pendientes' => $items->where('estado_seguimiento', 'pendiente')->count(),
+                    'abiertas' => $items->where('estado_seguimiento', '!=', 'finalizado')->count(),
+                    'estado_ultima' => optional($items->first())->estado_seguimiento,
+                    'ultima_fecha' => optional($items->first()->fecha_contacto ?? null)
+                        ? \Carbon\Carbon::parse($items->first()->fecha_contacto)->format('Y-m-d')
+                        : null,
+                    'interacciones' => $items->map($shape)->values(),
+                ];
+            })->values();
+
+            $estudiantes = User::whereHas('estudiante')->with('estudiante')->get()->map(fn ($u) => [
+                'id' => $u->id,
+                'label' => optional($u->getRelation('estudiante'))
+                    ? trim("{$u->getRelation('estudiante')->nombre} {$u->getRelation('estudiante')->paterno} {$u->getRelation('estudiante')->materno}") . " · {$u->correo}"
+                    : $u->correo,
+            ])->values();
+
+            return \Inertia\Inertia::render('Admin/CallCenter/Index', [
+                'grupos' => $grupos,
+                'pagination' => [
+                    'current_page' => $studentIdsPage->currentPage(),
+                    'per_page' => $studentIdsPage->perPage(),
+                    'total' => $studentIdsPage->total(),
+                ],
+                'estudiantes' => $estudiantes,
+                'stats' => [
+                    'total' => InteraccionCallCenter::count(),
+                    'pendientes' => InteraccionCallCenter::where('estado_seguimiento', 'pendiente')->count(),
+                    'enProceso' => InteraccionCallCenter::where('estado_seguimiento', 'en_proceso')->count(),
+                    'finalizados' => InteraccionCallCenter::where('estado_seguimiento', 'finalizado')->count(),
+                    'estudiantesContactados' => InteraccionCallCenter::distinct('id_estudiante')->count('id_estudiante'),
+                ],
+                'filters' => [
+                    'busqueda' => $busqueda,
+                    'estado' => $estado,
+                ],
+            ]);
+
         } catch (\Exception $e) {
             Log::error('Error en index de interacciones: ' . $e->getMessage());
-            return redirect()->route('admin.callcenter.index')
+            return redirect()->route('admin.dashboard')
                 ->with('error', 'Error al cargar las interacciones: ' . $e->getMessage());
         }
     }
@@ -163,12 +177,11 @@ class InteraccionCallCenterController extends Controller
                 'whatsapp' => 'WhatsApp'
             ];
             
-            return view('administrador.interacciones_call_center.create', compact('estudiantes', 'estadosSeguimiento', 'tiposContacto'));
-            
+            return redirect()->route('admin.callcenter.index');
+
         } catch (\Exception $e) {
             Log::error('Error en create de interacciones: ' . $e->getMessage());
-            return redirect()->route('admin.callcenter.index')
-                ->with('error', 'Error al cargar el formulario: ' . $e->getMessage());
+            return redirect()->route('admin.callcenter.index');
         }
     }
 
@@ -179,35 +192,37 @@ class InteraccionCallCenterController extends Controller
     {
         $request->validate([
             'id_estudiante' => 'required|exists:usuario,id',
-            'fecha_contacto' => 'required|date',
-            'hora_contacto' => 'required',
+            'fecha_contacto' => 'required|date|before_or_equal:today',
+            'hora_contacto' => 'nullable',
             'tipo_contacto' => 'required|in:llamada,email,whatsapp',
             'estado_seguimiento' => 'required|in:pendiente,en_proceso,finalizado',
             'motivo_contacto' => 'required|string',
             'nota' => 'nullable|string',
             'resultado' => 'nullable|string',
             'proximo_contacto' => 'nullable|date',
+        ], [
+            'fecha_contacto.before_or_equal' => 'La fecha de contacto no puede ser posterior a hoy.',
         ]);
 
         try {
             DB::beginTransaction();
-            
+
             $interaccion = InteraccionCallCenter::create([
                 'id_usuario_contacta' => Auth::id(),
                 'id_estudiante' => $request->id_estudiante,
                 'fecha_contacto' => $request->fecha_contacto,
-                'hora_contacto' => $request->hora_contacto,
+                'hora_contacto' => $request->hora_contacto ?: now()->format('H:i'),
                 'tipo_contacto' => $request->tipo_contacto,
                 'estado_seguimiento' => $request->estado_seguimiento,
                 'motivo_contacto' => $request->motivo_contacto,
-                'nota' => $request->nota,
-                'resultado' => $request->resultado,
+                'nota' => $request->nota ?: '',
+                'resultado' => $request->resultado ?: 'no_contesto',
                 'proximo_contacto' => $request->proximo_contacto,
             ]);
             
             DB::commit();
             
-            if ($request->ajax()) {
+            if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Interacción registrada exitosamente',
@@ -229,7 +244,7 @@ class InteraccionCallCenterController extends Controller
             
             Log::error('Error en store de interacción: ' . $e->getMessage());
             
-            if ($request->ajax()) {
+            if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $errorMessage
@@ -244,7 +259,7 @@ class InteraccionCallCenterController extends Controller
             DB::rollBack();
             Log::error('Error en store de interacción: ' . $e->getMessage());
             
-            if ($request->ajax()) {
+            if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Error al registrar: ' . $e->getMessage()
@@ -289,19 +304,19 @@ class InteraccionCallCenterController extends Controller
                 $interaccion->est_nombre_completo = $interaccion->estudiante->name ?? 'N/A';
             }
             
-            if (request()->ajax()) {
+            if (request()->wantsJson()) {
                 return response()->json([
                     'success' => true,
                     'data' => $interaccion
                 ]);
             }
             
-            return view('administrador.interacciones_call_center.show', compact('interaccion'));
+            return redirect()->route('admin.callcenter.index');
             
         } catch (\Exception $e) {
             Log::error('Error en show de interacción: ' . $e->getMessage());
             
-            if (request()->ajax()) {
+            if (request()->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Error al cargar la interacción: ' . $e->getMessage()
@@ -347,12 +362,11 @@ class InteraccionCallCenterController extends Controller
                 'whatsapp' => 'WhatsApp'
             ];
             
-            return view('administrador.interacciones_call_center.edit', compact('interaccion', 'estudiantes', 'estadosSeguimiento', 'tiposContacto'));
-            
+            return redirect()->route('admin.callcenter.index');
+
         } catch (\Exception $e) {
             Log::error('Error en edit de interacción: ' . $e->getMessage());
-            return redirect()->route('admin.callcenter.index')
-                ->with('error', 'Error al cargar el formulario de edición: ' . $e->getMessage());
+            return redirect()->route('admin.callcenter.index');
         }
     }
 
@@ -363,35 +377,37 @@ class InteraccionCallCenterController extends Controller
     {
         $request->validate([
             'id_estudiante' => 'required|exists:usuario,id',
-            'fecha_contacto' => 'required|date',
-            'hora_contacto' => 'required',
+            'fecha_contacto' => 'required|date|before_or_equal:today',
+            'hora_contacto' => 'nullable',
             'tipo_contacto' => 'required|in:llamada,email,whatsapp',
             'estado_seguimiento' => 'required|in:pendiente,en_proceso,finalizado',
             'motivo_contacto' => 'required|string',
             'nota' => 'nullable|string',
             'resultado' => 'nullable|string',
             'proximo_contacto' => 'nullable|date',
+        ], [
+            'fecha_contacto.before_or_equal' => 'La fecha de contacto no puede ser posterior a hoy.',
         ]);
 
         try {
             DB::beginTransaction();
-            
+
             $interaccion = InteraccionCallCenter::findOrFail($id);
             $interaccion->update([
                 'id_estudiante' => $request->id_estudiante,
                 'fecha_contacto' => $request->fecha_contacto,
-                'hora_contacto' => $request->hora_contacto,
+                'hora_contacto' => $request->hora_contacto ?: $interaccion->hora_contacto,
                 'tipo_contacto' => $request->tipo_contacto,
                 'estado_seguimiento' => $request->estado_seguimiento,
                 'motivo_contacto' => $request->motivo_contacto,
-                'nota' => $request->nota,
-                'resultado' => $request->resultado,
+                'nota' => $request->nota ?: '',
+                'resultado' => $request->resultado ?: 'no_contesto',
                 'proximo_contacto' => $request->proximo_contacto,
             ]);
             
             DB::commit();
             
-            if ($request->ajax()) {
+            if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Interacción actualizada exitosamente',
@@ -412,7 +428,7 @@ class InteraccionCallCenterController extends Controller
             
             Log::error('Error en update de interacción: ' . $e->getMessage());
             
-            if ($request->ajax()) {
+            if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $errorMessage
@@ -427,7 +443,7 @@ class InteraccionCallCenterController extends Controller
             DB::rollBack();
             Log::error('Error en update de interacción: ' . $e->getMessage());
             
-            if ($request->ajax()) {
+            if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Error al actualizar: ' . $e->getMessage()
@@ -453,7 +469,7 @@ class InteraccionCallCenterController extends Controller
             
             DB::commit();
             
-            if (request()->ajax()) {
+            if (request()->wantsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Interacción eliminada exitosamente'
@@ -467,7 +483,7 @@ class InteraccionCallCenterController extends Controller
             DB::rollBack();
             Log::error('Error en destroy de interacción: ' . $e->getMessage());
             
-            if (request()->ajax()) {
+            if (request()->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Error al eliminar: ' . $e->getMessage()
@@ -493,7 +509,7 @@ class InteraccionCallCenterController extends Controller
             $interaccion->estado_seguimiento = $request->estado;
             $interaccion->save();
             
-            if ($request->ajax()) {
+            if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Estado actualizado exitosamente',
@@ -506,7 +522,7 @@ class InteraccionCallCenterController extends Controller
         } catch (\Exception $e) {
             Log::error('Error en cambiarEstado: ' . $e->getMessage());
             
-            if ($request->ajax()) {
+            if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Error al actualizar estado: ' . $e->getMessage()

@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\VideoController;
 use App\Http\Controllers\Admin\ExamenRealizadoController;
 use App\Http\Controllers\Admin\ClaseController;
 use App\Http\Controllers\Alumno\AlumnoController;
+use App\Http\Controllers\NotificacionController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Auth\GoogleController;
 
@@ -26,24 +27,31 @@ use App\Http\Controllers\Auth\GoogleController;
 // RUTAS PÚBLICAS
 // ============================================
 Route::get('/', function () {
-    return view('index');
+    return \Inertia\Inertia::render('Welcome');
 })->name('home');
 
 Route::get('/terminos-y-condiciones', function () {
-    return view('terms');
+    return \Inertia\Inertia::render('Terms');
 })->name('terms');
 
-// Procesar login/registro (AJAX)
-Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/register', [AuthController::class, 'register'])->name('register');
+// Páginas de autenticación (pantalla completa, azul institucional)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', fn () => \Inertia\Inertia::render('Auth/Login'))->name('login');
+    Route::get('/crear-cuenta', fn () => \Inertia\Inertia::render('Auth/Register'))->name('registro');
+    Route::get('/recuperar-contrasena', fn () => \Inertia\Inertia::render('Auth/ForgotPassword'))->name('password.request');
+});
+
+// Procesar login/registro
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1')->name('register');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 //AUTENTIFICACIÓN CON GOOGLE
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
-Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
-Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
+Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:5,1')->name('password.email');
+Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 
 // Heartbeat público
@@ -259,6 +267,7 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
     // ========== GESTIÓN DE VIDEOS ==========
     Route::prefix('videos')->name('videos.')->group(function () {
         Route::get('/', [VideoController::class, 'index'])->name('index');
+        Route::get('/duracion', [VideoController::class, 'obtenerDuracion'])->name('duracion');
         Route::get('/create', [VideoController::class, 'create'])->name('create');
         Route::post('/', [VideoController::class, 'store'])->name('store');
         Route::get('/{id}', [VideoController::class, 'show'])->name('show');
@@ -294,7 +303,7 @@ Route::middleware(['auth'])->prefix('estudiante')->name('estudiante.')->group(fu
     Route::get('/dashboard', [AlumnoController::class, 'dashboard'])->name('dashboard');
     Route::get('/progreso', [AlumnoController::class, 'progreso'])->name('progreso');
     Route::get('/simulador', [AlumnoController::class, 'simulador'])->name('simulador');
-    Route::get('/examenes', function () { return view('estudiante.examenes'); })->name('examenes');
+    Route::get('/examenes', function () { return \Inertia\Inertia::render('Estudiante/Examenes'); })->name('examenes');
     Route::get('/clases-premium', [AlumnoController::class, 'clasesPremium'])->name('clases-premium');
     
     // Perfil
@@ -361,6 +370,20 @@ Route::middleware(['auth'])->prefix('estudiante')->name('estudiante.')->group(fu
     Route::get('/pago/mercadopago/pending', [App\Http\Controllers\Alumno\AlumnoController::class, 'pagoPendienteMercadoPago'])
         ->name('pago.mercadopago.pending');
     
+    // El webhook lo llama Mercado Pago (servidor a servidor): sin sesión ni CSRF.
     Route::post('/pago/mercadopago/webhook', [App\Http\Controllers\Alumno\AlumnoController::class, 'webhookMercadoPago'])
-        ->name('pago.mercadopago.webhook');
+        ->name('pago.mercadopago.webhook')
+        ->withoutMiddleware(['auth']);
+});
+
+// ============================================
+// NOTIFICACIONES (estudiante + administrador)
+// ============================================
+Route::middleware(['auth'])->prefix('notificaciones')->name('notificaciones.')->group(function () {
+    Route::get('/', [NotificacionController::class, 'index'])->name('index');
+    Route::get('/feed', [NotificacionController::class, 'feed'])->name('feed');
+    Route::post('/{id}/leer', [NotificacionController::class, 'marcarLeida'])->name('leer');
+    Route::post('/leer-todas', [NotificacionController::class, 'marcarTodas'])->name('leer-todas');
+    Route::delete('/leidas', [NotificacionController::class, 'eliminarLeidas'])->name('eliminar-leidas');
+    Route::delete('/{id}', [NotificacionController::class, 'eliminar'])->name('eliminar');
 });

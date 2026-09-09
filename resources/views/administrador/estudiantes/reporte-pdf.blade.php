@@ -4,397 +4,218 @@
     <meta charset="UTF-8">
     <title>Reporte de Estudiante - {{ $estudiante->nombre }} {{ $estudiante->paterno }}</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        @page { margin: 0; }
+
         body {
             font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif;
-            background: #f5f5f5;
-            color: #333333;
-            font-size: 11px;
-            line-height: 1.4;
-            padding: 20px;
+            color: #1e293b;
+            font-size: 10.5px;
+            line-height: 1.45;
         }
-        
-        /* Contenedor principal */
-        .report {
-            max-width: 100%;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            padding: 25px;
+
+        .wrap { padding: 32px 34px 40px; }
+
+        /* ===== Encabezado ===== */
+        .brandbar {
+            background: #4f46e5;
+            color: #ffffff;
+            padding: 22px 34px;
         }
-        
-        /* ========== HEADER MEJORADO ========== */
-        .header {
-            text-align: center;
-            padding-bottom: 20px;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #2c3e50;
+        .brandbar table { width: 100%; }
+        .brandbar .logo { width: 44px; height: auto; vertical-align: middle; }
+        .brandbar h1 {
+            font-size: 20px; font-weight: 700; letter-spacing: 1px;
+            display: inline-block; vertical-align: middle; margin-left: 12px;
         }
-        
-        .logo-img {
-            width: 70px;
-            height: auto;
-            margin-bottom: 10px;
+        .brandbar .sub { font-size: 10px; color: #c7d2fe; margin-top: 3px; }
+        .brandbar .meta { text-align: right; font-size: 9px; color: #c7d2fe; line-height: 1.7; }
+        .brandbar .meta strong { color: #ffffff; display: block; font-size: 11px; }
+
+        /* ===== Ficha del estudiante ===== */
+        .profile {
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
         }
-        
-        .header h1 {
-            font-size: 22px;
+        .profile .name { font-size: 16px; font-weight: 700; color: #312e81; }
+        .profile .email { font-size: 10px; color: #6366f1; margin: 3px 0 9px; }
+        .chip {
+            display: inline-block;
+            padding: 3px 11px;
+            border-radius: 999px;
+            font-size: 8.5px;
             font-weight: 700;
-            color: #2c3e50;
-            margin: 0;
-            letter-spacing: 1px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-right: 5px;
         }
-        
-        .header h2 {
-            font-size: 14px;
-            font-weight: 500;
-            color: #7f8c8d;
-            margin: 5px 0 0;
-        }
-        
-        .header-subtitle {
-            font-size: 10px;
-            color: #95a5a6;
-            margin-top: 8px;
-        }
-        
-        .report-meta {
-            margin-top: 10px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            font-size: 9px;
-            color: #95a5a6;
-        }
-        
-        /* ========== PERFIL ========== */
-        .profile-card {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 25px;
-            border: 1px solid #e9ecef;
-            page-break-inside: avoid;
-        }
-        
-        .profile-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        
-        .profile-email {
-            font-size: 10px;
-            color: #7f8c8d;
-            margin-bottom: 10px;
-        }
-        
-        .profile-badges {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .badge-active {
-            background: #d4edda;
-            color: #155724;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 9px;
-            font-weight: 500;
-        }
-        
-        .badge-inactive {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 9px;
-            font-weight: 500;
-        }
-        
-        .badge-cupon {
-            background: #fff3cd;
-            color: #856404;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 9px;
-            font-family: monospace;
-        }
-        
-        /* ========== TABLA DE ESTADÍSTICAS ========== */
-        .stats-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-            page-break-inside: avoid;
-        }
-        
-        .stats-table td {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            padding: 12px 10px;
-            text-align: center;
+        .chip-on { background: #dcfce7; color: #166534; }
+        .chip-off { background: #fee2e2; color: #991b1b; }
+        .chip-cupon { background: #fef3c7; color: #92400e; font-family: 'DejaVu Sans Mono', monospace; }
+
+        /* ===== Tarjetas de estadísticas ===== */
+        .stats { width: 100%; border-collapse: separate; border-spacing: 8px 0; margin: 0 -8px 22px; }
+        .stats td {
             width: 25%;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid #4f46e5;
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
         }
-        
-        .stats-number {
-            font-size: 18px;
+        .stats .num { font-size: 17px; font-weight: 800; color: #0f172a; display: block; }
+        .stats .lbl {
+            font-size: 8px; color: #64748b; margin-top: 4px;
+            text-transform: uppercase; letter-spacing: 0.5px; display: block;
+        }
+        .stats td.c-green { border-top-color: #16a34a; }
+        .stats td.c-amber { border-top-color: #d97706; }
+        .stats td.c-blue { border-top-color: #0ea5e9; }
+
+        /* ===== Secciones ===== */
+        .section { margin-bottom: 22px; page-break-inside: avoid; }
+        .section-title {
+            font-size: 11px;
             font-weight: 700;
-            color: #2c3e50;
-            display: block;
-        }
-        
-        .stats-label {
-            font-size: 9px;
-            color: #7f8c8d;
-            margin-top: 4px;
+            color: #312e81;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            display: block;
-        }
-        
-        /* ========== TABLAS DE INFORMACIÓN ========== */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-        }
-        
-        .data-table th {
-            background: #e9ecef;
-            padding: 8px 12px;
-            text-align: left;
-            font-size: 10px;
-            font-weight: 600;
-            color: #2c3e50;
-            border: 1px solid #dee2e6;
-            width: 30%;
-        }
-        
-        .data-table td {
-            background: white;
-            padding: 8px 12px;
-            border: 1px solid #dee2e6;
-            font-size: 10px;
-            color: #555;
-        }
-        
-        /* ========== SECCIONES ========== */
-        .section {
-            margin-bottom: 25px;
-            page-break-inside: avoid;
-        }
-        
-        .section-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #2c3e50;
+            padding: 0 0 6px 10px;
+            border-left: 3px solid #4f46e5;
             margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #e0e0e0;
         }
-        
-        /* ========== TABLA DE ACTIVIDAD (SIN BARRAS) ========== */
-        .actividad-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-        }
-        
-        .actividad-table th {
-            background: #e9ecef;
-            padding: 8px 10px;
+
+        /* ===== Tablas de datos ===== */
+        table.data { width: 100%; border-collapse: collapse; }
+        table.data th {
+            background: #f1f5f9;
+            padding: 7px 11px;
             text-align: left;
-            font-size: 9px;
-            font-weight: 600;
-            color: #2c3e50;
-            border: 1px solid #dee2e6;
-        }
-        
-        .actividad-table td {
-            padding: 8px 10px;
-            border: 1px solid #dee2e6;
-            font-size: 9px;
-            color: #555;
-        }
-        
-        /* ========== TABLA DE MÉTRICAS ========== */
-        .metrics-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-        }
-        
-        .metrics-table td {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            padding: 10px;
-            text-align: center;
-            width: 33.33%;
-        }
-        
-        .metrics-number {
-            font-size: 18px;
+            font-size: 9.5px;
             font-weight: 700;
-            color: #2c3e50;
-            display: block;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            width: 26%;
         }
-        
-        .metrics-label {
-            font-size: 9px;
-            color: #7f8c8d;
-            margin: 4px 0;
-            display: block;
+        table.data td {
+            padding: 7px 11px;
+            border: 1px solid #e2e8f0;
+            font-size: 9.5px;
+            color: #475569;
         }
-        
-        .progress-bar {
-            background: #e9ecef;
-            height: 4px;
-            border-radius: 2px;
-            margin: 6px 0 3px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: #3498db;
-            border-radius: 2px;
-        }
-        
-        /* ========== TABLA DE EXÁMENES ========== */
-        .examenes-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-        }
-        
-        .examenes-table th {
-            background: #e9ecef;
-            padding: 8px 10px;
+
+        table.grid { width: 100%; border-collapse: collapse; }
+        table.grid th {
+            background: #4f46e5;
+            color: #ffffff;
+            padding: 7px 10px;
             text-align: left;
-            font-size: 9px;
-            font-weight: 600;
-            color: #2c3e50;
-            border: 1px solid #dee2e6;
+            font-size: 8.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
         }
-        
-        .examenes-table td {
-            padding: 8px 10px;
-            border: 1px solid #dee2e6;
-            font-size: 9px;
-            color: #555;
+        table.grid td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 9.5px;
+            color: #475569;
         }
-        
-        .score-high {
-            color: #27ae60;
-            font-weight: 600;
+        table.grid tr:nth-child(even) td { background: #f8fafc; }
+
+        .metrics { width: 100%; border-collapse: separate; border-spacing: 8px 0; }
+        .metrics td {
+            width: 33.33%;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 10px;
+            text-align: center;
         }
-        
-        .score-low {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-        
-        /* ========== FOOTER ========== */
+        .metrics .num { font-size: 16px; font-weight: 800; color: #0f172a; display: block; }
+        .metrics .lbl { font-size: 8.5px; color: #64748b; margin: 3px 0; display: block; }
+        .bar { background: #e2e8f0; height: 5px; border-radius: 3px; margin: 6px 0 3px; }
+        .bar > span { display: block; height: 5px; border-radius: 3px; background: #4f46e5; }
+
+        .score-high { color: #16a34a; font-weight: 700; }
+        .score-low { color: #dc2626; font-weight: 700; }
+
         .footer {
-            margin-top: 25px;
+            margin-top: 26px;
             padding-top: 12px;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid #e2e8f0;
             text-align: center;
             font-size: 8px;
-            color: #95a5a6;
+            color: #94a3b8;
             page-break-inside: avoid;
         }
-        
-        /* Utilidades */
+        .page-break { page-break-before: always; }
         .text-center { text-align: center; }
-        .page-break {
-            page-break-before: always;
-        }
     </style>
 </head>
 <body>
-    <div class="report">
-        
-        <!-- ==================== PAGINA 1 ==================== -->
-        
-        <!-- HEADER MEJORADO -->
-        <div class="header">
-            <img src="{{ public_path('images/logo.png') }}" class="logo-img" alt="SAINS">
-            <h1>SAINS</h1>
-            <h2>Plataforma educativa para ingreso a la universidad</h2>
-            <div class="header-subtitle">Sistema de Administracion y Gestion Academica</div>
-            <div class="report-meta">
-                <span>Reporte de Estudiante</span>
-                <span>|</span>
-                <span>Generado: {{ date('d/m/Y H:i:s') }}</span>
-            </div>
-        </div>
-        
-        <!-- PERFIL -->
-        <div class="profile-card">
-            <div class="profile-name">{{ $estudiante->nombre }} {{ $estudiante->paterno }} {{ $estudiante->materno }}</div>
-            <div class="profile-email">{{ $usuario->correo }}</div>
-            <div class="profile-badges">
-                @if($estudiante->plan_activo)
-                    <span class="badge-active">Plan Activo</span>
-                @else
-                    <span class="badge-inactive">Plan Inactivo</span>
-                @endif
-                @if($estudiante->cupon)
-                    <span class="badge-cupon">Cupon: {{ $estudiante->cupon }}</span>
-                @endif
-            </div>
-        </div>
-        
-        <!-- TABLA DE ESTADISTICAS PRINCIPALES -->
-        <table class="stats-table">
+
+    <div class="brandbar">
+        <table>
             <tr>
-                @php
-                    $horas = floor($tiempoTotalHoras ?? 0);
-                    $minutos = round(($tiempoTotalHoras - $horas) * 60);
-                    if ($horas >= 24) {
-                        $dias = floor($horas / 24);
-                        $horasResto = $horas % 24;
-                        $tiempoTexto = $dias . 'd ' . $horasResto . 'h';
-                    } else {
-                        $tiempoTexto = $horas . 'h ' . $minutos . 'm';
-                    }
-                @endphp
                 <td>
-                    <span class="stats-number">{{ $tiempoTexto }}</span>
-                    <span class="stats-label">Tiempo de estudio</span>
+                    <img src="{{ public_path('images/logo-sm.png') }}" class="logo" alt="SAINS">
+                    <h1>SAINS</h1>
+                    <div class="sub">Preparación para el ingreso a la universidad</div>
                 </td>
-                <td>
-                    <span class="stats-number">{{ $vistosCompletos ?? 0 }}/{{ $totalVideos ?? 0 }}</span>
-                    <span class="stats-label">Videos vistos</span>
-                </td>
-                <td>
-                    <span class="stats-number">{{ number_format($promedioCalificaciones ?? 0) }}%</span>
-                    <span class="stats-label">Promedio general</span>
-                </td>
-                <td>
-                    <span class="stats-number">{{ number_format($diasActivos ?? 0) }}</span>
-                    <span class="stats-label">Dias activos</span>
+                <td class="meta">
+                    <strong>Reporte de estudiante</strong>
+                    Generado: {{ date('d/m/Y H:i') }}<br>
+                    Documento confidencial
                 </td>
             </tr>
         </table>
-        
-        <!-- TABLA INFORMACION PERSONAL -->
+    </div>
+
+    <div class="wrap">
+
+        <!-- Ficha -->
+        <div class="profile">
+            <div class="name">{{ $estudiante->nombre }} {{ $estudiante->paterno }} {{ $estudiante->materno }}</div>
+            <div class="email">{{ $usuario->correo }}</div>
+            @if($estudiante->plan_activo)
+                <span class="chip chip-on">Plan activo</span>
+            @else
+                <span class="chip chip-off">Plan inactivo</span>
+            @endif
+            @if($estudiante->cupon)
+                <span class="chip chip-cupon">Cupón: {{ $estudiante->cupon }}</span>
+            @endif
+        </div>
+
+        <!-- Estadísticas principales -->
+        @php
+            $horas = floor($tiempoTotalHoras ?? 0);
+            $minutos = round((($tiempoTotalHoras ?? 0) - $horas) * 60);
+            if ($horas >= 24) {
+                $tiempoTexto = floor($horas / 24) . 'd ' . ($horas % 24) . 'h';
+            } else {
+                $tiempoTexto = $horas . 'h ' . $minutos . 'm';
+            }
+        @endphp
+        <table class="stats">
+            <tr>
+                <td><span class="num">{{ $tiempoTexto }}</span><span class="lbl">Tiempo de estudio</span></td>
+                <td class="c-blue"><span class="num">{{ $vistosCompletos ?? 0 }}/{{ $totalVideos ?? 0 }}</span><span class="lbl">Videos vistos</span></td>
+                <td class="c-green"><span class="num">{{ number_format($promedioCalificaciones ?? 0) }}%</span><span class="lbl">Promedio general</span></td>
+                <td class="c-amber"><span class="num">{{ number_format($diasActivos ?? 0) }}</span><span class="lbl">Días activos</span></td>
+            </tr>
+        </table>
+
+        <!-- Información personal -->
         <div class="section">
-            <div class="section-title">Informacion Personal</div>
-            <table class="data-table">
+            <div class="section-title">Información personal</div>
+            <table class="data">
                 <tr>
                     <th>Nombre completo</th>
                     <td colspan="3">{{ $estudiante->nombre }} {{ $estudiante->paterno }} {{ $estudiante->materno }}</td>
@@ -406,24 +227,24 @@
                     <td>{{ $estudiante->sexo == 'M' ? 'Masculino' : 'Femenino' }}</td>
                 </tr>
                 <tr>
-                    <th>Telefono celular</th>
+                    <th>Teléfono celular</th>
                     <td>{{ $estudiante->telefono ?? '—' }}</td>
-                    <th>Telefono casa</th>
+                    <th>Teléfono casa</th>
                     <td>{{ $estudiante->telefono_casa ?? '—' }}</td>
                 </tr>
             </table>
         </div>
-        
-        <!-- TABLA INFORMACION ACADEMICA -->
+
+        <!-- Información académica -->
         <div class="section">
-            <div class="section-title">Informacion Academica</div>
-            <table class="data-table">
+            <div class="section-title">Información académica</div>
+            <table class="data">
                 <tr>
                     <th>Escuela de procedencia</th>
                     <td colspan="3">{{ $estudiante->escuelaProcedencia->centro_educativo ?? '—' }}</td>
                 </tr>
                 <tr>
-                    <th>Ubicacion (Prepa)</th>
+                    <th>Ubicación (prepa)</th>
                     <td colspan="3">{{ $estudiante->escuelaProcedencia->estado ?? '' }} / {{ $estudiante->escuelaProcedencia->municipio ?? '' }} / {{ $estudiante->escuelaProcedencia->localidad ?? '' }}</td>
                 </tr>
                 <tr>
@@ -433,175 +254,132 @@
                     <td>{{ $estudiante->escuelaProcedencia->clave ?? '—' }}</td>
                 </tr>
                 <tr>
-                    <th>Universidad de interes</th>
+                    <th>Universidad de interés</th>
                     <td colspan="3">{{ $estudiante->universidadInteres->clave ?? '—' }}</td>
                 </tr>
                 <tr>
-                    <th>Ubicacion (Universidad)</th>
+                    <th>Ubicación (universidad)</th>
                     <td colspan="3">{{ $estudiante->universidadInteres->estado ?? '' }} / {{ $estudiante->universidadInteres->municipio ?? '' }} / {{ $estudiante->universidadInteres->localidad ?? '' }}</td>
                 </tr>
                 <tr>
-                    <th>Tipo / Duracion</th>
+                    <th>Tipo / Duración</th>
                     <td colspan="3">{{ $estudiante->universidadInteres->tipo ?? '—' }} / {{ $estudiante->universidadInteres->duracion ?? '—' }}</td>
                 </tr>
             </table>
         </div>
-        
-        <!-- ==================== PAGINA 2 ==================== -->
+
         <div class="page-break"></div>
-        
-        <!-- TABLA DE ACTIVIDAD (SIN BARRAS, SOLO DATOS) -->
+
+        <!-- Actividad -->
         <div class="section">
-            <div class="section-title">Actividad - Ultimos 7 dias</div>
-            <table class="actividad-table">
+            <div class="section-title">Actividad · últimos 7 días</div>
+            <table class="grid">
                 <thead>
-                    <tr>
-                        <th>Dia</th>
-                        <th>Fecha</th>
-                        <th>Horas estudiadas</th>
-                    </tr>
+                    <tr><th>Día</th><th>Fecha</th><th>Horas estudiadas</th></tr>
                 </thead>
                 <tbody>
-                    @foreach($estudioDiario ?? [] as $dia)
+                    @forelse($estudioDiario ?? [] as $dia)
                         @php
-                            $horas = floatval($dia->horas_estudiadas ?? 0);
+                            $h = floatval($dia->horas_estudiadas ?? 0);
                             $diaSemana = [
-                                'Mon' => 'Lunes', 'Tue' => 'Martes', 'Wed' => 'Miercoles', 'Thu' => 'Jueves',
-                                'Fri' => 'Viernes', 'Sat' => 'Sabado', 'Sun' => 'Domingo'
+                                'Mon' => 'Lunes', 'Tue' => 'Martes', 'Wed' => 'Miércoles', 'Thu' => 'Jueves',
+                                'Fri' => 'Viernes', 'Sat' => 'Sábado', 'Sun' => 'Domingo',
                             ][$dia->dia] ?? $dia->dia;
                         @endphp
                         <tr>
                             <td><strong>{{ $diaSemana }}</strong></td>
                             <td>{{ $dia->fecha }}</td>
-                            <td>{{ number_format($horas, 1) }} horas</td>
+                            <td>{{ number_format($h, 1) }} h</td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr><td colspan="3" class="text-center">Sin actividad registrada</td></tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
-        
-        <!-- TABLA EXTRAS DE ESTUDIO -->
-        <table class="data-table" style="margin-bottom: 20px;">
+
+        <table class="data" style="margin-bottom: 20px;">
             <tr>
                 <th>Sesiones totales</th>
                 <td>{{ number_format($totalSesiones ?? 0) }}</td>
-                <th>Ultima actividad</th>
+                <th>Última actividad</th>
                 <td>{{ $ultimaActividad ?? '—' }}</td>
             </tr>
         </table>
-        
-        <!-- TABLA RENDIMIENTO POR TIPO -->
+
+        <!-- Rendimiento por tipo -->
         <div class="section">
             <div class="section-title">Rendimiento por tipo de examen</div>
-            <table class="metrics-table">
+            <table class="metrics">
                 <tr>
                     <td>
-                        <span class="metrics-number">{{ $examenesPorTipo['simulacion'] ?? 0 }}</span>
-                        <span class="metrics-label">Simulaciones</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ ($promedioPorTipo['simulacion'] ?? 0) }}%;"></div>
-                        </div>
-                        <span class="metrics-label">Promedio: {{ number_format($promedioPorTipo['simulacion'] ?? 0, 0) }}%</span>
+                        <span class="num">{{ $examenesPorTipo['simulacion'] ?? 0 }}</span>
+                        <span class="lbl">Simulaciones</span>
+                        <div class="bar"><span style="width: {{ min(100, $promedioPorTipo['simulacion'] ?? 0) }}%;"></span></div>
+                        <span class="lbl">Prom. {{ number_format($promedioPorTipo['simulacion'] ?? 0, 0) }}%</span>
                     </td>
                     <td>
-                        <span class="metrics-number">{{ $examenesPorTipo['materia'] ?? 0 }}</span>
-                        <span class="metrics-label">Por materia</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ ($promedioPorTipo['materia'] ?? 0) }}%;"></div>
-                        </div>
-                        <span class="metrics-label">Promedio: {{ number_format($promedioPorTipo['materia'] ?? 0, 0) }}%</span>
+                        <span class="num">{{ $examenesPorTipo['materia'] ?? 0 }}</span>
+                        <span class="lbl">Por materia</span>
+                        <div class="bar"><span style="width: {{ min(100, $promedioPorTipo['materia'] ?? 0) }}%;"></span></div>
+                        <span class="lbl">Prom. {{ number_format($promedioPorTipo['materia'] ?? 0, 0) }}%</span>
                     </td>
                     <td>
-                        <span class="metrics-number">{{ $examenesPorTipo['curso'] ?? 0 }}</span>
-                        <span class="metrics-label">Por curso</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ ($promedioPorTipo['curso'] ?? 0) }}%;"></div>
-                        </div>
-                        <span class="metrics-label">Promedio: {{ number_format($promedioPorTipo['curso'] ?? 0, 0) }}%</span>
+                        <span class="num">{{ $examenesPorTipo['curso'] ?? 0 }}</span>
+                        <span class="lbl">Por curso</span>
+                        <div class="bar"><span style="width: {{ min(100, $promedioPorTipo['curso'] ?? 0) }}%;"></span></div>
+                        <span class="lbl">Prom. {{ number_format($promedioPorTipo['curso'] ?? 0, 0) }}%</span>
                     </td>
                 </tr>
             </table>
         </div>
-        
-        <!-- ==================== PAGINA 3 ==================== -->
-        <div class="page-break"></div>
-        
-        <!-- TABLA DE EXAMENES -->
+
         @if($examenes->isNotEmpty())
+        <div class="page-break"></div>
         <div class="section">
-            <div class="section-title">Historial de examenes</div>
-            <table class="examenes-table">
+            <div class="section-title">Historial de exámenes</div>
+            <table class="grid">
                 <thead>
-                    <tr>
-                        <th>Examen</th>
-                        <th>Tipo</th>
-                        <th>Fecha</th>
-                        <th>Calificacion</th>
-                        <th>Intento</th>
-                    </tr>
+                    <tr><th>Examen</th><th>Tipo</th><th>Fecha</th><th>Calificación</th><th>Intento</th></tr>
                 </thead>
                 <tbody>
                     @foreach($examenes->take(15) as $examen)
-                        @php
-                            $score = floatval($examen->calificacion ?? 0);
-                        @endphp
+                        @php $score = floatval($examen->calificacion ?? 0); @endphp
                         <tr>
                             <td>{{ Str::limit($examen->examen_nombre ?? 'Examen', 40) }}</td>
                             <td>{{ $examen->tipo_texto ?? 'General' }}</td>
                             <td>{{ $examen->fecha_completa ?? '—' }}</td>
-                            <td class="{{ $score >= 70 ? 'score-high' : 'score-low' }}">
-                                {{ number_format($score, 0) }}%
-                            </td>
+                            <td class="{{ $score >= 70 ? 'score-high' : 'score-low' }}">{{ number_format($score, 0) }}%</td>
                             <td>{{ $examen->intento ?? 1 }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
             @if($examenes->count() > 15)
-                <div class="text-center mt-2" style="font-size: 8px; color: #95a5a6;">* Mostrando ultimos 15 de {{ $examenes->count() }} examenes</div>
+                <div class="text-center" style="font-size: 8px; color: #94a3b8; margin-top: 6px;">Mostrando 15 de {{ $examenes->count() }} exámenes</div>
             @endif
         </div>
         @endif
-        
-        <!-- ==================== PAGINA 4 ==================== -->
+
         @if($ultimosVideos->isNotEmpty())
         <div class="page-break"></div>
-        
-        <!-- TABLA PROGRESO VIDEOS -->
         <div class="section">
             <div class="section-title">Progreso en videos</div>
-            
-            <table class="stats-table" style="margin-bottom: 15px;">
+            <table class="metrics" style="margin-bottom: 14px;">
                 <tr>
-                    <td>
-                        <span class="stats-number">{{ $vistosCompletos ?? 0 }}</span>
-                        <span class="stats-label">Completados</span>
-                    </td>
-                    <td>
-                        <span class="stats-number">{{ $videosEnProgreso ?? 0 }}</span>
-                        <span class="stats-label">En progreso</span>
-                    </td>
-                    <td>
-                        <span class="stats-number">{{ number_format($porcentajeProgreso ?? 0) }}%</span>
-                        <span class="stats-label">Progreso</span>
-                    </td>
+                    <td><span class="num">{{ $vistosCompletos ?? 0 }}</span><span class="lbl">Completados</span></td>
+                    <td><span class="num">{{ $videosEnProgreso ?? 0 }}</span><span class="lbl">En progreso</span></td>
+                    <td><span class="num">{{ number_format($porcentajeProgreso ?? 0) }}%</span><span class="lbl">Progreso total</span></td>
                 </tr>
             </table>
-            
-            <!-- Barra de progreso (sutil) -->
-            <div class="progress-bar" style="margin-bottom: 15px; height: 6px;">
-                <div class="progress-fill" style="width: {{ $porcentajeProgreso ?? 0 }}%; background: #27ae60;"></div>
+            <div class="bar" style="height: 7px; margin-bottom: 16px;">
+                <span style="width: {{ min(100, $porcentajeProgreso ?? 0) }}%; height: 7px; background: #16a34a;"></span>
             </div>
-            
-            <!-- TABLA ULTIMOS VIDEOS VISTOS -->
-            <div class="section-title" style="margin-bottom: 10px;">Ultimos videos vistos</div>
-            <table class="data-table">
+
+            <div class="section-title" style="margin-bottom: 8px;">Últimos videos vistos</div>
+            <table class="grid">
                 <thead>
-                    <tr>
-                        <th>Video</th>
-                        <th width="25%">Fecha</th>
-                        <th width="20%">Estado</th>
-                    </tr>
+                    <tr><th>Video</th><th>Fecha</th><th>Estado</th></tr>
                 </thead>
                 <tbody>
                     @foreach($ultimosVideos as $progreso)
@@ -615,13 +393,12 @@
             </table>
         </div>
         @endif
-        
-        <!-- FOOTER -->
+
         <div class="footer">
-            <p>SAINS - Plataforma educativa para ingreso a la universidad</p>
-            <p>Reporte generado automaticamente - Documento confidencial</p>
+            SAINS · Preparación para el ingreso a la universidad<br>
+            Reporte generado automáticamente · Documento confidencial
         </div>
-        
+
     </div>
 </body>
 </html>

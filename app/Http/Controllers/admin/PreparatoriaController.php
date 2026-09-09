@@ -10,15 +10,27 @@ use Illuminate\Support\Facades\Log;
 
 class PreparatoriaController extends Controller{
 
+    private const ESTADOS = [
+        'AGUASCALIENTES', 'BAJA CALIFORNIA', 'BAJA CALIFORNIA SUR', 'CAMPECHE',
+        'CHIAPAS', 'CHIHUAHUA', 'CIUDAD DE MÉXICO', 'COAHUILA', 'COLIMA',
+        'DURANGO', 'ESTADO DE MÉXICO', 'GUANAJUATO', 'GUERRERO', 'HIDALGO',
+        'JALISCO', 'MICHOACÁN', 'MORELOS', 'NAYARIT', 'NUEVO LEÓN',
+        'OAXACA', 'PUEBLA', 'QUERÉTARO', 'QUINTANA ROO', 'SAN LUIS POTOSÍ',
+        'SINALOA', 'SONORA', 'TABASCO', 'TAMAULIPAS', 'TLAXCALA',
+        'VERACRUZ', 'YUCATÁN', 'ZACATECAS',
+    ];
+
     public function index(Request $request)
     {
         $search = $request->get('search');
+        $clave = $request->get('clave');
+        $municipio = $request->get('municipio');
         $estado = $request->get('estado');
-        $tipo = $request->get('tipo'); 
-        $turno = $request->get('turno'); 
+        $tipo = $request->get('tipo');
+        $turno = $request->get('turno');
         $sort = $request->get('sort', 'centro_educativo');
         $order = $request->get('order', 'asc');
-        
+
         // Consulta base para los filtros
         $query = Preparatoria::query()
             ->when($search, function($query, $search) {
@@ -27,6 +39,8 @@ class PreparatoriaController extends Controller{
                     ->orWhere('clave', 'LIKE', "%{$search}%");
                 });
             })
+            ->when($clave, fn ($q, $clave) => $q->where('clave', 'LIKE', "%{$clave}%"))
+            ->when($municipio, fn ($q, $municipio) => $q->where('municipio', 'LIKE', "%{$municipio}%"))
             ->when($estado, function($query, $estado) {
                 return $query->where('estado', $estado);
             })
@@ -49,31 +63,35 @@ class PreparatoriaController extends Controller{
         
         // Obtener estados únicos para filtros
         $estados = Preparatoria::select('estado')->distinct()->orderBy('estado')->pluck('estado');
-        
-        return view('administrador.preparatorias.index', compact(
-            'preparatorias', 
-            'estados',
-            'totalPreparatorias',
-            'publicas',
-            'privadas'
-        ));
+
+        return \Inertia\Inertia::render('Admin/Preparatorias/Index', [
+            'preparatorias' => $preparatorias->withQueryString(),
+            'estados' => $estados,
+            'stats' => [
+                'total' => $totalPreparatorias,
+                'publicas' => $publicas,
+                'privadas' => $privadas,
+            ],
+            'filters' => [
+                'search' => $search,
+                'clave' => $clave,
+                'municipio' => $municipio,
+                'estado' => $estado,
+                'tipo' => $tipo,
+                'turno' => $turno,
+                'sort' => $sort,
+                'order' => $order,
+            ],
+        ]);
     }
     
     /**
      * Formulario para crear preparatoria
      */
     public function create(){
-        $estados = [
-            'AGUASCALIENTES', 'BAJA CALIFORNIA', 'BAJA CALIFORNIA SUR', 'CAMPECHE', 
-            'CHIAPAS', 'CHIHUAHUA', 'CIUDAD DE MÉXICO', 'COAHUILA', 'COLIMA', 
-            'DURANGO', 'ESTADO DE MÉXICO', 'GUANAJUATO', 'GUERRERO', 'HIDALGO', 
-            'JALISCO', 'MICHOACÁN', 'MORELOS', 'NAYARIT', 'NUEVO LEÓN', 
-            'OAXACA', 'PUEBLA', 'QUERÉTARO', 'QUINTANA ROO', 'SAN LUIS POTOSÍ', 
-            'SINALOA', 'SONORA', 'TABASCO', 'TAMAULIPAS', 'TLAXCALA', 
-            'VERACRUZ', 'YUCATÁN', 'ZACATECAS'
-        ];
-        
-        return view('administrador.preparatorias.create', compact('estados'));
+        return \Inertia\Inertia::render('Admin/Preparatorias/Create', [
+            'estados' => self::ESTADOS,
+        ]);
     }
     
     /**
@@ -95,8 +113,8 @@ class PreparatoriaController extends Controller{
         ]);
         
         try {
-            Preparatoria::create($request->all());
-            
+            Preparatoria::create($this->payload($request));
+
             return redirect()->route('admin.preparatorias.index')
                 ->with('success', 'Preparatoria registrada exitosamente');
                 
@@ -115,18 +133,11 @@ class PreparatoriaController extends Controller{
     public function edit($id)
     {
         $preparatoria = Preparatoria::findOrFail($id);
-        
-        $estados = [
-            'AGUASCALIENTES', 'BAJA CALIFORNIA', 'BAJA CALIFORNIA SUR', 'CAMPECHE', 
-            'CHIAPAS', 'CHIHUAHUA', 'CIUDAD DE MÉXICO', 'COAHUILA', 'COLIMA', 
-            'DURANGO', 'ESTADO DE MÉXICO', 'GUANAJUATO', 'GUERRERO', 'HIDALGO', 
-            'JALISCO', 'MICHOACÁN', 'MORELOS', 'NAYARIT', 'NUEVO LEÓN', 
-            'OAXACA', 'PUEBLA', 'QUERÉTARO', 'QUINTANA ROO', 'SAN LUIS POTOSÍ', 
-            'SINALOA', 'SONORA', 'TABASCO', 'TAMAULIPAS', 'TLAXCALA', 
-            'VERACRUZ', 'YUCATÁN', 'ZACATECAS'
-        ];
-        
-        return view('administrador.preparatorias.edit', compact('preparatoria', 'estados'));
+
+        return \Inertia\Inertia::render('Admin/Preparatorias/Edit', [
+            'preparatoria' => $preparatoria,
+            'estados' => self::ESTADOS,
+        ]);
     }
     
     /**
@@ -150,8 +161,8 @@ class PreparatoriaController extends Controller{
         ]);
         
         try {
-            $preparatoria->update($request->all());
-            
+            $preparatoria->update($this->payload($request));
+
             return redirect()->route('admin.preparatorias.index')
                 ->with('success', 'Preparatoria actualizada exitosamente');
                 
@@ -185,6 +196,24 @@ class PreparatoriaController extends Controller{
         }
     }
     
+    /**
+     * Normaliza el request: las columnas NOT NULL sin default no aceptan null
+     * (el middleware ConvertEmptyStringsToNull convierte "" en null).
+     */
+    private function payload(Request $request): array
+    {
+        $data = $request->only([
+            'estado', 'municipio', 'localidad', 'ambito', 'tipo',
+            'servicio', 'clave', 'turno', 'centro_educativo', 'direccion',
+        ]);
+
+        foreach (['localidad', 'tipo', 'clave', 'municipio', 'centro_educativo', 'estado'] as $notNull) {
+            $data[$notNull] = $data[$notNull] ?? '';
+        }
+
+        return $data;
+    }
+
     /**
      * Obtener municipios por estado (API)
      */

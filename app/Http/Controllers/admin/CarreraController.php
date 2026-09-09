@@ -15,7 +15,8 @@ class CarreraController extends Controller
     public function index(Request $request)
     {
         // Obtener todas las carreras primero
-        $query = Carrera::with(['tronco', 'asignatura1', 'asignatura2', 'asignatura3', 'universidades']);
+        $query = Carrera::with(['tronco', 'asignatura1', 'asignatura2', 'asignatura3'])
+            ->withCount('universidades');
         
         // Búsqueda
         if ($request->filled('search')) {
@@ -27,13 +28,21 @@ class CarreraController extends Controller
         if ($request->filled('tronco_id')) {
             $query->where('tronco_id', $request->tronco_id);
         }
-        
+
+        // Filtro por calificación mínima
+        if ($request->filled('calif')) {
+            $request->calif === 'definida'
+                ? $query->whereNotNull('calificacion_minima')->where('calificacion_minima', '>', 0)
+                : $query->where(fn ($q) => $q->whereNull('calificacion_minima')->orWhere('calificacion_minima', 0));
+        }
+
+
         // Obtener todas las carreras (sin paginar aún)
         $carrerasCollection = $query->get();
         
         // Agregar conteos a cada carrera
         foreach ($carrerasCollection as $carrera) {
-            $carrera->total_universidades = $carrera->universidades->count();
+            $carrera->total_universidades = $carrera->universidades_count;
         }
         
         // ORDENAMIENTO
@@ -78,8 +87,21 @@ class CarreraController extends Controller
         // Paginar la colección manualmente
         $perPage = 15;
         $currentPage = $request->get('page', 1);
-        $currentItems = $carrerasCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
-        
+        $currentItems = $carrerasCollection->slice(($currentPage - 1) * $perPage, $perPage)->values()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'nombre' => $c->nombre,
+                'tronco_id' => $c->tronco_id,
+                'tronco' => $c->tronco?->nombre,
+                'calificacion_minima' => $c->calificacion_minima,
+                'id_asignatura_1' => $c->id_asignatura_1,
+                'id_asignatura_2' => $c->id_asignatura_2,
+                'id_asignatura_3' => $c->id_asignatura_3,
+                'asignaturas' => collect([$c->asignatura1, $c->asignatura2, $c->asignatura3])
+                    ->filter()->map->nombre->values(),
+                'total_universidades' => $c->total_universidades,
+            ]);
+
         $carreras = new LengthAwarePaginator(
             $currentItems,
             $carrerasCollection->count(),
@@ -98,32 +120,44 @@ class CarreraController extends Controller
         $asignaturas = Asignatura::orderBy('nombre', 'asc')->get();
         $troncos = Tronco::orderBy('nombre', 'asc')->get();
         
-        return view('administrador.carreras.index', compact(
-            'carreras', 
-            'totalCarreras', 
-            'conTronco', 
-            'conUniversidades',
-            'conCalificacionMinima',
-            'asignaturas',
-            'troncos',
-            'ordenCampo',
-            'ordenDireccion'
-        ));
+        return \Inertia\Inertia::render('Admin/Carreras/Index', [
+            'carreras' => $carreras,
+            'asignaturas' => $asignaturas->map(fn ($a) => ['id' => $a->id, 'nombre' => $a->nombre]),
+            'troncos' => $troncos->map(fn ($t) => ['id' => $t->id, 'nombre' => $t->nombre]),
+            'stats' => [
+                'total' => $totalCarreras,
+                'conTronco' => $conTronco,
+                'conUniversidades' => $conUniversidades,
+                'conCalificacionMinima' => $conCalificacionMinima,
+            ],
+            'filters' => [
+                'search' => $request->search,
+                'tronco_id' => $request->tronco_id ? (int) $request->tronco_id : null,
+                'calif' => $request->calif,
+                'orden_campo' => $ordenCampo,
+                'orden_direccion' => $ordenDireccion,
+            ],
+        ]);
     }
     
+    public function create()
+    {
+        return redirect()->route('admin.carreras.index');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
             'nombre' => 'required|string|max:255|unique:carreras,nombre',
-            'tronco_id' => 'nullable|exists:tronco,id',
+            'tronco_id' => 'required|exists:tronco,id',
             'calificacion_minima' => 'nullable|numeric|min:0|max:100',
-            'id_asignatura_1' => 'nullable|exists:asignatura,id',
+            'id_asignatura_1' => 'required|exists:asignatura,id',
             'id_asignatura_2' => 'nullable|exists:asignatura,id',
             'id_asignatura_3' => 'nullable|exists:asignatura,id',
         ]);
         
         try {
-            $carrera = Carrera::create([
+            Carrera::create([
                 'nombre' => $request->nombre,
                 'tronco_id' => $request->tronco_id,
                 'calificacion_minima' => $request->calificacion_minima,
@@ -131,18 +165,11 @@ class CarreraController extends Controller
                 'id_asignatura_2' => $request->id_asignatura_2,
                 'id_asignatura_3' => $request->id_asignatura_3,
             ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Carrera creada exitosamente',
-                'data' => $carrera
-            ]);
+
+            return redirect()->route('admin.carreras.index')->with('success', 'Carrera creada exitosamente');
         } catch (\Exception $e) {
             Log::error('Error al crear carrera: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al crear la carrera: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->withInput()->with('error', 'Error al crear la carrera');
         }
     }
     
@@ -177,9 +204,9 @@ class CarreraController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:255|unique:carreras,nombre,' . $id,
-            'tronco_id' => 'nullable|exists:tronco,id',
+            'tronco_id' => 'required|exists:tronco,id',
             'calificacion_minima' => 'nullable|numeric|min:0|max:100',
-            'id_asignatura_1' => 'nullable|exists:asignatura,id',
+            'id_asignatura_1' => 'required|exists:asignatura,id',
             'id_asignatura_2' => 'nullable|exists:asignatura,id',
             'id_asignatura_3' => 'nullable|exists:asignatura,id',
         ]);
@@ -194,18 +221,11 @@ class CarreraController extends Controller
                 'id_asignatura_2' => $request->id_asignatura_2,
                 'id_asignatura_3' => $request->id_asignatura_3,
             ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Carrera actualizada exitosamente',
-                'data' => $carrera
-            ]);
+
+            return redirect()->route('admin.carreras.index')->with('success', 'Carrera actualizada exitosamente');
         } catch (\Exception $e) {
             Log::error('Error al actualizar carrera: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al actualizar la carrera: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->withInput()->with('error', 'Error al actualizar la carrera');
         }
     }
     
@@ -213,27 +233,17 @@ class CarreraController extends Controller
     {
         try {
             $carrera = Carrera::findOrFail($id);
-            
-            // Verificar si tiene universidades asociadas
+
             if ($carrera->universidades()->count() > 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se puede eliminar la carrera porque tiene universidades asociadas'
-                ], 400);
+                return redirect()->back()->with('error', 'No se puede eliminar la carrera porque tiene universidades asociadas');
             }
-            
+
             $carrera->delete();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Carrera eliminada exitosamente'
-            ]);
+
+            return redirect()->route('admin.carreras.index')->with('success', 'Carrera eliminada exitosamente');
         } catch (\Exception $e) {
             Log::error('Error al eliminar carrera: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar la carrera: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Error al eliminar la carrera');
         }
     }
     

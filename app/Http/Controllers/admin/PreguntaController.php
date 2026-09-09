@@ -12,13 +12,6 @@ use Illuminate\Support\Facades\Log;
 class PreguntaController extends Controller
 {
     // ==================== MÉTODOS PARA PREGUNTAS ====================
-    
-    // Vista pública de preguntas frecuentes
-    public function preguntas()
-    {
-        $preguntas = Pregunta::with('area')->get();
-        return view('administrador.preguntas', compact('preguntas'));
-    }
 
     // Listar todas las preguntas (gestión) CON FILTROS Y ORDENAMIENTO
     public function indexPreguntas(Request $request)
@@ -30,7 +23,12 @@ class PreguntaController extends Controller
             $search = $request->search;
             $query->where('pregunta', 'LIKE', "%{$search}%");
         }
-        
+
+        // Filtro por respuesta correcta
+        if ($request->filled('respuesta_correcta')) {
+            $query->where('respuesta_correcta', 'LIKE', "%{$request->respuesta_correcta}%");
+        }
+
         // Filtro por área
         if ($request->filled('id_area')) {
             $query->where('id_area', $request->id_area);
@@ -57,24 +55,40 @@ class PreguntaController extends Controller
             $query->orderBy('id', 'desc');
         }
         
-        $preguntas = $query->paginate(10)->appends($request->all());
-        
-        $areas = AreaPregunta::all();
-        
-        // Estadísticas para el dashboard
-        $totalPreguntas = Pregunta::count();
-        $totalAreas = AreaPregunta::count();
-        $preguntasActivas = Pregunta::count();
-        $preguntasConJustificacion = Pregunta::whereNotNull('justificacion')->count();
-        
-        return view('administrador.preguntas.index', compact('preguntas', 'areas', 'totalPreguntas', 'totalAreas', 'preguntasActivas', 'preguntasConJustificacion'));
+        $preguntas = $query->paginate(10)->withQueryString();
+
+        $preguntas->getCollection()->transform(fn ($p) => [
+            'id' => $p->id,
+            'id_area' => $p->id_area,
+            'area' => $p->area?->nombre,
+            'pregunta' => $p->pregunta,
+            'respuesta_correcta' => $p->respuesta_correcta,
+            'respuesta1' => $p->respuesta1,
+            'respuesta2' => $p->respuesta2,
+            'justificacion' => $p->justificacion,
+        ]);
+
+        return \Inertia\Inertia::render('Admin/Preguntas/Index', [
+            'preguntas' => $preguntas,
+            'areas' => AreaPregunta::orderBy('nombre')->get(['id', 'nombre']),
+            'stats' => [
+                'total' => Pregunta::count(),
+                'areas' => AreaPregunta::count(),
+                'conJustificacion' => Pregunta::whereNotNull('justificacion')->count(),
+                'sinJustificacion' => Pregunta::whereNull('justificacion')->count(),
+            ],
+            'filters' => [
+                'search' => $request->search,
+                'respuesta_correcta' => $request->respuesta_correcta,
+                'id_area' => $request->id_area ? (int) $request->id_area : null,
+                'has_justificacion' => $request->has_justificacion,
+            ],
+        ]);
     }
 
-    // Mostrar formulario de creación de pregunta
     public function createPregunta()
     {
-        $areas = AreaPregunta::all();
-        return view('administrador.preguntas.create', compact('areas'));
+        return redirect()->route('admin.preguntas.index');
     }
 
     // Guardar nueva pregunta
@@ -123,7 +137,7 @@ class PreguntaController extends Controller
                 ]);
             }
             
-            return view('administrador.preguntas.show', compact('pregunta'));
+            return redirect()->route('admin.preguntas.index');
         } catch (\Exception $e) {
             if (request()->ajax()) {
                 return response()->json([
@@ -135,12 +149,9 @@ class PreguntaController extends Controller
         }
     }
 
-    // Mostrar formulario de edición de pregunta
     public function editPregunta($id)
     {
-        $pregunta = Pregunta::findOrFail($id);
-        $areas = AreaPregunta::all();
-        return view('administrador.preguntas.edit', compact('pregunta', 'areas'));
+        return redirect()->route('admin.preguntas.index');
     }
 
     // Actualizar pregunta
@@ -188,16 +199,6 @@ class PreguntaController extends Controller
         }
     }
 
-    // ==================== MÉTODO PARA VER ÁREAS (SOLO LECTURA) ====================
-
-    // Ver áreas existentes (solo consulta, sin CRUD)
-    public function verAreas()
-    {
-        $areas = AreaPregunta::withCount('preguntas')->get();
-        $totalPreguntas = Pregunta::count();
-        return view('administrador.areas.ver', compact('areas', 'totalPreguntas'));
-    }
-
     // ==================== MÉTODOS ADICIONALES ÚTILES ====================
 
     // Obtener preguntas por área (para API o filtros)
@@ -223,26 +224,6 @@ class PreguntaController extends Controller
             ],
             'area' => $pregunta->area->nombre ?? 'Sin área'
         ]);
-    }
-
-    // Dashboard con estadísticas de preguntas
-    public function dashboard()
-    {
-        $totalAreas = AreaPregunta::count();
-        $totalPreguntas = Pregunta::count();
-        $areasConPreguntas = AreaPregunta::has('preguntas')->withCount('preguntas')->get();
-        $ultimasPreguntas = Pregunta::with('area')->latest()->take(5)->get();
-        $preguntasConJustificacion = Pregunta::whereNotNull('justificacion')->count();
-        $preguntasSinJustificacion = Pregunta::whereNull('justificacion')->count();
-        
-        return view('administrador.preguntas.dashboard', compact(
-            'totalAreas', 
-            'totalPreguntas', 
-            'areasConPreguntas', 
-            'ultimasPreguntas',
-            'preguntasConJustificacion',
-            'preguntasSinJustificacion'
-        ));
     }
 
     // Método para exportar preguntas con justificación (útil para reportes)

@@ -8,6 +8,7 @@ use App\Models\Estudiante;
 use App\Models\Preparatoria;
 use App\Models\Universidad;
 use App\Models\Cupon;
+use App\Models\Pago;
 use App\Models\TiempoEstudio;
 use App\Models\ExamenRealizado;
 use App\Models\ProgresoVideo;
@@ -22,35 +23,40 @@ use Carbon\Carbon;
 class EstudianteController extends Controller
 {
 
+    /**
+     * Opciones compartidas para los formularios de estudiante.
+     */
+    private function opcionesFormulario(): array
+    {
+        return [
+            'preparatorias' => Preparatoria::orderBy('centro_educativo')
+                ->get(['id', 'centro_educativo', 'clave', 'estado', 'municipio'])
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'label' => trim("{$p->centro_educativo} ({$p->clave}) · {$p->estado}"),
+                ]),
+            'universidades' => Universidad::with('carrera')->orderBy('clave')
+                ->get(['id', 'clave', 'estado', 'municipio', 'carrera_id'])
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'label' => trim("{$u->clave} · {$u->estado}" . ($u->carrera ? " · {$u->carrera->nombre}" : '')),
+                ]),
+            'cupones' => Cupon::where('estatus', 'activo')->where('usado', false)->orderBy('codigo')
+                ->get(['id', 'codigo', 'tipo_descuento', 'valor_descuento'])
+                ->map(fn ($c) => [
+                    'id' => $c->id,
+                    'label' => $c->tipo_descuento === 'porcentaje'
+                        ? "{$c->codigo} — {$c->valor_descuento}%"
+                        : "{$c->codigo} — \${$c->valor_descuento}",
+                ]),
+        ];
+    }
+
     public function create()
     {
-        // Obtener estados únicos de preparatorias
-        $estadosPrepa = Preparatoria::select('estado')
-            ->distinct()
-            ->orderBy('estado')
-            ->pluck('estado');
-        
-        // Obtener estados únicos de universidades
-        $estadosUniversidad = Universidad::select('estado')
-            ->distinct()
-            ->orderBy('estado')
-            ->pluck('estado');
-        
-        // Para el select de escuelas (se cargarán por AJAX)
-        $preparatorias = Preparatoria::orderBy('centro_educativo')->get();
-        $universidades = Universidad::orderBy('clave')->get();
-        $cuponesDisponibles = Cupon::where('estatus', 'activo')
-            ->where('usado', false)
-            ->orderBy('codigo')
-            ->get(['id', 'codigo', 'tipo_descuento', 'valor_descuento']);
-    
-        return view('administrador.estudiantes.create', compact(
-            'estadosPrepa', 
-            'estadosUniversidad', 
-            'preparatorias', 
-            'universidades',
-            'cuponesDisponibles'  
-        ));
+        return \Inertia\Inertia::render('Admin/Estudiantes/Create', [
+            'opciones' => $this->opcionesFormulario(),
+        ]);
     }
         
     /**
@@ -69,8 +75,8 @@ class EstudianteController extends Controller
             'materno' => 'nullable|string|max:100|regex:/^[a-zA-ZáéíóúñÑÁÉÍÓÚ\s]+$/',
             'fecha_nacimiento' => 'required|date|before:today|after:1920-01-01',
             'sexo' => 'required|in:M,F',
-            'telefono' => 'required|string|max:15|regex:/^[0-9+\-\s]+$/',
-            'telefono_casa' => 'nullable|string|max:15|regex:/^[0-9+\-\s]+$/',
+            'telefono' => 'required|regex:/^[0-9]{10}$/',
+            'telefono_casa' => 'nullable|regex:/^[0-9]{7,10}$/',
             'escuela_procedencia' => 'required|exists:preparatorias,id',
             'universidad_interes' => 'required|exists:universidades,id',
             'plan_activo' => 'boolean',
@@ -89,10 +95,12 @@ class EstudianteController extends Controller
             'fecha_nacimiento.before' => 'La fecha de nacimiento debe ser anterior a hoy',
             'sexo.required' => 'Debes seleccionar el sexo',
             'telefono.required' => 'El teléfono es obligatorio',
+            'telefono.regex' => 'El teléfono debe tener 10 dígitos (sin espacios ni guiones)',
+            'telefono_casa.regex' => 'El teléfono de casa debe tener entre 7 y 10 dígitos',
             'escuela_procedencia.required' => 'Debes seleccionar la escuela de procedencia',
             'universidad_interes.required' => 'Debes seleccionar la universidad de interés',
         ]);
-        
+
         try {
             DB::beginTransaction();
             
@@ -120,6 +128,9 @@ class EstudianteController extends Controller
                 'rol' => 'estudiante'
             ]);
             
+            // Un cupón que cubre el 100% activa Premium automáticamente.
+            $cuponCubreTodo = $cupon && $cupon->cubreTodo();
+
             // 2. Crear el estudiante
             $estudiante = Estudiante::create([
                 'nombre' => $request->nombre,
@@ -131,12 +142,12 @@ class EstudianteController extends Controller
                 'telefono_casa' => $request->telefono_casa,
                 'escuela_procedencia' => $request->escuela_procedencia,
                 'universidad_interes' => $request->universidad_interes,
-                'plan_activo' => $request->has('plan_activo'),
+                'plan_activo' => $request->boolean('plan_activo') || $cuponCubreTodo,
                 'cupon' => $codigoCupon,
                 'fecha_inscripcion' => now(),
                 'usuario' => $user->id
             ]);
-            
+
             // 3. Marcar el cupón como usado
             if ($cupon) {
                 $cupon->update([
@@ -145,12 +156,26 @@ class EstudianteController extends Controller
                     'fecha_uso' => now()
                 ]);
             }
-            
+
+            if ($cuponCubreTodo) {
+                Pago::create([
+                    'alumno_pago' => $estudiante->id,
+                    'tipo_pago' => 'cupon',
+                    'monto_pago' => 0,
+                    'estatus' => 'completado',
+                    'referencia_pago' => 'CUPON-' . $cupon->codigo,
+                    'fecha_pago' => now(),
+                    'nota_usuario' => "Plan Premium activado con el cupón {$cupon->codigo} (100%).",
+                ]);
+            }
+
             DB::commit();
-            
+
             $mensaje = 'Estudiante registrado exitosamente. Correo: ' . $user->correo;
             if ($cupon) {
-                $mensaje .= ' - Cupón aplicado: ' . $cupon->codigo;
+                $mensaje .= $cuponCubreTodo
+                    ? " - Cupón {$cupon->codigo} (100%): Premium activado."
+                    : ' - Cupón aplicado: ' . $cupon->codigo;
             }
             
             return redirect()->route('admin.estudiantes.index')
@@ -169,11 +194,12 @@ class EstudianteController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
+        $telefono = $request->get('telefono');
         $sexo = $request->get('sexo');
         $plan_activo = $request->get('plan_activo');
         $estado_prepa = $request->get('estado_prepa');
         $estado_universidad = $request->get('estado_universidad');
-        
+
         // CONSULTAR DESDE USER como en administradores
         $estudiantes = User::where('rol', 'estudiante')
             ->with(['estudiante.escuelaProcedencia', 'estudiante.universidadInteres'])
@@ -186,6 +212,12 @@ class EstudianteController extends Controller
                           ->orWhere('telefono', 'LIKE', "%{$search}%")
                           ->orWhere('cupon', 'LIKE', "%{$search}%");
                     });
+            })
+            ->when($telefono, function($query, $telefono) {
+                return $query->whereHas('estudiante', function($q) use ($telefono) {
+                    $q->where('telefono', 'LIKE', "%{$telefono}%")
+                      ->orWhere('telefono_casa', 'LIKE', "%{$telefono}%");
+                });
             })
             ->when($sexo, function($query, $sexo) {
                 return $query->whereHas('estudiante', function($q) use ($sexo) {
@@ -234,15 +266,43 @@ class EstudianteController extends Controller
         $estadosPrepa = Preparatoria::select('estado')->distinct()->orderBy('estado')->pluck('estado');
         $estadosUniversidad = Universidad::select('estado')->distinct()->orderBy('estado')->pluck('estado');
         
-        return view('administrador.estudiantes.index', compact(
-            'estudiantes', 
-            'totalEstudiantes', 
-            'activos', 
-            'inactivos', 
-            'conCupon',
-            'estadosPrepa',
-            'estadosUniversidad'
-        ));
+        $estudiantes->getCollection()->transform(function ($u) {
+            $e = $u->estudiante;
+            return [
+                'id' => $u->id,
+                'correo' => $u->correo,
+                'nombre_completo' => $e ? trim("{$e->nombre} {$e->paterno} {$e->materno}") : $u->correo,
+                'telefono' => $e?->telefono,
+                'sexo' => $e?->sexo,
+                'plan_activo' => (bool) ($e?->plan_activo),
+                'cupon' => $e?->cupon,
+                'escuela' => $e?->escuelaProcedencia?->centro_educativo,
+                'escuela_estado' => $e?->escuelaProcedencia?->estado,
+                'universidad' => $e?->universidadInteres?->clave,
+                'universidad_estado' => $e?->universidadInteres?->estado,
+                'sin_perfil' => $e === null,
+            ];
+        });
+
+        return \Inertia\Inertia::render('Admin/Estudiantes/Index', [
+            'estudiantes' => $estudiantes,
+            'estadosPrepa' => $estadosPrepa,
+            'estadosUniversidad' => $estadosUniversidad,
+            'stats' => [
+                'total' => $totalEstudiantes,
+                'activos' => $activos,
+                'inactivos' => $inactivos,
+                'conCupon' => $conCupon,
+            ],
+            'filters' => [
+                'search' => $search,
+                'telefono' => $telefono,
+                'sexo' => $sexo,
+                'plan_activo' => $plan_activo === null || $plan_activo === '' ? null : (int) $plan_activo,
+                'estado_prepa' => $estado_prepa,
+                'estado_universidad' => $estado_universidad,
+            ],
+        ]);
     }
     
     public function show($id)
@@ -488,30 +548,54 @@ class EstudianteController extends Controller
             ->orderBy('tema')
             ->get();
         
-        $duracionEstimada = 3600;
-        
-        return view('administrador.estudiantes.show', compact(
-            'estudiante', 
-            'usuario',
-            'tiempoTotalHoras',
-            'tiempoTotalMinutos',
-            'estudioDiario',
-            'totalSesiones',
-            'ultimaActividad',
-            'fechaUltimaActividad',
-            'diasActivos',
-            'examenes',
-            'examenesPorTipo',
-            'promedioPorTipo',
-            'promedioCalificaciones',
-            'totalVideos',
-            'vistosCompletos',
-            'videosEnProgreso',
-            'porcentajeProgreso',
-            'ultimosVideos',
-            'videosFaltantes',
-            'duracionEstimada'
-        ));
+        return \Inertia\Inertia::render('Admin/Estudiantes/Show', [
+            'estudiante' => [
+                'id' => $user->id,
+                'correo' => $user->correo,
+                'nombre_completo' => trim("{$estudiante->nombre} {$estudiante->paterno} {$estudiante->materno}"),
+                'telefono' => $estudiante->telefono,
+                'telefono_casa' => $estudiante->telefono_casa,
+                'sexo' => $estudiante->sexo,
+                'fecha_nacimiento' => optional($estudiante->fecha_nacimiento)->format('Y-m-d'),
+                'fecha_inscripcion' => optional($estudiante->fecha_inscripcion)->format('Y-m-d'),
+                'plan_activo' => (bool) $estudiante->plan_activo,
+                'cupon' => $estudiante->cupon,
+                'escuela' => $estudiante->escuelaProcedencia?->centro_educativo,
+                'universidad' => $estudiante->universidadInteres?->clave,
+                'foto_url' => $estudiante->foto ? \Illuminate\Support\Facades\Storage::url($estudiante->foto) : null,
+            ],
+            'stats' => [
+                'tiempo_horas' => $tiempoTotalHoras,
+                'tiempo_minutos' => $tiempoTotalMinutos,
+                'total_sesiones' => $totalSesiones,
+                'dias_activos' => $diasActivos,
+                'ultima_actividad' => $ultimaActividad,
+                'promedio_calificaciones' => $promedioCalificaciones,
+                'total_examenes' => $examenes->count(),
+                'total_videos' => $totalVideos,
+                'videos_completos' => $vistosCompletos,
+                'videos_en_progreso' => $videosEnProgreso,
+                'porcentaje_progreso' => $porcentajeProgreso,
+            ],
+            'estudioDiario' => collect($estudioDiario)->map(fn ($d) => [
+                'dia' => is_object($d) ? $d->dia : $d['dia'],
+                'horas' => is_object($d) ? $d->horas_estudiadas : $d['horas_estudiadas'],
+            ])->values(),
+            'examenes' => collect($examenes)->take(15)->map(fn ($e) => [
+                'id' => $e->id ?? null,
+                'tipo' => $e->tipo_examen ?? 'Simulador',
+                'calificacion' => round($e->calificacion ?? 0, 1),
+                'fecha' => isset($e->fecha_fin) && $e->fecha_fin ? Carbon::parse($e->fecha_fin)->format('d/m/Y') : null,
+            ])->values(),
+            'pagos' => $estudiante->pagos->sortByDesc('id')->take(10)->map(fn ($p) => [
+                'id' => $p->id,
+                'monto' => (float) $p->monto_pago,
+                'estatus' => $p->estatus,
+                'tipo' => $p->tipo_pago,
+                'fecha' => optional($p->fecha_pago)->format('d/m/Y'),
+                'referencia' => $p->referencia_pago,
+            ])->values(),
+        ]);
     }
     /**
      * Obtiene los datos de un estudiante en formato JSON para el modal
@@ -655,15 +739,24 @@ class EstudianteController extends Controller
         $preparatorias = Preparatoria::orderBy('centro_educativo')->get();
         $universidades = Universidad::orderBy('clave')->get();
         
-        return view('administrador.estudiantes.edit', compact(
-            'estudianteData', 
-            'user', 
-            'estadosPrepa', 
-            'estadosUniversidad', 
-            'preparatorias', 
-            'universidades',
-            'cuponesDisponibles'
-        ));
+        return \Inertia\Inertia::render('Admin/Estudiantes/Edit', [
+            'estudiante' => [
+                'id' => $user->id,
+                'correo' => $user->correo,
+                'nombre' => $estudianteData->nombre,
+                'paterno' => $estudianteData->paterno,
+                'materno' => $estudianteData->materno,
+                'fecha_nacimiento' => $estudiante->fecha_nacimiento ? $estudiante->fecha_nacimiento->format('Y-m-d') : null,
+                'sexo' => $estudianteData->sexo ?: null,
+                'telefono' => $estudianteData->telefono,
+                'telefono_casa' => $estudianteData->telefono_casa,
+                'escuela_procedencia' => $estudiante->escuela_procedencia,
+                'universidad_interes' => $estudiante->universidad_interes,
+                'plan_activo' => (bool) $estudiante->plan_activo,
+                'cupon' => $estudianteData->cupon,
+            ],
+            'opciones' => $this->opcionesFormulario(),
+        ]);
     }
     
     /**
@@ -686,8 +779,8 @@ class EstudianteController extends Controller
             'materno' => 'nullable|string|max:100|regex:/^[a-zA-ZáéíóúñÑÁÉÍÓÚ\s]+$/',
             'fecha_nacimiento' => 'required|date|before:today',
             'sexo' => 'required|in:M,F',
-            'telefono' => 'required|string|max:15|regex:/^[0-9+\-\s]+$/',
-            'telefono_casa' => 'nullable|string|max:15|regex:/^[0-9+\-\s]+$/',
+            'telefono' => 'required|regex:/^[0-9]{10}$/',
+            'telefono_casa' => 'nullable|regex:/^[0-9]{7,10}$/',
             'escuela_procedencia' => 'required|exists:preparatorias,id',
             'universidad_interes' => 'required|exists:universidades,id',
             'plan_activo' => 'boolean',
@@ -744,7 +837,7 @@ class EstudianteController extends Controller
                 'telefono_casa' => $request->telefono_casa,
                 'escuela_procedencia' => $request->escuela_procedencia,
                 'universidad_interes' => $request->universidad_interes,
-                'plan_activo' => $request->has('plan_activo'),
+                'plan_activo' => $request->boolean('plan_activo'),
                 'cupon' => $codigoCupon,
             ]);
             

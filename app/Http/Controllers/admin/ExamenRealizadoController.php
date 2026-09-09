@@ -22,27 +22,38 @@ class ExamenRealizadoController extends Controller
         
         $query = $this->applyFiltersAndSorting($query, $request);
         
-        $examenes = $query->paginate(15)->appends($request->except('page'));
-        
-        $stats = $this->getEstadisticas($request);
-        
-        $ordenCampo = $request->get('orden_campo', 'fecha');
-        $ordenDireccion = $request->get('orden_direccion', 'desc');
-        
-        if ($request->ajax()) {
-            if ($request->has('export')) {
-                return $this->export($request);
-            }
-            
-            return view('administrador.examenes_realizados.partials.table_rows', compact('examenes'))->render();
-        }
-        
-        return view('administrador.examenes_realizados.index', compact(
-            'examenes',
-            'stats',
-            'ordenCampo',
-            'ordenDireccion'
-        ));
+        $examenes = $query->paginate(15)->withQueryString();
+
+        $examenes->getCollection()->transform(function ($e) {
+            $est = $e->estudianteRel;
+            $hora = $e->hora_inicio && $e->hora_inicio != '00:00:00'
+                ? \Carbon\Carbon::parse($e->hora_inicio)->format('H:i')
+                : null;
+            return [
+                'id' => $e->id,
+                'estudiante' => $est ? trim("{$est->nombre} {$est->paterno} {$est->materno}") : 'Estudiante #' . $e->estudiante,
+                'examen_id' => $e->examen,
+                'tipo_examen' => $e->examenGenerado?->tipo_examen ?? 'Simulador',
+                'calificacion' => $e->calificacion !== null ? round($e->calificacion, 1) : null,
+                'intento' => $e->intento,
+                'fecha' => $e->fecha_inicio
+                    ? \Carbon\Carbon::parse($e->fecha_inicio)->format('d/m/Y') . ($hora ? " · {$hora}" : '')
+                    : null,
+                'tiempo' => $e->tiempo,
+            ];
+        });
+
+        return \Inertia\Inertia::render('Admin/ExamenesRealizados/Index', [
+            'examenes' => $examenes,
+            'stats' => $this->getEstadisticas($request),
+            'tiposExamen' => ExamenGenerado::select('tipo_examen')->distinct()->pluck('tipo_examen'),
+            'filters' => [
+                'estudiante' => $request->estudiante,
+                'tipo_examen' => $request->tipo_examen,
+                'calificacion' => $request->calificacion,
+                'intento' => $request->intento,
+            ],
+        ]);
     }
     
     private function applyFiltersAndSorting($query, Request $request)
@@ -192,13 +203,28 @@ class ExamenRealizadoController extends Controller
             ];
         }
         
-        $examen->respuestas = $respuestasProcesadas;
-        
         $totalPreguntas = count($respuestasProcesadas);
         $correctas = collect($respuestasProcesadas)->where('correcta', true)->count();
-        $incorrectas = $totalPreguntas - $correctas;
-        
-        return view('administrador.examenes_realizados.show', compact('examen', 'totalPreguntas', 'correctas', 'incorrectas'));
+        $est = $examen->estudianteRel;
+
+        return \Inertia\Inertia::render('Admin/ExamenesRealizados/Show', [
+            'examen' => [
+                'id' => $examen->id,
+                'estudiante' => $est ? trim("{$est->nombre} {$est->paterno} {$est->materno}") : 'Estudiante #' . $examen->estudiante,
+                'estudiante_id' => $examen->estudiante,
+                'tipo_examen' => $examen->examenGenerado?->tipo_examen ?? 'Simulador',
+                'calificacion' => $examen->calificacion !== null ? round($examen->calificacion, 1) : null,
+                'intento' => $examen->intento,
+                'fecha_inicio' => $examen->fecha_inicio ? \Carbon\Carbon::parse($examen->fecha_inicio)->format('d/m/Y') : null,
+                'tiempo' => $examen->tiempo,
+            ],
+            'resumen' => [
+                'total' => $totalPreguntas,
+                'correctas' => $correctas,
+                'incorrectas' => $totalPreguntas - $correctas,
+            ],
+            'respuestas' => $respuestasProcesadas,
+        ]);
     }
     
     public function export(Request $request)

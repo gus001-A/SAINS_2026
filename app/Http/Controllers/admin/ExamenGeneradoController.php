@@ -91,35 +91,56 @@ class ExamenGeneradoController extends Controller
         $tipos_examen = ['Materia', 'General del curso', 'Simulación'];
         $areas = AreaPregunta::orderBy('nombre')->get();
         
-        return view('administrador.examenes.index', compact(
-            'examenes',
-            'totalExamenes',
-            'examenesMateria',
-            'examenesSimulacion',
-            'examenesGeneral',
-            'totalPreguntasAsignadas',
-            'promedioPreguntas',
-            'promedioTiempo',
-            'tipos_examen',
-            'areas',
-            'ordenCampo',
-            'ordenDireccion'
-        ));
+        $examenes->getCollection()->transform(fn ($e) => [
+            'id' => $e->id,
+            'tipo_examen' => $e->tipo_examen,
+            'numero_preguntas' => $e->numero_preguntas,
+            'tiempo' => $e->tiempo,
+            'created_at' => optional($e->created_at)->format('Y-m-d H:i'),
+        ]);
+
+        // Tipos reales presentes en la BD (para que el filtro siempre coincida)
+        $tiposExamen = ExamenGenerado::select('tipo_examen')
+            ->whereNotNull('tipo_examen')->where('tipo_examen', '!=', '')
+            ->distinct()->orderBy('tipo_examen')->pluck('tipo_examen');
+
+        return \Inertia\Inertia::render('Admin/Examenes/Index', [
+            'examenes' => $examenes,
+            'areas' => AreaPregunta::orderBy('nombre')->get(['id', 'nombre']),
+            'tiposExamen' => $tiposExamen,
+            'stats' => [
+                'total' => $totalExamenes,
+                'materia' => $examenesMateria,
+                'simulacion' => $examenesSimulacion,
+                'curso' => $examenesGeneral,
+                'preguntasAsignadas' => $totalPreguntasAsignadas,
+                'promedioPreguntas' => $promedioPreguntas,
+            ],
+            'filters' => [
+                'search' => $request->search,
+                'tipo' => $request->tipo,
+                'rango' => $request->rango,
+            ],
+        ]);
     }
 
-    // Mostrar formulario de creación de examen
+    private function preguntasParaSelector()
+    {
+        return Pregunta::with('area')->orderBy('id_area')->get()->map(fn ($p) => [
+            'id' => $p->id,
+            'pregunta' => $p->pregunta,
+            'area' => $p->area?->nombre ?? 'Sin área',
+            'id_area' => $p->id_area,
+        ]);
+    }
+
     public function create()
     {
-        $areas = AreaPregunta::with('preguntas')->get();
-        $preguntas = Pregunta::with('area')->get();
-        
-        $tipos_examen = [
-            'Materia' => 'Materia',
-            'General del curso' => 'General del curso',
-            'Simulación' => 'Simulación'
-        ];
-        
-        return view('administrador.examenes.create', compact('areas', 'preguntas', 'tipos_examen'));
+        return \Inertia\Inertia::render('Admin/Examenes/Create', [
+            'preguntas' => $this->preguntasParaSelector(),
+            'areas' => AreaPregunta::orderBy('nombre')->get(['id', 'nombre']),
+            'tiposExamen' => ['Materia', 'General del curso', 'Simulación'],
+        ]);
     }
 
     // Guardar nuevo examen
@@ -129,42 +150,37 @@ class ExamenGeneradoController extends Controller
             'numero_preguntas' => 'required|integer|min:1|max:200',
             'tiempo' => 'required|integer|min:1|max:180',
             'tipo_examen' => 'required|string|max:50',
-            'preguntas_seleccionadas' => 'required|array|min:1',
+            'completar_aleatorio' => 'boolean',
+            'preguntas_seleccionadas' => 'array',
             'preguntas_seleccionadas.*' => 'exists:preguntas,id',
         ]);
 
         try {
             DB::beginTransaction();
-            
-            // Validar que el número de preguntas coincida
-            if (count($request->preguntas_seleccionadas) != $request->numero_preguntas) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'El número de preguntas seleccionadas no coincide con el indicado');
+
+            $preguntas = $this->armarPreguntas($request);
+            if ($preguntas instanceof \Illuminate\Http\RedirectResponse) {
+                DB::rollBack();
+                return $preguntas;
             }
-            
-            // Crear el examen
+
             $examen = ExamenGenerado::create([
-                'numero_preguntas' => $request->numero_preguntas,
+                'numero_preguntas' => count($preguntas),
                 'tiempo' => $request->tiempo,
                 'tipo_examen' => $request->tipo_examen,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
-            
-            // Asignar las preguntas al examen usando ApoyoPregunta
-            foreach ($request->preguntas_seleccionadas as $pregunta_id) {
-                ApoyoPregunta::create([
-                    'examen' => $examen->id,
-                    'pregunta' => $pregunta_id,
-                ]);
+
+            foreach ($preguntas as $pregunta_id) {
+                ApoyoPregunta::create(['examen' => $examen->id, 'pregunta' => $pregunta_id]);
             }
-            
+
             DB::commit();
-            
+
             return redirect()->route('admin.examenes.index')
-                ->with('success', "Examen #{$examen->id} creado correctamente con {$request->numero_preguntas} preguntas");
-                
+                ->with('success', $this->mensajeArmado($examen->id, $request, count($preguntas), 'creado'));
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error al crear examen: ' . $e->getMessage());
@@ -172,6 +188,55 @@ class ExamenGeneradoController extends Controller
                 ->withInput()
                 ->with('error', 'Error al crear el examen: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Combina las preguntas elegidas manualmente con un relleno aleatorio del banco.
+     * Devuelve un array de IDs, o un RedirectResponse con el error de validación.
+     */
+    private function armarPreguntas(Request $request)
+    {
+        $objetivo = (int) $request->numero_preguntas;
+        $manuales = collect($request->input('preguntas_seleccionadas', []))
+            ->map(fn ($id) => (int) $id)->unique()->values();
+        $completar = $request->boolean('completar_aleatorio');
+
+        if ($manuales->count() > $objetivo) {
+            return redirect()->back()->withInput()->with('error',
+                "Seleccionaste {$manuales->count()} preguntas pero el examen es de {$objetivo}. Reduce la selección o sube el total.");
+        }
+
+        if (!$completar) {
+            if ($manuales->count() !== $objetivo) {
+                return redirect()->back()->withInput()->with('error',
+                    "Debes seleccionar exactamente {$objetivo} preguntas o activar el relleno aleatorio.");
+            }
+            return $manuales->all();
+        }
+
+        $faltan = $objetivo - $manuales->count();
+        if ($faltan > 0) {
+            $aleatorias = Pregunta::whereNotIn('id', $manuales->all())
+                ->inRandomOrder()->limit($faltan)->pluck('id');
+
+            if ($aleatorias->count() < $faltan) {
+                return redirect()->back()->withInput()->with('error',
+                    "No hay suficientes preguntas en el banco para el relleno aleatorio (faltan {$faltan}, disponibles {$aleatorias->count()}).");
+            }
+            $manuales = $manuales->merge($aleatorias);
+        }
+
+        return $manuales->values()->all();
+    }
+
+    private function mensajeArmado($id, Request $request, int $total, string $verbo): string
+    {
+        $manuales = count($request->input('preguntas_seleccionadas', []));
+        $aleatorias = $total - $manuales;
+        $detalle = ($request->boolean('completar_aleatorio') && $aleatorias > 0)
+            ? " ({$manuales} elegidas + {$aleatorias} aleatorias)"
+            : '';
+        return "Examen #{$id} {$verbo} correctamente con {$total} preguntas{$detalle}";
     }
 
     // Mostrar un examen específico - VERSIÓN CORREGIDA
@@ -206,9 +271,24 @@ class ExamenGeneradoController extends Controller
                 $preguntasPorArea[$areaNombre] = ($preguntasPorArea[$areaNombre] ?? 0) + 1;
             }
             
-            $totalPreguntas = $preguntasDelExamen->count();
-            return view('administrador.examenes.show', compact('examen', 'totalPreguntas', 'preguntasPorArea'));
-            
+            return \Inertia\Inertia::render('Admin/Examenes/Show', [
+                'examen' => [
+                    'id' => $examen->id,
+                    'tipo_examen' => $examen->tipo_examen,
+                    'numero_preguntas' => $examen->numero_preguntas,
+                    'tiempo' => $examen->tiempo,
+                ],
+                'preguntas' => $preguntasDelExamen->map(fn ($p) => [
+                    'id' => $p->id,
+                    'texto' => $p->texto_pregunta,
+                    'respuesta_correcta' => $p->respuesta_correcta,
+                    'respuesta1' => $p->respuesta1,
+                    'respuesta2' => $p->respuesta2,
+                    'area' => $p->area_nombre ?? 'Sin área',
+                ])->values(),
+                'porArea' => collect($preguntasPorArea)->map(fn ($total, $area) => ['area' => $area, 'total' => $total])->values(),
+            ]);
+
         } catch (\Exception $e) {
             \Log::error('Error en show de examen: ' . $e->getMessage());
             return redirect()->route('admin.examenes.index')
@@ -254,12 +334,21 @@ class ExamenGeneradoController extends Controller
                 'Simulación' => 'Simulación'
             ];
             
-            return view('administrador.examenes.edit', compact('examen', 'areas', 'preguntas', 'preguntasSeleccionadas', 'tipos_examen'));
-            
+            return \Inertia\Inertia::render('Admin/Examenes/Edit', [
+                'examen' => [
+                    'id' => $examen->id,
+                    'tipo_examen' => $examen->tipo_examen,
+                    'numero_preguntas' => $examen->numero_preguntas,
+                    'tiempo' => $examen->tiempo,
+                    'preguntas_seleccionadas' => array_map('intval', $preguntasSeleccionadas),
+                ],
+                'preguntas' => $this->preguntasParaSelector(),
+                'areas' => AreaPregunta::orderBy('nombre')->get(['id', 'nombre']),
+                'tiposExamen' => ['Materia', 'General del curso', 'Simulación'],
+            ]);
+
         } catch (\Exception $e) {
             \Log::error('Error en edit de examen: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
             return redirect()->route('admin.examenes.index')
                 ->with('error', 'Error al cargar el examen para editar: ' . $e->getMessage());
         }
@@ -276,52 +365,39 @@ public function update(Request $request, $id)
         'numero_preguntas' => 'required|integer|min:1|max:200',
         'tiempo' => 'required|integer|min:1|max:180',
         'tipo_examen' => 'required|string|max:50',
-        'preguntas_seleccionadas' => 'required|array|min:1',
+        'completar_aleatorio' => 'boolean',
+        'preguntas_seleccionadas' => 'array',
         'preguntas_seleccionadas.*' => 'exists:preguntas,id',
     ]);
 
     try {
         DB::beginTransaction();
-        
+
         $examen = ExamenGenerado::findOrFail($id);
-        
-        // Validar que el número de preguntas coincida
-        if (count($request->preguntas_seleccionadas) != $request->numero_preguntas) {
+
+        $preguntas = $this->armarPreguntas($request);
+        if ($preguntas instanceof \Illuminate\Http\RedirectResponse) {
             DB::rollBack();
-            return redirect()->back()
-                ->withInput()
-                ->with('error', "El número de preguntas seleccionadas (" . count($request->preguntas_seleccionadas) . ") no coincide con el indicado ({$request->numero_preguntas})");
+            return $preguntas;
         }
-        
-        // Actualizar el examen
+
         $examen->update([
-            'numero_preguntas' => $request->numero_preguntas,
+            'numero_preguntas' => count($preguntas),
             'tiempo' => $request->tiempo,
             'tipo_examen' => $request->tipo_examen,
             'updated_at' => Carbon::now(),
         ]);
-        
-        // Eliminar las preguntas antiguas
-        $deleted = ApoyoPregunta::where('examen', $examen->id)->delete();
-        \Log::info('Preguntas antiguas eliminadas: ' . $deleted);
-        
-        // Asignar las nuevas preguntas
-        $inserted = 0;
-        foreach ($request->preguntas_seleccionadas as $pregunta_id) {
-            ApoyoPregunta::create([
-                'examen' => $examen->id,
-                'pregunta' => $pregunta_id,
-            ]);
-            $inserted++;
+
+        ApoyoPregunta::where('examen', $examen->id)->delete();
+        foreach ($preguntas as $pregunta_id) {
+            ApoyoPregunta::create(['examen' => $examen->id, 'pregunta' => $pregunta_id]);
         }
-        
-        \Log::info('Nuevas preguntas insertadas: ' . $inserted);
-        
+
         DB::commit();
-        
+
         return redirect()->route('admin.examenes.index')
-            ->with('success', "Examen #{$examen->id} actualizado correctamente con {$inserted} preguntas");
-            
+            ->with('success', $this->mensajeArmado($examen->id, $request, count($preguntas), 'actualizado'));
+
     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
         DB::rollBack();
         \Log::error('Examen no encontrado para actualizar: ' . $id);
@@ -523,14 +599,22 @@ public function update(Request $request, $id)
             ->limit(10)
             ->get();
         
-        return view('administrador.examenes.dashboard', compact(
-            'totalExamenes',
-            'totalPreguntasAsignadas',
-            'promedioPreguntas',
-            'promedioTiempo',
-            'examenesPorTipo',
-            'distribucionPreguntas',
-            'ultimosExamenes'
-        ));
+        return \Inertia\Inertia::render('Admin/Examenes/Dashboard', [
+            'stats' => [
+                'total' => $totalExamenes,
+                'preguntasAsignadas' => $totalPreguntasAsignadas,
+                'promedioPreguntas' => round($promedioPreguntas, 1),
+                'promedioTiempo' => round($promedioTiempo, 1),
+            ],
+            'porTipo' => $examenesPorTipo->map(fn ($r) => ['tipo' => $r->tipo_examen, 'total' => $r->total]),
+            'ultimosExamenes' => $ultimosExamenes->map(fn ($e) => [
+                'id' => $e->id,
+                'tipo_examen' => $e->tipo_examen,
+                'numero_preguntas' => $e->numero_preguntas,
+                'preguntas_reales' => $e->apoyos_count,
+                'tiempo' => $e->tiempo,
+                'created_at' => optional($e->created_at)->format('d/m/Y'),
+            ]),
+        ]);
     }
 }

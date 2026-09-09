@@ -9,6 +9,7 @@ use App\Models\Carrera;
 use App\Models\User;
 use App\Models\Pago;
 use App\Models\Cupon;
+use App\Models\Notificacion;
 use App\Models\Pregunta;
 use App\Models\ExamenGenerado;
 use App\Models\TiempoEstudio;
@@ -53,20 +54,19 @@ class AlumnoController extends Controller
         if ($estudiante && $estudiante->foto) {
             $tieneFoto = true;
         }
-        
-        return view('estudiante.dashboard', compact('user', 'estudiante', 'perfilCompleto', 'tieneFoto'));
+
+        return \Inertia\Inertia::render('Estudiante/Dashboard', [
+            'estudiante' => $estudiante,
+            'perfilCompleto' => $perfilCompleto,
+            'tieneFoto' => $tieneFoto,
+        ]);
     }
 
     public function progreso()
     {
-        $user = Auth::user();
-        $estudiante = Estudiante::where('usuario', $user->id)->first();
-        
-        $asignaturas = Asignatura::with(['clases' => function($query) {
-            $query->orderBy('num_clase', 'asc');
-        }])->get();
-        
-        return view('estudiante.progreso', compact('estudiante', 'asignaturas'));
+        // La página "Mi progreso" se retiró: su contenido vive ahora en el
+        // dashboard y en "Mis exámenes". Se conserva la ruta por compatibilidad.
+        return redirect()->route('estudiante.dashboard');
     }
 
     // ========== PERFIL Y FOTO ==========
@@ -80,9 +80,32 @@ class AlumnoController extends Controller
             return redirect()->route('estudiante.dashboard')->with('warning', 'Por favor completa tu perfil primero');
         }
         
-        $universidades = Universidad::with('carrera')->get();
-        
-        return view('estudiante.perfil', compact('user', 'estudiante', 'universidades'));
+        $universidades = Universidad::with('carrera')->orderBy('clave')->get();
+
+        return \Inertia\Inertia::render('Estudiante/Perfil', [
+            'estudianteData' => [
+                'id' => $estudiante->id,
+                'nombre' => $estudiante->nombre,
+                'paterno' => $estudiante->paterno,
+                'materno' => $estudiante->materno,
+                'telefono' => $estudiante->telefono,
+                'telefono_casa' => $estudiante->telefono_casa,
+                'fecha_nacimiento' => optional($estudiante->fecha_nacimiento)->format('Y-m-d'),
+                'sexo' => $estudiante->sexo,
+                'correo' => $user->correo,
+                'cupon' => $estudiante->cupon,
+                'plan_activo' => (bool) $estudiante->plan_activo,
+                'universidad_interes' => $estudiante->universidad_interes,
+                'foto_url' => $estudiante->foto ? Storage::url($estudiante->foto) : null,
+                'fecha_inscripcion' => optional($estudiante->fecha_inscripcion)->format('Y-m-d'),
+            ],
+            'universidades' => $universidades->map(fn ($u) => [
+                'id' => $u->id,
+                'clave' => $u->clave,
+                'direccion' => $u->direccion,
+                'carrera' => $u->carrera->nombre ?? null,
+            ])->values(),
+        ]);
     }
 
     public function completarPerfilForm()
@@ -94,8 +117,22 @@ class AlumnoController extends Controller
             return redirect()->route('estudiante.dashboard')
                 ->with('info', 'Ya tienes un perfil completado');
         }
-        
-        return view('estudiante.completar-perfil');
+
+        return \Inertia\Inertia::render('Estudiante/CompletarPerfil', [
+            'correo' => $user->correo,
+            'preparatorias' => \App\Models\Preparatoria::orderBy('centro_educativo')
+                ->get(['id', 'centro_educativo', 'estado'])
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'label' => $p->centro_educativo . ($p->estado ? " ({$p->estado})" : ''),
+                ])->values(),
+            'universidades' => Universidad::orderBy('clave')
+                ->get(['id', 'clave', 'direccion'])
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'label' => trim("{$u->clave} - {$u->direccion}"),
+                ])->values(),
+        ]);
     }
 
     public function completarPerfil(Request $request)
@@ -104,13 +141,17 @@ class AlumnoController extends Controller
             'nombre' => 'required|string|max:255',
             'paterno' => 'required|string|max:255',
             'materno' => 'nullable|string|max:255',
-            'telefono' => 'required|string|max:20',
-            'fecha_nacimiento' => 'required|date',
+            'telefono' => 'required|regex:/^[0-9]{10}$/',
+            'fecha_nacimiento' => 'required|date|before:today',
             'sexo' => 'required|in:M,F',
             'escuela_procedencia' => 'nullable|exists:preparatorias,id',
             'universidad_interes' => 'nullable|exists:universidades,id',
-            'telefono_casa' => 'nullable|string|max:20',
+            'telefono_casa' => 'nullable|regex:/^[0-9]{7,10}$/',
             'cupon' => 'nullable|string|max:50',
+        ], [
+            'telefono.regex' => 'El teléfono debe tener 10 dígitos.',
+            'telefono_casa.regex' => 'El teléfono de casa debe tener entre 7 y 10 dígitos.',
+            'fecha_nacimiento.before' => 'La fecha de nacimiento debe ser anterior a hoy.',
         ]);
 
         try {
@@ -118,12 +159,10 @@ class AlumnoController extends Controller
             
             $existePerfil = Estudiante::where('usuario', $user->id)->exists();
             if ($existePerfil) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ya tienes un perfil completado'
-                ], 400);
+                return redirect()->route('estudiante.dashboard')
+                    ->with('info', 'Ya tienes un perfil completado');
             }
-            
+
             $estudiante = Estudiante::create([
                 'nombre' => $request->nombre,
                 'paterno' => $request->paterno,
@@ -133,7 +172,7 @@ class AlumnoController extends Controller
                 'telefono' => $request->telefono,
                 'telefono_casa' => $request->telefono_casa,
                 'escuela_procedencia' => $request->escuela_procedencia,
-                'cupon' => $request->cupon,
+                'cupon' => null,
                 'fecha_inscripcion' => now(),
                 'plan_activo' => false,
                 'universidad_interes' => $request->universidad_interes,
@@ -141,19 +180,94 @@ class AlumnoController extends Controller
                 'usuario' => $user->id
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => '¡Perfil completado exitosamente!',
-                'redirect' => route('estudiante.dashboard')
+            // Cupón que cubre el 100% → activa Premium automáticamente (sin pago).
+            $cupon100 = null;
+            if ($request->filled('cupon')) {
+                $cupon = Cupon::where('codigo', strtoupper($request->cupon))->first();
+                if ($cupon && $cupon->aplicable() && $cupon->cubreTodo()) {
+                    $cupon100 = $cupon;
+                    $this->activarPlanPorCupon($estudiante, $cupon);
+                } elseif ($cupon && $cupon->aplicable()) {
+                    // Cupón parcial: sólo se asocia para aplicarse al pagar.
+                    $estudiante->update(['cupon' => $cupon->codigo]);
+                    session(['cupon_aplicado' => $cupon->codigo]);
+                }
+            }
+
+            Notificacion::enviar($user->id, [
+                'tipo' => 'perfil_completo',
+                'titulo' => 'Perfil completado',
+                'mensaje' => $cupon100
+                    ? '¡Tu cupón cubre el 100%! Tu acceso Premium ya está activo.'
+                    : 'Ya puedes usar los simuladores y ver las clases gratuitas. Hazte Premium para desbloquear todo.',
+                'url' => route('estudiante.clases-premium'),
+                'icono' => 'check', 'color' => 'green',
             ]);
+            Notificacion::enviarAdmins([
+                'tipo' => 'estudiante_nuevo',
+                'titulo' => 'Nuevo estudiante',
+                'mensaje' => "{$estudiante->nombre_completo} completó su registro." . ($cupon100 ? " Activó Premium con el cupón {$cupon100->codigo} (100%)." : ''),
+                'url' => route('admin.estudiantes.index'),
+                'icono' => 'bell', 'color' => 'indigo',
+            ]);
+
+            return redirect()->route('estudiante.dashboard')
+                ->with('success', $cupon100
+                    ? '¡Perfil completado! Tu cupón cubre el 100%, ya tienes acceso Premium.'
+                    : '¡Perfil completado exitosamente!');
 
         } catch (\Exception $e) {
             Log::error('Error al completar perfil: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al completar perfil: ' . $e->getMessage()
-            ], 500);
+            return back()->with('error', 'Error al completar perfil: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Activa el plan Premium de un estudiante gracias a un cupón que cubre el 100%.
+     * Marca el cupón como usado y deja registro de un "pago" de $0 para el historial.
+     */
+    private function activarPlanPorCupon(Estudiante $estudiante, Cupon $cupon): void
+    {
+        DB::transaction(function () use ($estudiante, $cupon) {
+            $cupon->update([
+                'usado' => true,
+                'usuario_uso' => $estudiante->usuario,
+                'fecha_uso' => now(),
+            ]);
+
+            $estudiante->update([
+                'cupon' => $cupon->codigo,
+                'plan_activo' => true,
+                'fecha_inscripcion' => now(),
+            ]);
+
+            Pago::create([
+                'alumno_pago' => $estudiante->id,
+                'tipo_pago' => 'cupon',
+                'monto_pago' => 0,
+                'estatus' => 'completado',
+                'referencia_pago' => 'CUPON-' . $cupon->codigo,
+                'fecha_pago' => now(),
+                'nota_usuario' => "Plan Premium activado con el cupón {$cupon->codigo} (100% de descuento).",
+            ]);
+        });
+
+        session()->forget('cupon_aplicado');
+
+        Notificacion::enviar($estudiante->usuario, [
+            'tipo' => 'pago_aprobado',
+            'titulo' => '¡Acceso Premium activado!',
+            'mensaje' => "Tu cupón {$cupon->codigo} cubre el 100%. Ya tienes acceso completo al Curso Premium.",
+            'url' => route('estudiante.clases-premium'),
+            'icono' => 'check', 'color' => 'green',
+        ]);
+        Notificacion::enviarAdmins([
+            'tipo' => 'pago_nuevo',
+            'titulo' => 'Premium activado con cupón 100%',
+            'mensaje' => "{$estudiante->nombre_completo} activó Premium con el cupón {$cupon->codigo}.",
+            'url' => route('admin.estudiantes.index'),
+            'icono' => 'dollar', 'color' => 'green',
+        ]);
     }
 
     public function actualizarPerfil(Request $request)
@@ -173,10 +287,13 @@ class AlumnoController extends Controller
                 'nombre' => 'required|string|max:255',
                 'paterno' => 'nullable|string|max:255',
                 'materno' => 'nullable|string|max:255',
-                'telefono' => 'nullable|string|max:20',
-                'fecha_nacimiento' => 'nullable|date',
+                'telefono' => 'nullable|regex:/^[0-9]{10}$/',
+                'fecha_nacimiento' => 'nullable|date|before:today',
                 'sexo' => 'nullable|in:M,F',
                 'correo' => 'required|email|max:255|unique:usuario,correo,' . $user->id . ',id'
+            ], [
+                'telefono.regex' => 'El teléfono debe tener 10 dígitos.',
+                'fecha_nacimiento.before' => 'La fecha de nacimiento debe ser anterior a hoy.',
             ]);
             
             $estudiante->update([
@@ -372,10 +489,11 @@ class AlumnoController extends Controller
         $estudiante = Estudiante::where('usuario', $user->id)->first();
         
         $asignaturas = Asignatura::whereHas('clases', function($query) {
-            $query->whereNotNull('link');
+            $query->whereNotNull('link')->where('link', '!=', '');
         })->with(['clases' => function($query) {
-            $query->whereNotNull('link')->orderBy('num_clase', 'asc');
-        }])->get();
+            $query->whereNotNull('link')->where('link', '!=', '')
+                  ->with('video')->orderBy('num_clase', 'asc');
+        }])->orderBy('nombre')->get();
         
         $vistasIds = [];
         if ($estudiante) {
@@ -411,8 +529,34 @@ class AlumnoController extends Controller
         }
         
         $tieneAccesoPremium = $estudiante && $estudiante->plan_activo;
-        
-        return view('estudiante.clases-premium', compact('estudiante', 'asignaturas', 'vistasIds', 'examenesPorArea', 'tieneAccesoPremium'));
+
+        $data = $asignaturas->map(function ($a) use ($vistasIds, $examenesPorArea) {
+            $examen = $examenesPorArea[$a->id] ?? null;
+            return [
+                'id' => $a->id,
+                'nombre' => $a->nombre,
+                'examen' => $examen ? [
+                    'id' => $examen->id,
+                    'nombre' => $examen->nombre ?? $examen->tipo_examen ?? 'Examen de materia',
+                ] : null,
+                'clases' => $a->clases->values()->map(fn ($c, $i) => [
+                    'id' => $c->id,
+                    'num_clase' => $c->num_clase,
+                    'orden' => $i + 1,
+                    'nombre_clase' => $c->nombre_clase,
+                    'link' => $c->link,
+                    'url' => $c->url,
+                    'gratis' => (bool) $c->gratis,
+                    'duracion' => $c->video && $c->video->duracion && $c->video->duracion !== '00:00:00' ? $c->video->duracion : null,
+                    'vista' => in_array($c->id, $vistasIds),
+                ]),
+            ];
+        })->values();
+
+        return \Inertia\Inertia::render('Estudiante/ClasesPremium', [
+            'asignaturas' => $data,
+            'tieneAccesoPremium' => (bool) $tieneAccesoPremium,
+        ]);
     }
 
     public function registrarProgresoVideo(Request $request)
@@ -577,7 +721,15 @@ class AlumnoController extends Controller
             'porcentaje_descuento' => $porcentajeDescuento
         ];
         
-        return view('estudiante.checkout', compact('estudiante', 'precios'));
+        return \Inertia\Inertia::render('Estudiante/Checkout', [
+            'estudianteData' => [
+                'nombre_completo' => $estudiante->nombre_completo,
+                'correo' => Auth::user()->correo,
+                'telefono' => $estudiante->telefono,
+            ],
+            'precios' => $precios,
+            'mpPublicKey' => config('mercadopago.public_key'),
+        ]);
     }
 
     public function checkoutPendiente($pagoId = null)
@@ -607,7 +759,9 @@ class AlumnoController extends Controller
             return redirect()->route('estudiante.checkout')->with('info', 'No tienes pagos pendientes');
         }
         
-        return view('estudiante.checkout-pendiente', compact('estudiante', 'pagoPendiente'));
+        return \Inertia\Inertia::render('Estudiante/CheckoutPendiente', [
+            'pago' => $this->datosPago($pagoPendiente),
+        ]);
     }
 
     public function procesarSolicitudPago(Request $request)
@@ -708,7 +862,22 @@ class AlumnoController extends Controller
             
             DB::commit();
             session()->forget('cupon_aplicado');
-            
+
+            Notificacion::enviar($estudiante->usuario, [
+                'tipo' => 'pago_solicitud',
+                'titulo' => 'Solicitud de pago generada',
+                'mensaje' => "Referencia {$referencia} por $" . number_format($precioFinal, 2) . " MXN. Descarga tu ficha y sube tu comprobante cuando pagues.",
+                'url' => route('estudiante.ficha-pago', $pago->id),
+                'icono' => 'file', 'color' => 'amber',
+            ]);
+            Notificacion::enviarAdmins([
+                'tipo' => 'pago_nuevo',
+                'titulo' => 'Nueva solicitud de pago',
+                'mensaje' => "{$estudiante->nombre_completo} generó una ficha ({$request->metodo_pago}) por $" . number_format($precioFinal, 2) . " MXN.",
+                'url' => route('admin.pagos.show', $pago->id),
+                'icono' => 'dollar', 'color' => 'indigo',
+            ]);
+
             return redirect()->route('estudiante.ficha-pago', $pago->id)
                 ->with('success', 'Solicitud de pago registrada. Descarga tu ficha para realizar el pago.');
             
@@ -728,41 +897,55 @@ class AlumnoController extends Controller
         $estudiante = Estudiante::where('usuario', Auth::id())->first();
         
         if (!empty($estudiante->cupon)) {
-            return redirect()->back()->with('error_cupon', 'Ya tienes un cupón asociado a tu cuenta');
+            return redirect()->back()->with('error','Ya tienes un cupón asociado a tu cuenta');
         }
         
         if (session('cupon_aplicado')) {
-            return redirect()->back()->with('error_cupon', 'Ya tienes un cupón aplicado');
+            return redirect()->back()->with('error','Ya tienes un cupón aplicado');
         }
         
         $codigo = strtoupper($request->codigo);
         $cupon = Cupon::where('codigo', $codigo)->first();
         
         if (!$cupon) {
-            return redirect()->back()->with('error_cupon', 'El cupón no existe');
+            return redirect()->back()->with('error','El cupón no existe');
         }
         
         if ($cupon->usado) {
-            return redirect()->back()->with('error_cupon', 'Este cupón ya ha sido utilizado');
+            return redirect()->back()->with('error','Este cupón ya ha sido utilizado');
         }
         
         if ($cupon->fecha_expiracion && Carbon::now()->greaterThan($cupon->fecha_expiracion)) {
-            return redirect()->back()->with('error_cupon', 'Este cupón ha expirado');
+            return redirect()->back()->with('error','Este cupón ha expirado');
         }
         
         if ($cupon->estatus !== 'activo') {
-            return redirect()->back()->with('error_cupon', 'Este cupón no está activo');
+            return redirect()->back()->with('error','Este cupón no está activo');
         }
-        
+
+        // Cupón que cubre el 100% → activa Premium al instante, sin pago.
+        if ($cupon->cubreTodo()) {
+            if (!$estudiante) {
+                return redirect()->route('estudiante.completar-perfil')
+                    ->with('info', 'Completa tu perfil para activar tu cupón.');
+            }
+            if ($estudiante->plan_activo) {
+                return redirect()->route('estudiante.dashboard')->with('info', 'Ya tienes el plan Premium activo.');
+            }
+            $this->activarPlanPorCupon($estudiante, $cupon);
+            return redirect()->route('estudiante.clases-premium')
+                ->with('success', '¡Tu cupón cubre el 100%! Ya tienes acceso Premium completo.');
+        }
+
         session(['cupon_aplicado' => $codigo]);
-        
+
         if ($cupon->tipo_descuento === 'porcentaje') {
             $mensaje = "¡Cupón aplicado! " . $cupon->valor_descuento . "% de descuento";
         } else {
             $mensaje = "¡Cupón aplicado! $" . number_format($cupon->valor_descuento, 2) . " de descuento";
         }
-        
-        return redirect()->back()->with('success_cupon', $mensaje);
+
+        return redirect()->back()->with('success', $mensaje);
     }
 
     public function eliminarCupon()
@@ -806,8 +989,11 @@ class AlumnoController extends Controller
     {
         $estudiante = Estudiante::where('usuario', Auth::id())->first();
         $pago = Pago::where('id', $pagoId)->where('alumno_pago', $estudiante->id)->firstOrFail();
-        
-        return view('estudiante.ficha-pago', compact('pago'));
+
+        return \Inertia\Inertia::render('Estudiante/FichaPago', [
+            'pago' => $this->datosPago($pago),
+            'fichaUrl' => asset('images/FICHA_PAGO.jpeg'),
+        ]);
     }
 
     public function descargarFichaPago($pagoId)
@@ -849,7 +1035,22 @@ class AlumnoController extends Controller
                 'nota_usuario' => $request->nota_usuario,
                 'estatus' => 'revisando'
             ]);
-            
+
+            Notificacion::enviar($estudiante->usuario, [
+                'tipo' => 'comprobante_recibido',
+                'titulo' => 'Comprobante recibido',
+                'mensaje' => 'Tu pago está en revisión. Te avisaremos en cuanto sea aprobado (24–48 h hábiles).',
+                'url' => route('estudiante.pago-exito', $pago->id),
+                'icono' => 'clock', 'color' => 'blue',
+            ]);
+            Notificacion::enviarAdmins([
+                'tipo' => 'comprobante_subido',
+                'titulo' => 'Comprobante subido',
+                'mensaje' => "{$estudiante->nombre_completo} subió su comprobante del pago #{$pago->id}. Pendiente de revisar.",
+                'url' => route('admin.pagos.show', $pago->id),
+                'icono' => 'paperclip', 'color' => 'violet',
+            ]);
+
             return redirect()->route('estudiante.pago-exito', $pago->id)
                 ->with('success', '¡Comprobante subido! Tu pago está en revisión.');
             
@@ -863,8 +1064,10 @@ class AlumnoController extends Controller
     {
         $estudiante = Estudiante::where('usuario', Auth::id())->first();
         $pago = Pago::where('id', $pagoId)->where('alumno_pago', $estudiante->id)->firstOrFail();
-        
-        return view('estudiante.pago-exito', compact('pago', 'estudiante'));
+
+        return \Inertia\Inertia::render('Estudiante/PagoExito', [
+            'pago' => $this->datosPago($pago),
+        ]);
     }
 
     public function misPagos()
@@ -880,8 +1083,9 @@ class AlumnoController extends Controller
             ->orderBy('id', 'desc')
             ->first();  // Cambiado de get() a first()
         
-        // Enviar la variable $pago en lugar de $pagos
-        return view('estudiante.mis-pagos', compact('pago'));
+        return \Inertia\Inertia::render('Estudiante/MisPagos', [
+            'pago' => $pago ? $this->datosPago($pago) : null,
+        ]);
     }
 
     private function generarReferenciaPago($metodo, $estudianteId)
@@ -892,6 +1096,60 @@ class AlumnoController extends Controller
             default => 'PAG'
         };
         return $prefix . date('Ymd') . str_pad($estudianteId, 6, '0', STR_PAD_LEFT) . rand(100, 999);
+    }
+
+    /**
+     * Arma el arreglo de datos de un pago para las páginas Inertia del estudiante.
+     */
+    private function datosPago(Pago $pago): array
+    {
+        return [
+            'id' => $pago->id,
+            'tipo_pago' => $pago->tipo_pago,
+            'monto_pago' => (float) $pago->monto_pago,
+            'estatus' => $pago->estatus,
+            'referencia_pago' => $pago->referencia_pago,
+            'comprobante_url' => $pago->comprobante ? Storage::url($pago->comprobante) : null,
+            'nota_usuario' => $pago->nota_usuario,
+            'fecha_pago' => optional($pago->fecha_pago)->toIso8601String(),
+            'fecha_pago_formato' => optional($pago->fecha_pago)->format('d/m/Y H:i'),
+        ];
+    }
+
+    /**
+     * Datos base de un ExamenGenerado para las páginas de examen/simulador.
+     */
+    private function datosExamen($examen): array
+    {
+        return [
+            'id' => $examen->id,
+            'nombre' => $examen->nombre ?? $examen->tipo_examen ?? 'Examen',
+            'tipo_examen' => $examen->tipo_examen,
+            'numero_preguntas' => (int) ($examen->numero_preguntas ?? 0),
+            'tiempo' => (int) ($examen->tiempo ?? 60),
+        ];
+    }
+
+    /**
+     * Formatea las preguntas para el componente QuizRunner: cada una con sus
+     * opciones ya barajadas y etiquetadas (correcta / incorrecta1 / ...).
+     */
+    private function formatearPreguntasQuiz($preguntas): array
+    {
+        return collect($preguntas)->values()->map(function ($p) {
+            $opciones = [];
+            if (!empty($p->respuesta_correcta)) $opciones[] = ['texto' => $p->respuesta_correcta, 'valor' => 'correcta'];
+            if (!empty($p->respuesta1)) $opciones[] = ['texto' => $p->respuesta1, 'valor' => 'incorrecta1'];
+            if (!empty($p->respuesta2)) $opciones[] = ['texto' => $p->respuesta2, 'valor' => 'incorrecta2'];
+            if (!empty($p->respuesta3)) $opciones[] = ['texto' => $p->respuesta3, 'valor' => 'incorrecta3'];
+            shuffle($opciones);
+
+            return [
+                'id' => $p->id,
+                'pregunta' => $p->pregunta,
+                'opciones' => $opciones,
+            ];
+        })->all();
     }
 
     // ==================== MERCADO PAGO (INTEGRACIÓN COMPLETA) ====================
@@ -989,7 +1247,12 @@ class AlumnoController extends Controller
                     ],
                     'installments' => 12
                 ],
-                'external_reference' => 'curso_' . $estudiante->id . '_' . time()
+                'external_reference' => 'curso_' . $estudiante->id . '_' . time(),
+                'metadata' => [
+                    'estudiante_id' => $estudiante->id,
+                    'cupon' => $cuponAplicado,
+                    'monto' => round($precioFinal, 2),
+                ],
             ];
             
             Log::info('Enviando a MP:', $data);
@@ -1040,114 +1303,62 @@ class AlumnoController extends Controller
         }
     }
     /**
-     * Pago exitoso - Mercado Pago
+     * Retorno de éxito de Mercado Pago (lo abre el navegador del estudiante).
+     * Verifica el pago contra la API y delega en el helper idempotente, de modo
+     * que da igual si llega primero este retorno o el webhook.
      */
     public function pagoExitoMercadoPago(Request $request)
     {
         try {
-            $payment_id = $request->get('payment_id');
-            $preference_id = $request->get('preference_id');
-            $collection_status = $request->get('collection_status');
-            
-            Log::info('Pago exitoso MP recibido:', [
-                'payment_id' => $payment_id,
-                'preference_id' => $preference_id,
-                'collection_status' => $collection_status
-            ]);
-            
-            // Obtener información de la sesión
-            $pagoInfo = session('pago_en_proceso');
-            
-            if (!$pagoInfo) {
-                return redirect()->route('estudiante.checkout')
-                    ->with('error', 'No se encontró información del pago. Por favor contacta a soporte.');
+            // MP puede mandar el id como payment_id o collection_id
+            $paymentId = $request->get('payment_id') ?: $request->get('collection_id');
+
+            Log::info('Retorno éxito MP:', $request->all());
+
+            if (!$paymentId) {
+                // Sin id de pago no podemos verificar; mándalo a su pago pendiente.
+                return redirect()->route('estudiante.checkout-pendiente')
+                    ->with('warning', 'No recibimos la confirmación del pago. Si ya pagaste, se activará en unos minutos.');
             }
-            
-            $estudiante = Estudiante::find($pagoInfo['estudiante_id']);
-            
-            if (!$estudiante) {
-                return redirect()->route('estudiante.checkout')
-                    ->with('error', 'Estudiante no encontrado.');
-            }
-            
-            // Verificar el estado del pago con la API de MP
+
             $accessToken = config('mercadopago.access_token');
             $response = Http::withToken($accessToken)
-                ->get("https://api.mercadopago.com/v1/payments/{$payment_id}");
-            
-            if ($response->successful()) {
-                $paymentData = $response->json();
-                
-                if ($paymentData['status'] === 'approved') {
-                    DB::beginTransaction();
-                    
-                    try {
-                        // Verificar que no exista un pago ya procesado
-                        $pagoExistente = Pago::where('referencia_pago', $payment_id)->first();
-                        if ($pagoExistente) {
-                            DB::rollBack();
-                            return redirect()->route('estudiante.pago-exito', $pagoExistente->id)
-                                ->with('info', 'Este pago ya había sido procesado anteriormente.');
-                        }
-                        
-                        // Crear registro de pago
-                        $pago = Pago::create([
-                            'alumno_pago' => $estudiante->id,
-                            'tipo_pago' => 'mercadopago',
-                            'monto_pago' => $pagoInfo['monto'],
-                            'estatus' => 'completado',
-                            'referencia_pago' => $payment_id,
-                            'fecha_pago' => now(),
-                            'nota_usuario' => "Pago realizado con Mercado Pago\nID Transacción: $payment_id\nPreference ID: $preference_id"
-                        ]);
-                        
-                        // Activar plan del estudiante
-                        $estudiante->plan_activo = true;
-                        $estudiante->fecha_activacion = now();
-                        $estudiante->save();
-                        
-                        // Marcar cupón como usado si existe
-                        if ($pagoInfo['cupon']) {
-                            $cupon = Cupon::where('codigo', $pagoInfo['cupon'])->first();
-                            if ($cupon && !$cupon->usado) {
-                                $cupon->usado = true;
-                                $cupon->usuario_uso = $estudiante->usuario;
-                                $cupon->fecha_uso = now();
-                                $cupon->save();
-                                
-                                // Actualizar el campo cupon en el estudiante
-                                $estudiante->cupon = $pagoInfo['cupon'];
-                                $estudiante->save();
-                            }
-                        }
-                        
-                        // Limpiar sesión
-                        session()->forget(['pago_en_proceso', 'cupon_aplicado']);
-                        
-                        DB::commit();
-                        
-                        return redirect()->route('estudiante.pago-exito', $pago->id)
-                            ->with('success', '¡Pago completado exitosamente! Bienvenido al curso premium.');
-                        
-                    } catch (\Exception $e) {
-                        DB::rollBack();
-                        Log::error('Error al guardar pago exitoso: ' . $e->getMessage());
-                        throw $e;
-                    }
-                } else {
-                    Log::warning('Pago no aprobado', ['status' => $paymentData['status']]);
-                    return redirect()->route('estudiante.checkout')
-                        ->with('error', 'El pago no fue aprobado. Estado: ' . $paymentData['status']);
-                }
+                ->get("https://api.mercadopago.com/v1/payments/{$paymentId}");
+
+            if (!$response->successful()) {
+                return redirect()->route('estudiante.checkout-pendiente')
+                    ->with('warning', 'Estamos verificando tu pago con Mercado Pago. Se activará en cuanto se confirme.');
             }
-            
+
+            $payment = $response->json();
+            $status = $payment['status'] ?? 'unknown';
+
+            if ($status === 'approved') {
+                $pago = $this->procesarPagoAprobadoMercadoPago($payment);
+                session()->forget(['pago_en_proceso', 'cupon_aplicado']);
+
+                if ($pago) {
+                    return redirect()->route('estudiante.pago-exito', $pago->id)
+                        ->with('success', '¡Pago completado! Ya tienes acceso al Curso Premium.');
+                }
+
+                return redirect()->route('estudiante.mis-pagos')
+                    ->with('success', '¡Pago aprobado! Tu plan se está activando.');
+            }
+
+            if (in_array($status, ['in_process', 'pending', 'authorized'])) {
+                return redirect()->route('estudiante.checkout-pendiente')
+                    ->with('info', 'Tu pago está siendo procesado por Mercado Pago. Recibirás una notificación cuando se apruebe.');
+            }
+
+            Log::warning('Pago MP no aprobado', ['status' => $status, 'payment_id' => $paymentId]);
             return redirect()->route('estudiante.checkout')
-                ->with('error', 'No se pudo verificar el estado del pago. Por favor contacta a soporte.');
-                
+                ->with('error', 'El pago no se completó (estado: ' . $status . '). Puedes intentarlo de nuevo.');
+
         } catch (\Exception $e) {
             Log::error('Error en pagoExitoMercadoPago: ' . $e->getMessage());
-            return redirect()->route('estudiante.checkout')
-                ->with('error', 'Error al procesar el pago: ' . $e->getMessage());
+            return redirect()->route('estudiante.checkout-pendiente')
+                ->with('warning', 'Hubo un problema al confirmar el pago. Si ya pagaste, contáctanos con tu comprobante.');
         }
     }
 
@@ -1170,9 +1381,123 @@ class AlumnoController extends Controller
     public function pagoPendienteMercadoPago(Request $request)
     {
         Log::info('Pago pendiente MP:', $request->all());
-        
-        return redirect()->route('estudiante.checkout')
-            ->with('warning', 'Tu pago está siendo procesado. Recibirás un correo de confirmación cuando sea aprobado.');
+
+        $estudiante = Estudiante::where('usuario', Auth::id())->first();
+        if ($estudiante) {
+            Notificacion::enviar($estudiante->usuario, [
+                'tipo' => 'pago_pendiente',
+                'titulo' => 'Pago en proceso',
+                'mensaje' => 'Mercado Pago está procesando tu pago. Te avisaremos en cuanto se apruebe.',
+                'url' => route('estudiante.checkout-pendiente'),
+                'icono' => 'clock', 'color' => 'amber',
+            ]);
+        }
+
+        return redirect()->route('estudiante.checkout-pendiente')
+            ->with('info', 'Tu pago está siendo procesado por Mercado Pago. Recibirás una notificación cuando se apruebe.');
+    }
+
+    /**
+     * Activa el plan del estudiante a partir de un pago aprobado de Mercado Pago.
+     * Es idempotente: si el pago ya fue registrado (por el redirect de éxito o por
+     * un webhook anterior) no vuelve a crear el registro ni a re-activar el plan.
+     *
+     * @param  array  $payment  Objeto de pago devuelto por la API de Mercado Pago.
+     * @return \App\Models\Pago|null
+     */
+    private function procesarPagoAprobadoMercadoPago(array $payment)
+    {
+        $paymentId = (string) ($payment['id'] ?? '');
+
+        if ($paymentId === '') {
+            Log::warning('procesarPagoAprobadoMercadoPago: payment sin id');
+            return null;
+        }
+
+        // Idempotencia: ¿ya está registrado este pago?
+        $pagoExistente = Pago::where('referencia_pago', $paymentId)->first();
+        if ($pagoExistente) {
+            return $pagoExistente;
+        }
+
+        // Resolver el estudiante desde external_reference: "curso_{id}_{timestamp}"
+        $externalReference = $payment['external_reference'] ?? '';
+        $estudianteId = null;
+        if (preg_match('/curso_(\d+)_/', $externalReference, $m)) {
+            $estudianteId = (int) $m[1];
+        }
+
+        $estudiante = $estudianteId ? Estudiante::find($estudianteId) : null;
+        if (!$estudiante) {
+            Log::error('procesarPagoAprobadoMercadoPago: estudiante no encontrado', [
+                'external_reference' => $externalReference,
+                'payment_id' => $paymentId,
+            ]);
+            return null;
+        }
+
+        $monto = $payment['transaction_amount'] ?? self::PRECIO_CURSO;
+
+        return DB::transaction(function () use ($estudiante, $payment, $paymentId, $monto) {
+            // Segunda comprobación dentro de la transacción para evitar carreras
+            // entre el redirect de éxito y el webhook.
+            $pago = Pago::where('referencia_pago', $paymentId)->lockForUpdate()->first();
+            if ($pago) {
+                return $pago;
+            }
+
+            $pago = Pago::create([
+                'alumno_pago' => $estudiante->id,
+                'tipo_pago' => 'mercadopago',
+                'monto_pago' => round($monto, 2),
+                'estatus' => 'completado',
+                'referencia_pago' => $paymentId,
+                'fecha_pago' => now(),
+                'nota_usuario' => "Pago aprobado vía Mercado Pago\nID Transacción: {$paymentId}",
+            ]);
+
+            if (!$estudiante->plan_activo) {
+                $estudiante->plan_activo = true;
+                $estudiante->save();
+            }
+
+            $codigoCupon = $payment['metadata']['cupon'] ?? $estudiante->cupon;
+            if ($codigoCupon) {
+                $cupon = Cupon::where('codigo', $codigoCupon)->first();
+                if ($cupon && !$cupon->usado) {
+                    $cupon->update([
+                        'usado' => true,
+                        'usuario_uso' => $estudiante->usuario,
+                        'fecha_uso' => now(),
+                    ]);
+                    if (empty($estudiante->cupon)) {
+                        $estudiante->update(['cupon' => $codigoCupon]);
+                    }
+                }
+            }
+
+            Notificacion::enviar($estudiante->usuario, [
+                'tipo' => 'pago_aprobado',
+                'titulo' => '¡Pago aprobado con Mercado Pago!',
+                'mensaje' => 'Tu acceso al Curso Premium SAINS ya está activo. ¡A estudiar!',
+                'url' => route('estudiante.clases-premium'),
+                'icono' => 'check', 'color' => 'green',
+            ]);
+            Notificacion::enviarAdmins([
+                'tipo' => 'pago_mercadopago',
+                'titulo' => 'Pago con Mercado Pago recibido',
+                'mensaje' => "{$estudiante->nombre_completo} pagó $" . number_format($pago->monto_pago, 2) . " MXN con Mercado Pago. Plan activado automáticamente.",
+                'url' => route('admin.pagos.show', $pago->id),
+                'icono' => 'dollar', 'color' => 'green',
+            ]);
+
+            Log::info('procesarPagoAprobadoMercadoPago: plan activado', [
+                'estudiante_id' => $estudiante->id,
+                'pago_id' => $pago->id,
+            ]);
+
+            return $pago;
+        });
     }
 
     /**
@@ -1200,14 +1525,7 @@ class AlumnoController extends Controller
                     // Aquí puedes actualizar el estado del pago en tu BD si es necesario
                     // Por ejemplo, si el pago está aprobado y por alguna razón no se procesó antes
                     if ($payment['status'] === 'approved') {
-                        // Buscar si ya existe el pago
-                        $pagoExistente = Pago::where('referencia_pago', $payment_id)->first();
-                        
-                        if (!$pagoExistente) {
-                            // Procesar el pago pendiente
-                            Log::info('Webhook: Procesando pago pendiente ID: ' . $payment_id);
-                            // Aquí puedes llamar a tu lógica de procesamiento de pago
-                        }
+                        $this->procesarPagoAprobadoMercadoPago($payment);
                     }
                 }
             }
@@ -1578,11 +1896,17 @@ class AlumnoController extends Controller
         $intentosRealizados = ExamenRealizado::where('estudiante', $estudiante->id)
             ->where('examen', $examen->id)
             ->count();
-        $intento = $intentosRealizados + 1;
-        $intentosRestantes = 'Ilimitados';
-        $maxPreguntas = null;
-        
-        return view('estudiante.simulador', compact('examen', 'preguntas', 'estudiante', 'intento', 'examenes', 'intentosRestantes', 'maxPreguntas'));
+
+        return \Inertia\Inertia::render('Estudiante/Simulador', [
+            'examen' => $this->datosExamen($examen),
+            'preguntas' => $this->formatearPreguntasQuiz($preguntas),
+            'intento' => $intentosRealizados + 1,
+            'planActivo' => true,
+            'intentosRestantes' => null,
+            'maxPreguntas' => null,
+            'examenes' => $examenes->map(fn ($e) => $this->datosExamen($e))->values(),
+            'responderUrl' => route('estudiante.simulador.responder'),
+        ]);
     }
 
     private function simuladorBasico($estudiante, $examenId = null)
@@ -1610,10 +1934,20 @@ class AlumnoController extends Controller
         $intentosRestantes = max(0, self::MAX_INTENTOS_BASICO - $intentosRealizados);
         
         if ($intentosRealizados >= self::MAX_INTENTOS_BASICO) {
-            return redirect()->route('estudiante.simulador')
-                ->with('error_limit', "Has alcanzado el límite de " . self::MAX_INTENTOS_BASICO . " intentos. ¡Actualiza a Premium!");
+            return \Inertia\Inertia::render('Estudiante/Simulador', [
+                'examen' => $this->datosExamen($examen),
+                'preguntas' => [],
+                'intento' => $intentosRealizados,
+                'planActivo' => false,
+                'intentosRestantes' => 0,
+                'maxPreguntas' => self::MAX_PREGUNTAS_BASICO,
+                'maxIntentos' => self::MAX_INTENTOS_BASICO,
+                'limiteAlcanzado' => true,
+                'examenes' => $examenes->map(fn ($e) => $this->datosExamen($e))->values(),
+                'responderUrl' => route('estudiante.simulador.responder'),
+            ]);
         }
-        
+
         $todasPreguntas = $examen->preguntas()->get();
         
         if ($todasPreguntas->isEmpty()) {
@@ -1623,14 +1957,17 @@ class AlumnoController extends Controller
         $numPreguntas = rand(self::MIN_PREGUNTAS_BASICO, min(self::MAX_PREGUNTAS_BASICO, $todasPreguntas->count()));
         $preguntas = $todasPreguntas->random($numPreguntas);
         
-        $intento = $intentosRealizados + 1;
-        $maxPreguntas = self::MAX_PREGUNTAS_BASICO;
-        
-        $mensajeBasico = "Modo Básico: " . self::MAX_PREGUNTAS_BASICO . " preguntas | Intentos restantes: " . $intentosRestantes . "/" . self::MAX_INTENTOS_BASICO;
-        
-        session()->flash('modo_basico', $mensajeBasico);
-        
-        return view('estudiante.simulador', compact('examen', 'preguntas', 'estudiante', 'intento', 'examenes', 'intentosRestantes', 'maxPreguntas'));
+        return \Inertia\Inertia::render('Estudiante/Simulador', [
+            'examen' => $this->datosExamen($examen),
+            'preguntas' => $this->formatearPreguntasQuiz($preguntas),
+            'intento' => $intentosRealizados + 1,
+            'planActivo' => false,
+            'intentosRestantes' => $intentosRestantes,
+            'maxPreguntas' => self::MAX_PREGUNTAS_BASICO,
+            'maxIntentos' => self::MAX_INTENTOS_BASICO,
+            'examenes' => $examenes->map(fn ($e) => $this->datosExamen($e))->values(),
+            'responderUrl' => route('estudiante.simulador.responder'),
+        ]);
     }
 
     public function cargarSimulador($id)
@@ -1795,8 +2132,39 @@ class AlumnoController extends Controller
         $mejorCalificacion = ExamenRealizado::where('estudiante', $estudiante->id)
             ->where('examen', $examenRealizado->examen)
             ->max('calificacion') ?? 0;
-        
-        return view('estudiante.resultados', compact('examenRealizado', 'estudiante', 'mejorCalificacion', 'preguntasConRespuestas'));
+
+        $intentosAnteriores = ExamenRealizado::where('estudiante', $estudiante->id)
+            ->where('examen', $examenRealizado->examen)
+            ->orderBy('intento')
+            ->get(['id', 'intento', 'calificacion'])
+            ->map(fn ($i) => [
+                'id' => $i->id,
+                'intento' => $i->intento,
+                'calificacion' => round($i->calificacion ?? 0),
+            ])->values();
+
+        return \Inertia\Inertia::render('Estudiante/Resultados', [
+            'examen' => [
+                'id' => $examenRealizado->id,
+                'calificacion' => round($examenRealizado->calificacion ?? 0),
+                'intento' => $examenRealizado->intento ?? 1,
+                'tiempo' => $examenRealizado->tiempo,
+                'fecha_inicio' => $examenRealizado->fecha_inicio,
+                'hora_inicio' => $examenRealizado->hora_inicio,
+                'tipo_examen' => optional($examenRealizado->examenGenerado)->tipo_examen ?? 'Simulador',
+                'nombre' => optional($examenRealizado->examenGenerado)->nombre,
+            ],
+            'mejorCalificacion' => round($mejorCalificacion),
+            'intentos' => $intentosAnteriores,
+            'preguntas' => collect($preguntasConRespuestas)->map(fn ($p) => [
+                'id' => $p->id,
+                'texto' => $p->texto,
+                'respuesta_correcta' => $p->respuesta_correcta,
+                'respuesta_usuario' => $p->respuesta_usuario,
+                'es_correcta' => $p->es_correcta,
+                'justificacion' => $p->justificacion,
+            ])->values(),
+        ]);
     }
 
     // ========== MÉTODOS AUXILIARES ==========
@@ -1936,8 +2304,15 @@ class AlumnoController extends Controller
         $mejorCalificacion = ExamenRealizado::where('estudiante', $estudiante->id)
                                         ->where('examen', $examen->id)
                                         ->max('calificacion');
-        
-        return view('estudiante.examen-materia', compact('examen', 'preguntas', 'estudiante', 'intento', 'mejorCalificacion', 'asignaturaNombre'));
+
+        return \Inertia\Inertia::render('Estudiante/ExamenMateria', [
+            'examen' => $this->datosExamen($examen),
+            'preguntas' => $this->formatearPreguntasQuiz($preguntas),
+            'intento' => $intento,
+            'mejorCalificacion' => $mejorCalificacion !== null ? round($mejorCalificacion) : null,
+            'asignaturaNombre' => $asignaturaNombre,
+            'responderUrl' => route('estudiante.responder.examen.materia'),
+        ]);
     }
 
     /**
@@ -2126,8 +2501,14 @@ class AlumnoController extends Controller
         $mejorCalificacion = ExamenRealizado::where('estudiante', $estudiante->id)
                                         ->where('examen', $examen->id)
                                         ->max('calificacion');
-        
-        return view('estudiante.examen-curso', compact('examen', 'preguntas', 'estudiante', 'intento', 'mejorCalificacion'));
+
+        return \Inertia\Inertia::render('Estudiante/ExamenCurso', [
+            'examen' => $this->datosExamen($examen),
+            'preguntas' => $this->formatearPreguntasQuiz($preguntas),
+            'intento' => $intento,
+            'mejorCalificacion' => $mejorCalificacion !== null ? round($mejorCalificacion) : null,
+            'responderUrl' => route('estudiante.responder.examen-curso'),
+        ]);
     }
 
     /**
@@ -2268,49 +2649,6 @@ class AlumnoController extends Controller
                 'message' => 'Error al procesar el examen final: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    /**
-     * Ver respuestas detalladas de un examen realizado
-     */
-    public function verRespuestasExamen($examenRealizadoId)
-    {
-        $user = Auth::user();
-        $estudiante = Estudiante::where('usuario', $user->id)->first();
-        
-        if (!$estudiante) {
-            return redirect()->route('estudiante.dashboard')->with('error', 'Estudiante no encontrado');
-        }
-        
-        $examenRealizado = ExamenRealizado::where('id', $examenRealizadoId)
-                                        ->where('estudiante', $estudiante->id)
-                                        ->first();
-        
-        if (!$examenRealizado) {
-            return redirect()->route('estudiante.dashboard')->with('error', 'Examen no encontrado');
-        }
-        
-        $respuestas = json_decode($examenRealizado->respuestas, true);
-        
-        $preguntasIds = array_column($respuestas['respuestas'] ?? [], 'pregunta_id');
-        $preguntas = Pregunta::whereIn('id', $preguntasIds)->get()->keyBy('id');
-        
-        $preguntasConRespuestas = [];
-        foreach ($respuestas['respuestas'] ?? [] as $respuestaItem) {
-            $pregunta = $preguntas->get($respuestaItem['pregunta_id']);
-            
-            $preguntasConRespuestas[] = (object)[
-                'id' => $respuestaItem['pregunta_id'],
-                'texto' => $pregunta ? $pregunta->pregunta : 'Pregunta no encontrada',
-                'respuesta_correcta' => $pregunta ? $pregunta->respuesta_correcta : null,
-                'respuesta_usuario' => $respuestaItem['respuesta'],
-                'estatus' => $respuestaItem['estatus'],
-                'es_correcta' => $respuestaItem['estatus'] === 'correcta',
-                'justificacion' => $pregunta ? $pregunta->justificacion : null
-            ];
-        }
-        
-        return view('estudiante.ver-respuestas', compact('examenRealizado', 'preguntasConRespuestas'));
     }
 
     /**

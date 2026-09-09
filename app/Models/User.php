@@ -25,6 +25,15 @@ class User extends Authenticatable
         'contraseña',
     ];
 
+    /**
+     * La columna de contraseña de esta app es "contraseña" (no "password").
+     * Sin esto, Auth::attempt(), remember-me y la confirmación de contraseña fallan.
+     */
+    public function getAuthPassword()
+    {
+        return $this->contraseña;
+    }
+
     // Relaciones existentes
     public function administrador()
     {
@@ -49,7 +58,7 @@ class User extends Authenticatable
     // Verificar si es administrador
     public function isAdmin()
     {
-        return $this->rol === 'Administrador';
+        return in_array($this->rol, ['Administrador', 'admin'], true);
     }
 
     // Verificar si es estudiante

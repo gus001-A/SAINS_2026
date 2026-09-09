@@ -11,15 +11,26 @@ class Clase extends Model
     
     protected $fillable = [
         'id_asignatura',
+        'id_video', // Video del catálogo (los que se suben en "Videos")
         'num_clase',
         'nombre_clase',
-        'link',   // Video principal
-        'url'     // Recurso adicional (opcional, se mantiene por compatibilidad)
+        'link',   // Video principal (copia del link del video, para compatibilidad)
+        'url',    // Recurso adicional (opcional, se mantiene por compatibilidad)
+        'gratis', // true = clase de muestra abierta, false = requiere plan premium
     ];
-    
+
+    protected $casts = [
+        'gratis' => 'boolean',
+    ];
+
     public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura');
+    }
+
+    public function video()
+    {
+        return $this->belongsTo(Video::class, 'id_video');
     }
     
     // Relación con recursos adicionales

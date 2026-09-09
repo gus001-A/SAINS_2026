@@ -57,4 +57,19 @@ class Cupon extends Model
     {
         return !$this->usado && !$this->isExpired();
     }
+
+    /**
+     * ¿El cupón cubre el 100% del curso? (porcentaje >= 100)
+     * Cuando es así, el plan premium se activa automáticamente sin necesidad de pago.
+     */
+    public function cubreTodo(): bool
+    {
+        return $this->tipo_descuento === 'porcentaje' && (float) $this->valor_descuento >= 100;
+    }
+
+    /** ¿Se puede aplicar? (activo, no usado, no expirado) */
+    public function aplicable(): bool
+    {
+        return $this->estatus === 'activo' && $this->isValid();
+    }
 }

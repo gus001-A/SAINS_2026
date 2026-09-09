@@ -12,6 +12,7 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // Webhook servidor-a-servidor de Mercado Pago (no envía token CSRF).
+        'estudiante/pago/mercadopago/webhook',
     ];
 }

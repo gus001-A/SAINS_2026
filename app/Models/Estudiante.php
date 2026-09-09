@@ -33,7 +33,9 @@ class Estudiante extends Model
 
     public function getCorreoAttribute()
     {
-        return $this->usuario ? $this->usuario->correo : null;
+        // "usuario" también es el nombre de la columna FK (int), por eso hay que
+        // resolver la relación explícitamente en lugar de leer $this->usuario.
+        return $this->usuario()->first()?->correo;
     }
 
     public function escuelaProcedencia()

@@ -13,8 +13,10 @@ class ResetPasswordController extends Controller
 {
     public function showResetForm($token)
     {
-        $email = request()->get('email');
-        return view('auth.reset-password', compact('token', 'email'));
+        return \Inertia\Inertia::render('Auth/ResetPassword', [
+            'token' => $token,
+            'email' => request()->get('email'),
+        ]);
     }
 
     public function reset(Request $request)

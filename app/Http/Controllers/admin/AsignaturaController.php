@@ -79,15 +79,27 @@ class AsignaturaController extends Controller
               ->orWhereHas('carrerasComoMateria3');
         })->count();
         
-        return view('administrador.asignaturas.index', compact('asignaturas', 'totalMaterias', 'conClases', 'enCarreras', 'ordenCampo', 'ordenDireccion'));
+        return \Inertia\Inertia::render('Admin/Asignaturas/Index', [
+            'asignaturas' => $asignaturas,
+            'stats' => [
+                'total' => $totalMaterias,
+                'conClases' => $conClases,
+                'enCarreras' => $enCarreras,
+            ],
+            'filters' => [
+                'search' => $request->search,
+                'orden_campo' => $ordenCampo,
+                'orden_direccion' => $ordenDireccion,
+            ],
+        ]);
     }
-    
+
     /**
-     * Show the form for creating a new resource.
+     * El alta/edición se hace desde un modal en el índice.
      */
     public function create()
     {
-        return view('administrador.asignaturas.create');
+        return redirect()->route('admin.asignaturas.index');
     }
     
     /**
@@ -126,7 +138,7 @@ class AsignaturaController extends Controller
      */
     public function edit(Asignatura $asignatura)  // Usando Route Model Binding
     {
-        return view('administrador.asignaturas.edit', compact('asignatura'));
+        return redirect()->route('admin.asignaturas.index');
     }
     
     /**
@@ -175,38 +187,18 @@ class AsignaturaController extends Controller
             }
             
             if ($tieneRelaciones) {
-                if (request()->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No se puede eliminar la materia porque ' . implode(' y ', $mensajeRelaciones)
-                    ], 400);
-                }
                 return redirect()->back()
                     ->with('error', 'No se puede eliminar la materia porque ' . implode(' y ', $mensajeRelaciones));
             }
-            
+
             $asignatura->delete();
-            
-            if (request()->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Materia eliminada exitosamente'
-                ]);
-            }
-            
+
             return redirect()->route('admin.asignaturas.index')
                 ->with('success', 'Materia eliminada exitosamente');
-                
+
         } catch (\Exception $e) {
             Log::error('Error al eliminar materia: ' . $e->getMessage());
-            
-            if (request()->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al eliminar la materia: ' . $e->getMessage()
-                ], 500);
-            }
-            
+
             return redirect()->back()
                 ->with('error', 'Error al eliminar la materia: ' . $e->getMessage());
         }

@@ -196,26 +196,46 @@ public function dashboard()
         'primer_examen_fecha' => $ultimosExamenes->first() ? $ultimosExamenes->first()->fecha_formateada : 'sin datos'
     ]);
     
-    return view('administrador.dashboard', compact(
-        'totalUsuarios',
-        'totalExamenes',
-        'totalPagos',
-        'cuponesCanjeados',
-        'examenesRealizados',
-        'calificacionPromedio',
-        'tasaAprobacion',
-        'totalInteracciones',
-        'interaccionesMes',
-        'nuevosUsuariosMes',
-        'nuevosExamenes',
-        'ingresosMes',
-        'cuponesMes',
-        'estudiantesActivos',
-        'ultimosExamenes',
-        'ultimasInteracciones',
-        'topEstudiantes',
-        'examenesRealizadosSemana'
-    ));
+    return \Inertia\Inertia::render('Admin/Dashboard', [
+        'stats' => [
+            'totalUsuarios' => $totalUsuarios,
+            'totalExamenes' => $totalExamenes,
+            'totalPagos' => (float) $totalPagos,
+            'cuponesCanjeados' => $cuponesCanjeados,
+            'examenesRealizados' => $examenesRealizados,
+            'calificacionPromedio' => $calificacionPromedio,
+            'tasaAprobacion' => $tasaAprobacion,
+            'totalInteracciones' => $totalInteracciones,
+            'interaccionesMes' => $interaccionesMes,
+            'nuevosUsuariosMes' => $nuevosUsuariosMes,
+            'nuevosExamenes' => $nuevosExamenes,
+            'ingresosMes' => (float) $ingresosMes,
+            'cuponesMes' => $cuponesMes,
+            'estudiantesActivos' => $estudiantesActivos,
+            'examenesRealizadosSemana' => $examenesRealizadosSemana,
+        ],
+        'ultimosExamenes' => $ultimosExamenes->map(fn ($e) => [
+            'id' => $e->id,
+            'estudiante_nombre' => $e->estudiante_nombre,
+            'estudiante_email' => $e->estudiante_email,
+            'examen_titulo' => $e->examen_titulo,
+            'calificacion' => round($e->calificacion ?? 0, 1),
+            'fecha' => $e->fecha_formateada,
+        ])->values(),
+        'ultimasInteracciones' => $ultimasInteracciones->map(fn ($i) => [
+            'id' => $i->id,
+            'estudiante_nombre' => $i->estudiante_nombre,
+            'estudiante_email' => $i->estudiante_email,
+            'tipo' => $i->tipo_interaccion ?? $i->motivo ?? null,
+            'fecha' => $i->fecha_humana,
+        ])->values(),
+        'topEstudiantes' => $topEstudiantes->map(fn ($t) => [
+            'estudiante' => $t->estudiante,
+            'nombre_completo' => $t->nombre_completo,
+            'promedio' => $t->promedio,
+            'total_examenes' => $t->total_examenes,
+        ])->values(),
+    ]);
 }
     /**
      * Obtener datos de ingresos para la gráfica
@@ -525,86 +545,61 @@ public function dashboard()
         return $colores[$tipo] ?? 'text-muted';
     }
     
-    // ========== MÉTODOS DE GESTIÓN ==========
-    
-    public function usuarios()
-    {
-        $estudiantes = User::where('rol', 'estudiante')
-            ->with('estudiante')
-            ->paginate(15);
-        return view('administrador.estudiantes.index', compact('estudiantes'));
-    }
-    
-    public function examenes()
-    {
-        $examenes = ExamenGenerado::with('estudiante')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        return view('administrador.examenes.index', compact('examenes'));
-    }
-    
-    public function pagos()
-    {
-        $pagos = Pago::with(['alumno', 'usuarioRevision'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-        return view('administrador.pagos.index', compact('pagos'));
-    }
-    
-    public function cupones()
-    {
-        $cupones = Cupon::with('usuarioGenero')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        return view('administrador.cupones.index', compact('cupones'));
-    }
-    
-    public function callcenter()
-    {
-        $registros = InteraccionCallCenter::with(['estudiante.estudiante'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        return view('administrador.callcenter', compact('registros'));
-    }
-    
-    public function preguntas()
-    {
-        $preguntas = Pregunta::with('area')->paginate(10);
-        $areas = AreaPregunta::all();
-        return view('administrador.preguntas.index', compact('preguntas', 'areas'));
-    }
-    
     // ========== MÉTODOS DE PERFIL ==========
     
     public function perfil()
     {
-        $admin = Auth::user();
-        
-        if ($admin && $admin->rol === 'Administrador') {
-            $admin->load('administrador');
-        }
-        
-        return view('administrador.perfil', compact('admin'));
+        $user = Auth::user();
+        $admin = Administrador::where('usuario_id', $user->id)->first();
+
+        return \Inertia\Inertia::render('Admin/Perfil', [
+            'perfil' => [
+                'correo' => $user->correo,
+                'nombre' => $admin?->nombre,
+                'apellido_paterno' => $admin?->apellido_paterno,
+                'apellido_materno' => $admin?->apellido_materno,
+                'telefono' => $admin?->telefono,
+                'sexo' => $admin?->sexo,
+                'fecha_nacimiento' => optional($admin?->fecha_nacimiento)->format('Y-m-d'),
+            ],
+        ]);
     }
     
     public function updatePerfil(Request $request)
     {
         $request->validate([
             'email' => 'required|email|unique:usuario,correo,' . Auth::id() . ',id',
+            'nombre' => 'required|string|max:100',
+            'apellido_paterno' => 'required|string|max:100',
+            'apellido_materno' => 'nullable|string|max:100',
+            'telefono' => 'nullable|regex:/^[0-9]{10}$/',
+            'sexo' => 'nullable|in:M,F',
+            'fecha_nacimiento' => 'nullable|date|before:today',
         ]);
-        
+
         try {
             $user = Auth::user();
             $user->correo = $request->email;
             $user->save();
-            
             session(['MM_Username' => $user->correo]);
-            
-            return redirect()->back()->with('success', 'Correo electrónico actualizado correctamente');
-            
+
+            Administrador::updateOrCreate(
+                ['usuario_id' => $user->id],
+                [
+                    'nombre' => $request->nombre,
+                    'apellido_paterno' => $request->apellido_paterno,
+                    'apellido_materno' => $request->apellido_materno,
+                    'telefono' => $request->telefono,
+                    'sexo' => $request->sexo,
+                    'fecha_nacimiento' => $request->fecha_nacimiento ?: null,
+                ]
+            );
+
+            return redirect()->back()->with('success', 'Perfil actualizado correctamente');
+
         } catch (\Exception $e) {
             Log::error('Error al actualizar perfil: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Error al actualizar el correo: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al actualizar el perfil');
         }
     }
     
@@ -674,21 +669,6 @@ public function dashboard()
         }
     }
     
-    public function cambiarEstadoExamen($id)
-    {
-        try {
-            $examen = ExamenGenerado::findOrFail($id);
-            $examen->activo = !$examen->activo;
-            $examen->save();
-            
-            $estado = $examen->activo ? 'activado' : 'desactivado';
-            return redirect()->back()->with('success', "Examen {$estado} correctamente");
-        } catch (\Exception $e) {
-            Log::error('Error al cambiar estado del examen: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Error al cambiar el estado del examen');
-        }
-    }
-    
     // ========== MÉTODOS DE GESTIÓN DE ADMINISTRADORES ==========
     
     public function administradores(Request $request)
@@ -708,7 +688,17 @@ public function dashboard()
                   });
             });
         }
-        
+
+        if ($request->filled('correo')) {
+            $query->where('correo', 'like', "%{$request->correo}%");
+        }
+
+        if ($request->filled('telefono')) {
+            $query->whereHas('administrador', function($q) use ($request) {
+                $q->where('telefono', 'like', "%{$request->telefono}%");
+            });
+        }
+
         if ($request->filled('sexo')) {
             $query->whereHas('administrador', function($q) use ($request) {
                 $q->where('sexo', $request->sexo);
@@ -716,13 +706,37 @@ public function dashboard()
         }
         
         $admins = $query->orderBy('created_at', 'desc')->paginate(15);
-        
-        return view('administrador.administradores.index', compact('admins'));
+
+        $admins->getCollection()->transform(fn ($u) => [
+            'id' => $u->id,
+            'correo' => $u->correo,
+            'nombre' => $u->administrador?->nombre,
+            'apellido_paterno' => $u->administrador?->apellido_paterno,
+            'apellido_materno' => $u->administrador?->apellido_materno,
+            'nombre_completo' => $u->administrador
+                ? trim("{$u->administrador->nombre} {$u->administrador->apellido_paterno} {$u->administrador->apellido_materno}")
+                : $u->correo,
+            'telefono' => $u->administrador?->telefono,
+            'sexo' => $u->administrador?->sexo,
+            'fecha_nacimiento' => optional($u->administrador?->fecha_nacimiento)->format('Y-m-d'),
+            'created_at' => optional($u->created_at)->format('Y-m-d'),
+        ]);
+
+        return \Inertia\Inertia::render('Admin/Administradores/Index', [
+            'admins' => $admins,
+            'currentUserId' => auth()->id(),
+            'filters' => [
+                'search' => $request->search,
+                'correo' => $request->correo,
+                'telefono' => $request->telefono,
+                'sexo' => $request->sexo,
+            ],
+        ]);
     }
-    
+
     public function createAdmin()
     {
-        return view('administrador.administradores.create');
+        return redirect()->route('admin.administradores.index');
     }
     
     public function storeAdmin(Request $request)
@@ -734,7 +748,7 @@ public function dashboard()
             'apellido_paterno' => 'required|string|max:100',
             'apellido_materno' => 'nullable|string|max:100',
             'fecha_nacimiento' => 'nullable|date|before:today',
-            'telefono' => 'nullable|string|max:20',
+            'telefono' => 'nullable|regex:/^[0-9]{10}$/',
             'sexo' => 'nullable|in:M,F',
         ]);
         
@@ -779,14 +793,7 @@ public function dashboard()
     
     public function editAdmin($id)
     {
-        $user = User::with('administrador')->findOrFail($id);
-        
-        $admin = (object) array_merge(
-            $user->toArray(),
-            $user->administrador ? $user->administrador->toArray() : []
-        );
-        
-        return view('administrador.administradores.edit', compact('admin', 'user'));
+        return redirect()->route('admin.administradores.index');
     }
     
     public function updateAdmin(Request $request, $id)
@@ -800,7 +807,7 @@ public function dashboard()
             'apellido_paterno' => 'required|string|max:100',
             'apellido_materno' => 'nullable|string|max:100',
             'fecha_nacimiento' => 'nullable|date|before:today',
-            'telefono' => 'nullable|string|max:20',
+            'telefono' => 'nullable|regex:/^[0-9]{10}$/',
             'sexo' => 'nullable|in:M,F',
         ]);
         
@@ -847,20 +854,20 @@ public function dashboard()
     public function eliminarAdmin($id)
     {
         try {
-            $admin = User::findOrFail($id);
-            $admin->delete();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Administrador eliminado exitosamente'
-            ]);
-            
+            if ((int) $id === (int) auth()->id()) {
+                return redirect()->route('admin.administradores.index')
+                    ->with('error', 'No puedes eliminar tu propia cuenta');
+            }
+
+            User::findOrFail($id)->delete();
+
+            return redirect()->route('admin.administradores.index')
+                ->with('success', 'Administrador eliminado exitosamente');
+
         } catch (\Exception $e) {
             Log::error('Error al eliminar administrador: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar el administrador'
-            ], 500);
+            return redirect()->route('admin.administradores.index')
+                ->with('error', 'Error al eliminar el administrador');
         }
     }
     /**
@@ -869,45 +876,33 @@ public function dashboard()
     public function getNotificacionesApi()
     {
         try {
-            $pagosPendientes = Pago::with(['alumno.usuario', 'revisor'])
-                ->where('estatus', 'pendiente')
-                ->orderBy('created_at', 'desc')
-                ->limit(10)
+            $userId = auth()->id();
+
+            $items = \App\Models\Notificacion::where('id_usuario', $userId)
+                ->orderByRaw('leida_at IS NOT NULL')   // no leídas primero
+                ->orderByDesc('created_at')
+                ->limit(15)
                 ->get()
-                ->map(function($pago) {
-                    $nombreEstudiante = 'Estudiante';
-                    if ($pago->alumno) {
-                        $nombreEstudiante = $pago->alumno->nombre_completo ?? 'Estudiante';
-                    }
-                    
-                    $montoFormateado = '$' . number_format($pago->monto_pago, 2);
-                    
-                    return [
-                        'id' => $pago->id,
-                        'mensaje' => "Nuevo pago de {$montoFormateado} - {$nombreEstudiante}",
-                        'fecha' => $pago->created_at ? $pago->created_at->diffForHumans() : 'Reciente',
-                        'url' => route('admin.pagos.show', $pago->id),
-                        'monto' => $pago->monto_pago,
-                        'estudiante' => $nombreEstudiante,
-                        'created_at' => $pago->created_at ? $pago->created_at->timestamp : null  // Añadimos timestamp para tracking
-                    ];
-                });
-            
-            $totalPendientes = Pago::where('estatus', 'pendiente')->count();
-            
+                ->map->paraVista();
+
+            $noLeidas = \App\Models\Notificacion::where('id_usuario', $userId)->whereNull('leida_at')->count();
+            $totalPendientes = Pago::whereIn('estatus', ['pendiente', 'revisando'])->count();
+
             return response()->json([
                 'success' => true,
-                'notificaciones' => $pagosPendientes,
-                'total_pendientes' => $totalPendientes
+                'notificaciones' => $items,
+                'total_no_leidas' => $noLeidas,
+                'total_pendientes' => $totalPendientes,
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error al obtener notificaciones: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'notificaciones' => [],
-                'total_pendientes' => 0
+                'total_no_leidas' => 0,
+                'total_pendientes' => 0,
             ]);
         }
     }

@@ -7,6 +7,7 @@ use App\Models\Pago;
 use App\Models\Estudiante;
 use App\Models\User;
 use App\Models\Administrador;
+use App\Models\Notificacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +23,7 @@ class PagoController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
+        $estudiante = $request->get('estudiante');
         $estatus = $request->get('estatus');
         $tipo_pago = $request->get('tipo_pago');
         $fecha_desde = $request->get('fecha_desde');
@@ -33,14 +35,14 @@ class PagoController extends Controller
         
         $pagos = Pago::with(['alumno', 'revisor.administrador'])
             ->when($search, function($query, $search) {
-                return $query->where(function($q) use ($search) {
-                    $q->where('referencia_pago', 'LIKE', "%{$search}%")
-                      ->orWhere('id', 'LIKE', "%{$search}%")
-                      ->orWhereHas('alumno', function($sub) use ($search) {
-                          $sub->where('nombre', 'LIKE', "%{$search}%")
-                              ->orWhere('paterno', 'LIKE', "%{$search}%")
-                              ->orWhere('materno', 'LIKE', "%{$search}%");
-                      });
+                return $query->where('referencia_pago', 'LIKE', "%{$search}%");
+            })
+            ->when($estudiante, function($query, $estudiante) {
+                return $query->whereHas('alumno', function($sub) use ($estudiante) {
+                    $sub->where('nombre', 'LIKE', "%{$estudiante}%")
+                        ->orWhere('paterno', 'LIKE', "%{$estudiante}%")
+                        ->orWhere('materno', 'LIKE', "%{$estudiante}%")
+                        ->orWhereRaw("CONCAT(nombre, ' ', paterno, ' ', COALESCE(materno,'')) LIKE ?", ["%{$estudiante}%"]);
                 });
             })
             ->when($estatus, function($query, $estatus) {
@@ -74,25 +76,66 @@ class PagoController extends Controller
         if ($fecha_hasta) $queryStats->whereDate('fecha_pago', '<=', $fecha_hasta);
         
         $totalPagos = $queryStats->sum('monto_pago');
-        $pagosPendientes = (clone $queryStats)->where('estatus', 'pendiente')->count();
+        $pagosPendientes = (clone $queryStats)->whereIn('estatus', ['pendiente', 'revisando', 'procesando'])->count();
         $pagosAprobados = (clone $queryStats)->where('estatus', 'aprobado')->count();
         $pagosRechazados = (clone $queryStats)->where('estatus', 'rechazado')->count();
         $totalTransacciones = $queryStats->count();
         
-        return view('administrador.pagos.index', compact(
-            'pagos', 'estados_pago', 'tipos_pago', 'totalPagos', 
-            'pagosPendientes', 'pagosAprobados', 'pagosRechazados', 'totalTransacciones'
-        ));
+        $pagos->getCollection()->transform(fn ($p) => [
+            'id' => $p->id,
+            'referencia' => $p->referencia_pago,
+            'alumno' => $p->alumno ? trim("{$p->alumno->nombre} {$p->alumno->paterno} {$p->alumno->materno}") : null,
+            'monto' => (float) $p->monto_pago,
+            'tipo_pago' => $p->tipo_pago,
+            'estatus' => $p->estatus,
+            'fecha_pago' => optional($p->fecha_pago)->format('d/m/Y'),
+            'hora_pago' => optional($p->fecha_pago)->format('H:i') !== '00:00'
+                ? optional($p->fecha_pago)->format('H:i')
+                : optional($p->created_at)->format('H:i'),
+            'tiene_comprobante' => !empty($p->comprobante),
+            'comprobante_url' => $p->comprobante ? Storage::url($p->comprobante) : null,
+            'comprobante_es_pdf' => $p->comprobante ? str_ends_with(strtolower($p->comprobante), '.pdf') : false,
+            'revisor' => $p->revisor?->administrador
+                ? trim("{$p->revisor->administrador->nombre} {$p->revisor->administrador->apellido_paterno}")
+                : null,
+        ]);
+
+        return \Inertia\Inertia::render('Admin/Pagos/Index', [
+            'pagos' => $pagos,
+            'estadosPago' => $estados_pago,
+            'tiposPago' => $tipos_pago,
+            'stats' => [
+                'ingresos' => (float) $totalPagos,
+                'pendientes' => $pagosPendientes,
+                'aprobados' => $pagosAprobados,
+                'rechazados' => $pagosRechazados,
+                'transacciones' => $totalTransacciones,
+            ],
+            'filters' => [
+                'search' => $search,
+                'estudiante' => $estudiante,
+                'estatus' => $estatus,
+                'tipo_pago' => $tipo_pago,
+            ],
+        ]);
+    }
+
+    private function estudiantesParaSelect()
+    {
+        return Estudiante::with('usuario')
+            ->orderBy('paterno')->orderBy('materno')->orderBy('nombre')
+            ->get()
+            ->map(fn ($e) => [
+                'id' => $e->id,
+                'label' => trim("{$e->nombre} {$e->paterno} {$e->materno}") . ' · ' . (optional($e->getRelation('usuario'))->correo ?? ''),
+            ]);
     }
 
     public function create()
     {
-        $estudiantes = Estudiante::with('usuario')
-            ->orderBy('paterno')
-            ->orderBy('materno')
-            ->orderBy('nombre')
-            ->get();
-        return view('administrador.pagos.create', compact('estudiantes'));
+        return \Inertia\Inertia::render('Admin/Pagos/Create', [
+            'estudiantes' => $this->estudiantesParaSelect(),
+        ]);
     }
 
     public function store(Request $request)
@@ -100,18 +143,22 @@ class PagoController extends Controller
         $request->validate([
             'tipo_pago' => 'required|string|max:50',
             'alumno_pago' => 'required|exists:estudiante,id',
-            'fecha_pago' => 'required|date',
-            'monto_pago' => 'required|numeric|min:0.01',
+            'fecha_pago' => 'required|date|before_or_equal:today',
             'referencia_pago' => 'nullable|string|max:100',
             'comprobante' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
             'nota_usuario' => 'nullable|string',
             'estatus' => 'required|in:pendiente,aprobado,rechazado,cancelado',
+        ], [
+            'fecha_pago.before_or_equal' => 'La fecha de pago no puede ser posterior a hoy.',
         ]);
+
+        // El monto del curso premium es fijo; nunca se toma del formulario.
+        $montoCurso = \App\Http\Controllers\Alumno\AlumnoController::PRECIO_CURSO;
 
         try {
             DB::beginTransaction();
             $estudiante = Estudiante::findOrFail($request->alumno_pago);
-            
+
             $imagenPath = null;
             if ($request->hasFile('comprobante')) {
                 $file = $request->file('comprobante');
@@ -134,7 +181,7 @@ class PagoController extends Controller
                 'tipo_pago' => $request->tipo_pago,
                 'alumno_pago' => $request->alumno_pago,
                 'fecha_pago' => $request->fecha_pago,
-                'monto_pago' => $request->monto_pago,
+                'monto_pago' => $montoCurso,
                 'estatus' => $request->estatus,
                 'referencia_pago' => $request->referencia_pago,
                 'comprobante' => $imagenPath,
@@ -167,19 +214,50 @@ class PagoController extends Controller
 
     public function show($id)
     {
-        $pago = Pago::with(['alumno', 'revisor.administrador'])->findOrFail($id);
-        return view('administrador.pagos.show', compact('pago'));
+        $pago = Pago::with(['alumno.usuario', 'revisor.administrador'])->findOrFail($id);
+
+        return \Inertia\Inertia::render('Admin/Pagos/Show', [
+            'pago' => [
+                'id' => $pago->id,
+                'referencia' => $pago->referencia_pago,
+                'monto' => (float) $pago->monto_pago,
+                'tipo_pago' => $pago->tipo_pago,
+                'estatus' => $pago->estatus,
+                'fecha_pago' => optional($pago->fecha_pago)->format('Y-m-d H:i'),
+                'fecha_aprueba' => optional($pago->fecha_aprueba)->format('Y-m-d H:i'),
+                'nota_usuario' => $pago->nota_usuario,
+                'comprobante_url' => $pago->comprobante ? Storage::url($pago->comprobante) : null,
+                'alumno' => $pago->alumno ? [
+                    'id' => $pago->alumno->id,
+                    'nombre' => trim("{$pago->alumno->nombre} {$pago->alumno->paterno} {$pago->alumno->materno}"),
+                    'correo' => optional($pago->alumno->getRelation('usuario'))->correo,
+                    'plan_activo' => (bool) $pago->alumno->plan_activo,
+                ] : null,
+                'revisor' => $pago->revisor?->administrador
+                    ? trim("{$pago->revisor->administrador->nombre} {$pago->revisor->administrador->apellido_paterno}")
+                    : null,
+            ],
+        ]);
     }
 
     public function edit($id)
     {
         $pago = Pago::with('alumno')->findOrFail($id);
-        $estudiantes = Estudiante::with('usuario')
-            ->orderBy('paterno')
-            ->orderBy('materno')
-            ->orderBy('nombre')
-            ->get();
-        return view('administrador.pagos.edit', compact('pago', 'estudiantes'));
+
+        return \Inertia\Inertia::render('Admin/Pagos/Edit', [
+            'pago' => [
+                'id' => $pago->id,
+                'alumno_pago' => $pago->alumno_pago,
+                'tipo_pago' => $pago->tipo_pago,
+                'fecha_pago' => optional($pago->fecha_pago)->format('Y-m-d'),
+                'monto_pago' => (float) $pago->monto_pago,
+                'referencia_pago' => $pago->referencia_pago,
+                'estatus' => $pago->estatus,
+                'nota_usuario' => $pago->nota_usuario,
+                'comprobante_url' => $pago->comprobante ? Storage::url($pago->comprobante) : null,
+            ],
+            'estudiantes' => $this->estudiantesParaSelect(),
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -187,12 +265,13 @@ class PagoController extends Controller
         $request->validate([
             'tipo_pago' => 'required|string|max:50',
             'alumno_pago' => 'required|exists:estudiante,id',
-            'fecha_pago' => 'required|date',
-            'monto_pago' => 'required|numeric|min:0.01',
+            'fecha_pago' => 'required|date|before_or_equal:today',
             'referencia_pago' => 'nullable|string|max:100',
             'comprobante' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
             'nota_usuario' => 'nullable|string',
             'estatus' => 'required|in:pendiente,aprobado,rechazado,cancelado',
+        ], [
+            'fecha_pago.before_or_equal' => 'La fecha de pago no puede ser posterior a hoy.',
         ]);
 
         try {
@@ -200,12 +279,11 @@ class PagoController extends Controller
             $pago = Pago::findOrFail($id);
             $estadoAnterior = $pago->estatus;
             $estudiante = Estudiante::findOrFail($request->alumno_pago);
-            
+
             $data = [
                 'tipo_pago' => $request->tipo_pago,
                 'alumno_pago' => $request->alumno_pago,
                 'fecha_pago' => $request->fecha_pago,
-                'monto_pago' => $request->monto_pago,
                 'referencia_pago' => $request->referencia_pago,
                 'nota_usuario' => $request->nota_usuario,
                 'estatus' => $request->estatus,
@@ -255,13 +333,16 @@ class PagoController extends Controller
             if ($seActivoPlan) {
                 $this->activarPlanEstudiante($estudiante, $pago);
                 $this->enviarCorreoAprobacion($estudiante, $pago);
+                $this->notificarEstudiantePago($estudiante, $pago, 'aprobado');
+            } elseif ($request->estatus == 'rechazado' && $estadoAnterior != 'rechazado') {
+                $this->notificarEstudiantePago($estudiante, $pago, 'rechazado', $request->nota_usuario);
             }
-            
+
             if ($estadoAnterior == 'aprobado' && $request->estatus != 'aprobado') {
                 $estudiante->update(['plan_activo' => false]);
                 $this->enviarCorreoDesactivacion($estudiante, $pago, $request->estatus);
             }
-            
+
             DB::commit();
             
             $usuarioActual = auth()->user()->correo ?? auth()->user()->name ?? 'Usuario';
@@ -542,7 +623,8 @@ class PagoController extends Controller
             
             $this->activarPlanEstudiante($estudiante, $pago);
             $this->enviarCorreoAprobacion($estudiante, $pago);
-            
+            $this->notificarEstudiantePago($estudiante, $pago, 'aprobado');
+
             DB::commit();
             return redirect()->route('admin.pagos.index')->with('success', '✅ Pago aprobado. Plan activado y correo enviado al estudiante.');
         } catch (\Exception $e) {
@@ -576,7 +658,8 @@ class PagoController extends Controller
             ]);
             
             $this->enviarCorreoRechazo($estudiante, $pago, $request->motivo_rechazo);
-            
+            $this->notificarEstudiantePago($estudiante, $pago, 'rechazado', $request->motivo_rechazo);
+
             DB::commit();
             return redirect()->route('admin.pagos.index')->with('success', '❌ Pago rechazado. Se ha notificado al estudiante.');
         } catch (\Exception $e) {
@@ -606,13 +689,15 @@ class PagoController extends Controller
                 $data['fecha_aprueba'] = now();
                 $this->activarPlanEstudiante($estudiante, $pago);
                 $this->enviarCorreoAprobacion($estudiante, $pago);
+                $this->notificarEstudiantePago($estudiante, $pago, 'aprobado');
             } elseif ($request->estatus == 'rechazado') {
                 $data['usuario_revision'] = auth()->id();
                 $data['fecha_aprueba'] = now();
                 if ($request->motivo_rechazo) $data['nota_usuario'] = $request->motivo_rechazo;
                 if ($estudiante->plan_activo) $estudiante->update(['plan_activo' => false]);
                 $this->enviarCorreoRechazo($estudiante, $pago, $request->motivo_rechazo);
-            } elseif (($estadoAnterior == 'aprobado' || $estadoAnterior == 'rechazado') && 
+                $this->notificarEstudiantePago($estudiante, $pago, 'rechazado', $request->motivo_rechazo);
+            } elseif (($estadoAnterior == 'aprobado' || $estadoAnterior == 'rechazado') &&
                       ($request->estatus == 'pendiente' || $request->estatus == 'cancelado')) {
                 $usuarioActual = auth()->user()->correo ?? auth()->user()->name;
                 $notaActual = $pago->nota_usuario ?? '';
@@ -668,13 +753,32 @@ class PagoController extends Controller
             ->limit(12)
             ->get();
         
-        $ultimosPagos = Pago::with(['alumno', 'revisor.administrador'])->orderBy('id', 'desc')->limit(10)->get();
-        $pagosPendientesRecientes = Pago::with('alumno')->where('estatus', 'pendiente')->orderBy('id', 'desc')->limit(5)->get();
-        
-        return view('administrador.pagos.dashboard', compact(
-            'totalIngresos', 'totalPendientes', 'totalTransacciones', 'totalAprobados', 'totalRechazados',
-            'pagosPorTipo', 'pagosPorMes', 'ultimosPagos', 'pagosPendientesRecientes'
-        ));
+        return \Inertia\Inertia::render('Admin/Pagos/Dashboard', [
+            'stats' => [
+                'ingresos' => (float) $totalIngresos,
+                'pendientes_monto' => (float) $totalPendientes,
+                'transacciones' => $totalTransacciones,
+                'aprobados' => $totalAprobados,
+                'rechazados' => $totalRechazados,
+            ],
+            'porTipo' => $pagosPorTipo->map(fn ($r) => [
+                'tipo' => $r->tipo_pago,
+                'total' => $r->total,
+                'monto' => (float) $r->monto,
+            ]),
+            'porMes' => $pagosPorMes->map(fn ($r) => [
+                'mes' => $r->mes,
+                'total' => $r->total,
+                'monto' => (float) $r->monto,
+            ]),
+            'ultimosPagos' => Pago::with('alumno')->orderBy('id', 'desc')->limit(10)->get()->map(fn ($p) => [
+                'id' => $p->id,
+                'alumno' => $p->alumno ? trim("{$p->alumno->nombre} {$p->alumno->paterno}") : null,
+                'monto' => (float) $p->monto_pago,
+                'estatus' => $p->estatus,
+                'fecha' => optional($p->fecha_pago)->format('d/m/Y'),
+            ]),
+        ]);
     }
     
     public function exportar(Request $request)
@@ -728,6 +832,34 @@ class PagoController extends Controller
         return response()->json($pagos);
     }
     
+    /**
+     * Notifica al estudiante el resultado de la revisión de su pago.
+     */
+    private function notificarEstudiantePago($estudiante, $pago, string $nuevoEstado, ?string $motivo = null): void
+    {
+        if (! $estudiante) {
+            return;
+        }
+
+        if ($nuevoEstado === 'aprobado') {
+            Notificacion::enviar($estudiante->usuario, [
+                'tipo' => 'pago_aprobado',
+                'titulo' => '¡Tu pago fue aprobado!',
+                'mensaje' => 'Ya tienes acceso completo al Curso Premium SAINS. ¡Bienvenido!',
+                'url' => route('estudiante.clases-premium'),
+                'icono' => 'check', 'color' => 'green',
+            ]);
+        } elseif ($nuevoEstado === 'rechazado') {
+            Notificacion::enviar($estudiante->usuario, [
+                'tipo' => 'pago_rechazado',
+                'titulo' => 'Tu pago fue rechazado',
+                'mensaje' => $motivo ? "Motivo: {$motivo}" : 'Revisa tu comprobante e inténtalo de nuevo, o contáctanos.',
+                'url' => route('estudiante.mis-pagos'),
+                'icono' => 'close', 'color' => 'red',
+            ]);
+        }
+    }
+
     private function sanitizarNombre($nombre)
     {
         $nombre = strtolower($nombre);

@@ -16,7 +16,7 @@ class ClaseController extends Controller
     public function index(Request $request)
     {
         // Obtener todas las clases con relaciones
-        $query = Clase::with('asignatura', 'recursos');
+        $query = Clase::with('asignatura', 'recursos', 'video');
         
         // Búsqueda
         if ($request->filled('search')) {
@@ -33,6 +33,23 @@ class ClaseController extends Controller
         if ($request->filled('asignatura_id')) {
             $query->where('id_asignatura', $request->asignatura_id);
         }
+
+        // Filtro por acceso (gratis / premium)
+        if ($request->filled('acceso')) {
+            $query->where('gratis', $request->acceso === 'gratis');
+        }
+
+        // Filtro por recursos
+        if ($request->filled('recurso')) {
+            match ($request->recurso) {
+                'video' => $query->whereNotNull('link')->where('link', '!=', ''),
+                'material' => $query->whereNotNull('url')->where('url', '!=', ''),
+                'sin' => $query
+                    ->where(fn ($q) => $q->whereNull('link')->orWhere('link', ''))
+                    ->where(fn ($q) => $q->whereNull('url')->orWhere('url', '')),
+                default => null,
+            };
+        }
         
         // Obtener todas las clases (sin paginar aún)
         $clasesCollection = $query->get();
@@ -48,13 +65,12 @@ class ClaseController extends Controller
                 : $clasesCollection->sortByDesc('id');
         } 
         elseif ($ordenCampo == 'asignatura') {
-            $clasesCollection = $ordenDireccion == 'asc' 
-                ? $clasesCollection->sortBy(function($item) {
-                    return $item->asignatura ? $item->asignatura->nombre : '';
-                }) 
-                : $clasesCollection->sortByDesc(function($item) {
-                    return $item->asignatura ? $item->asignatura->nombre : '';
-                });
+            // Materia (asc/desc) y dentro de cada materia por número de clase
+            $clasesCollection = $clasesCollection
+                ->sortBy('num_clase')
+                ->{$ordenDireccion == 'asc' ? 'sortBy' : 'sortByDesc'}(
+                    fn ($item) => $item->asignatura ? $item->asignatura->nombre : ''
+                );
         }
         elseif ($ordenCampo == 'num_clase') {
             $clasesCollection = $ordenDireccion == 'asc' 
@@ -102,45 +118,91 @@ class ClaseController extends Controller
         $totalClases = Clase::count();
         $conVideo = Clase::whereNotNull('link')->where('link', '!=', '')->count();
         $conMaterial = Clase::whereNotNull('url')->where('url', '!=', '')->count();
+        $gratuitas = Clase::where('gratis', true)->count();
         
         // Para selects
         $asignaturas = Asignatura::orderBy('nombre', 'asc')->get();
-        
-        return view('administrador.clases.index', compact(
-            'clases', 
-            'totalClases', 
-            'conVideo', 
-            'conMaterial',
-            'asignaturas',
-            'ordenCampo',
-            'ordenDireccion'
-        ));
+
+        // Videos del catálogo ("los que se suben") para elegir el video de la clase
+        $videos = Video::orderBy('materia')->orderBy('tema')
+            ->get(['id', 'materia', 'tema', 'titulo', 'link', 'duracion', 'plan'])
+            ->map(fn ($v) => [
+                'id' => $v->id,
+                'materia' => $v->materia,
+                'tema' => $v->tema,
+                'titulo' => $v->titulo,
+                'link' => $v->link,
+                'duracion' => $v->duracion && $v->duracion !== '00:00:00' ? $v->duracion : null,
+                'plan' => (bool) $v->plan,
+            ]);
+
+        $clases->getCollection()->transform(fn ($c) => [
+            'id' => $c->id,
+            'id_asignatura' => $c->id_asignatura,
+            'id_video' => $c->id_video,
+            'asignatura' => $c->asignatura?->nombre,
+            'num_clase' => $c->num_clase,
+            'nombre_clase' => $c->nombre_clase,
+            'link' => $c->link ?: $c->video?->link,
+            'url' => $c->url,
+            'gratis' => (bool) $c->gratis,
+            'recursos_count' => $c->recursos->count(),
+            'recursos' => $c->recursos->map(fn ($r) => [
+                'id' => $r->id,
+                'titulo' => $r->titulo,
+                'tipo' => $r->tipo,
+                'url' => $r->url,
+                'descripcion' => $r->descripcion,
+            ])->values(),
+            'video_titulo' => $c->video?->titulo,
+            'video_duracion' => $c->video && $c->video->duracion && $c->video->duracion !== '00:00:00' ? $c->video->duracion : null,
+        ]);
+
+        return \Inertia\Inertia::render('Admin/Clases/Index', [
+            'clases' => $clases,
+            'asignaturas' => $asignaturas->map(fn ($a) => ['id' => $a->id, 'nombre' => $a->nombre]),
+            'videos' => $videos,
+            'tiposRecurso' => collect(RecursoClase::TIPOS)->map(fn ($label, $value) => [
+                'value' => $value,
+                'label' => $label,
+            ])->values(),
+            'stats' => [
+                'total' => $totalClases,
+                'conVideo' => $conVideo,
+                'conMaterial' => $conMaterial,
+                'gratuitas' => $gratuitas,
+            ],
+            'filters' => [
+                'search' => $request->search,
+                'asignatura_id' => $request->asignatura_id ? (int) $request->asignatura_id : null,
+                'recurso' => $request->recurso,
+                'acceso' => $request->acceso,
+            ],
+        ]);
     }
-    
+
     public function create()
     {
-        $asignaturas = Asignatura::orderBy('nombre', 'asc')->get();
-        $videos = Video::orderBy('materia')->orderBy('tema')->orderBy('titulo')->get();
-        $tiposRecursos = RecursoClase::TIPOS;
-        
-        return view('administrador.clases.create', compact('asignaturas', 'videos', 'tiposRecursos'));
+        return redirect()->route('admin.clases.index');
     }
     
     public function store(Request $request)
     {
         $request->validate([
             'id_asignatura' => 'required|exists:asignatura,id',
+            'id_video' => 'nullable|exists:videos,id',
             'num_clase' => 'required|integer|min:1',
             'nombre_clase' => 'required|string|max:255',
             'link' => 'nullable|string|max:500',
             'url' => 'nullable|string|max:500',
+            'gratis' => 'boolean',
             'recursos' => 'nullable|array',
-            'recursos.*.titulo' => 'required_with:recursos.*|string|max:255',
-            'recursos.*.tipo' => 'required_with:recursos.*|string',
-            'recursos.*.url' => 'required_with:recursos.*|url',
-            'recursos.*.descripcion' => 'nullable|string',
+            'recursos.*.titulo' => 'required_with:recursos.*.url|string|max:255',
+            'recursos.*.tipo' => ['required_with:recursos.*.url', 'string', \Illuminate\Validation\Rule::in(array_keys(\App\Models\RecursoClase::TIPOS))],
+            'recursos.*.url' => 'nullable|url|max:2000',
+            'recursos.*.descripcion' => 'nullable|string|max:1000',
         ]);
-        
+
         try {
             // Verificar duplicado de número de clase
             $existe = Clase::where('id_asignatura', $request->id_asignatura)
@@ -151,13 +213,17 @@ class ClaseController extends Controller
                 return redirect()->back()->with('error', 'Ya existe una clase con el número ' . $request->num_clase . ' para esta asignatura')->withInput();
             }
             
-            // Crear la clase
+            // El video sale del catálogo: guardamos también su link por compatibilidad
+            $video = $request->id_video ? Video::find($request->id_video) : null;
+
             $clase = Clase::create([
                 'id_asignatura' => $request->id_asignatura,
+                'id_video' => $video?->id,
                 'num_clase' => $request->num_clase,
                 'nombre_clase' => $request->nombre_clase,
-                'link' => $request->link,
+                'link' => $video?->link ?: $request->link,
                 'url' => $request->url,
+                'gratis' => $request->boolean('gratis'),
             ]);
             
             // Guardar recursos adicionales
@@ -196,7 +262,7 @@ class ClaseController extends Controller
                 ]);
             }
             
-            return view('administrador.clases.show', compact('clase', 'tiposRecursos'));
+            return redirect()->route('admin.clases.index');
         } catch (\Exception $e) {
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json([
@@ -207,30 +273,27 @@ class ClaseController extends Controller
             return redirect()->route('admin.clases.index')->with('error', 'Clase no encontrada');
         }
     }
-    
+
     public function edit($id)
     {
-        $clase = Clase::with('asignatura', 'recursos')->findOrFail($id);
-        $asignaturas = Asignatura::orderBy('nombre', 'asc')->get();
-        $videos = Video::orderBy('materia')->orderBy('tema')->orderBy('titulo')->get();
-        $tiposRecursos = RecursoClase::TIPOS;
-        
-        return view('administrador.clases.edit', compact('clase', 'asignaturas', 'videos', 'tiposRecursos'));
+        return redirect()->route('admin.clases.index');
     }
     
     public function update(Request $request, $id)
     {
         $request->validate([
             'id_asignatura' => 'required|exists:asignatura,id',
+            'id_video' => 'nullable|exists:videos,id',
             'num_clase' => 'required|integer|min:1',
             'nombre_clase' => 'required|string|max:255',
             'link' => 'nullable|string|max:500',
             'url' => 'nullable|string|max:500',
+            'gratis' => 'boolean',
             'recursos' => 'nullable|array',
-            'recursos.*.titulo' => 'required_with:recursos.*|string|max:255',
-            'recursos.*.tipo' => 'required_with:recursos.*|string',
-            'recursos.*.url' => 'required_with:recursos.*|url',
-            'recursos.*.descripcion' => 'nullable|string',
+            'recursos.*.titulo' => 'required_with:recursos.*.url|string|max:255',
+            'recursos.*.tipo' => ['required_with:recursos.*.url', 'string', \Illuminate\Validation\Rule::in(array_keys(\App\Models\RecursoClase::TIPOS))],
+            'recursos.*.url' => 'nullable|url|max:2000',
+            'recursos.*.descripcion' => 'nullable|string|max:1000',
             'recursos_eliminar' => 'nullable|array',
         ]);
         
@@ -247,13 +310,16 @@ class ClaseController extends Controller
                 return redirect()->back()->with('error', 'Ya existe una clase con el número ' . $request->num_clase . ' para esta asignatura')->withInput();
             }
             
-            // Actualizar la clase
+            $video = $request->id_video ? Video::find($request->id_video) : null;
+
             $clase->update([
                 'id_asignatura' => $request->id_asignatura,
+                'id_video' => $video?->id,
                 'num_clase' => $request->num_clase,
                 'nombre_clase' => $request->nombre_clase,
-                'link' => $request->link,
+                'link' => $video?->link ?: $request->link,
                 'url' => $request->url,
+                'gratis' => $request->boolean('gratis'),
             ]);
             
             // Eliminar recursos marcados para eliminar

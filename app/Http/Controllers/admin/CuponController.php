@@ -37,20 +37,26 @@ class CuponController extends Controller
             $query->where('estatus', $request->estatus);
         }
         
-        // Filtro por expiración (opcional)
-        if ($request->filled('expiracion_filter')) {
-            switch ($request->expiracion_filter) {
+        // Filtro por expiración
+        $expira = $request->get('expira', $request->get('expiracion_filter'));
+        if ($expira) {
+            switch ($expira) {
                 case 'expirados':
                     $query->where('fecha_expiracion', '<', now());
                     break;
+                case 'vigentes':
                 case 'no_expirados':
                     $query->where(function($q) {
                         $q->where('fecha_expiracion', '>=', now())
                           ->orWhereNull('fecha_expiracion');
                     });
                     break;
+                case 'sin_fecha':
                 case 'sin_expiracion':
                     $query->whereNull('fecha_expiracion');
+                    break;
+                case 'con_fecha':
+                    $query->whereNotNull('fecha_expiracion');
                     break;
                 case 'proximos_7_dias':
                     $query->whereBetween('fecha_expiracion', [now(), now()->addDays(7)]);
@@ -80,7 +86,15 @@ class CuponController extends Controller
             }
             $cupon->nombre_generador = $nombreGenerador;
         }
-        
+
+        // Filtro por generador (sobre el nombre calculado)
+        if ($request->filled('generador')) {
+            $g = mb_strtolower($request->generador);
+            $cuponesCollection = $cuponesCollection->filter(
+                fn ($c) => str_contains(mb_strtolower($c->nombre_generador ?? ''), $g)
+            )->values();
+        }
+
         // ORDENAMIENTO
         $ordenCampo = $request->get('orden_campo', 'id');
         $ordenDireccion = $request->get('orden_direccion', 'desc');
@@ -162,25 +176,41 @@ class CuponController extends Controller
         })->count();
         $cuponesVencidos = Cupon::where('fecha_expiracion', '<', now())->count();
         
-        return view('administrador.cupones.index', compact(
-            'cupones', 
-            'totalCupones', 
-            'cuponesUsados', 
-            'cuponesActivos',
-            'cuponesExpirados',
-            'cuponesVencidos',
-            'ordenCampo',
-            'ordenDireccion'
-        ));
+        $cupones->getCollection()->transform(fn ($c) => [
+            'id' => $c->id,
+            'codigo' => $c->codigo,
+            'usado' => (bool) $c->usado,
+            'estatus' => $c->estatus,
+            'tipo_descuento' => $c->tipo_descuento,
+            'valor_descuento' => $c->valor_descuento !== null ? (float) $c->valor_descuento : null,
+            'fecha_genero' => optional($c->fecha_genero)->format('Y-m-d'),
+            'fecha_expiracion' => optional($c->fecha_expiracion)->format('Y-m-d'),
+            'expirado' => (bool) $c->expirado,
+            'generador' => $c->nombre_generador,
+        ]);
+
+        return \Inertia\Inertia::render('Admin/Cupones/Index', [
+            'cupones' => $cupones,
+            'codigoSugerido' => $this->generarCodigoUnico(),
+            'stats' => [
+                'total' => $totalCupones,
+                'usados' => $cuponesUsados,
+                'activos' => $cuponesActivos,
+                'expirados' => $cuponesExpirados,
+            ],
+            'filters' => [
+                'search' => $request->search,
+                'estatus' => $request->estatus,
+                'tipo_descuento' => $request->tipo_descuento,
+                'expira' => $expira,
+                'generador' => $request->generador,
+            ],
+        ]);
     }
 
-    // Mostrar formulario de creación de cupón
     public function create()
     {
-        $codigoGenerado = $this->generarCodigoUnico();
-        $usuarios = User::where('rol', 'estudiante')->orderBy('correo')->get();
-        
-        return view('administrador.cupones.create', compact('usuarios', 'codigoGenerado'));
+        return redirect()->route('admin.cupones.index');
     }
 
     // Guardar nuevo cupón
@@ -277,13 +307,9 @@ class CuponController extends Controller
         }
     }
 
-    // Mostrar formulario de edición de cupón
     public function edit($id)
     {
-        $cupon = Cupon::with(['usuarioGenero', 'usuarioUso'])->findOrFail($id);
-        $usuarios = User::orderBy('correo')->get();
-        
-        return view('administrador.cupones.edit', compact('cupon', 'usuarios'));
+        return redirect()->route('admin.cupones.index');
     }
 
     // Actualizar cupón
@@ -537,15 +563,8 @@ class CuponController extends Controller
      */
     public function generarMasivoForm()
     {
-        try {
-            // No intentes cargar ningún cupón aquí, solo la vista
-            return view('administrador.cupones.generar-masivo');
-        } catch (\Exception $e) {
-            Log::error('Error al cargar formulario masivo: ' . $e->getMessage());
-            return redirect()->route('admin.cupones.index')
-                ->with('error', 'Error al cargar el formulario: ' . $e->getMessage());
-        }
-}
+        return redirect()->route('admin.cupones.index');
+    }
     
     // Exportar cupones a CSV
     public function exportar(Request $request)
