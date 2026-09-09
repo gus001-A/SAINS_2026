@@ -10,9 +10,15 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
+     * En producción el sitio va detrás de un proxy que termina el SSL, así que
+     * hay que confiar en `X-Forwarded-Proto` para que Laravel sepa que la
+     * petición es HTTPS. Si no, route()/redirect() generan enlaces http:// y la
+     * redirección http→https posterior pierde la cabecera X-Inertia (y el login
+     * termina mostrando el dashboard dentro de un modal).
+     *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.

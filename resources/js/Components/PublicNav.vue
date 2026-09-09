@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { confirmAction } from '@/lib/notify';
 
@@ -22,13 +22,85 @@ const currentPath = computed(() => {
 const enInicio = computed(() => currentPath.value === '/' || currentPath.value === '');
 
 const links = [
-    { label: 'Inicio', href: '/', icon: 'home', match: () => enInicio.value },
-    { label: 'Nosotros', href: '/#nosotros', icon: 'info' },
-    { label: 'Método', href: '/#metodo', icon: 'grid' },
-    { label: 'Docentes', href: '/#docentes', icon: 'users' },
-    { label: 'Plan Premium', href: '/#plan', icon: 'star' },
-    { label: 'Contacto', href: '/#contacto', icon: 'mail' },
+    { label: 'Inicio', href: '/', icon: 'home', section: 'inicio' },
+    { label: 'Nosotros', href: '/#nosotros', icon: 'info', section: 'nosotros' },
+    { label: 'Método', href: '/#metodo', icon: 'grid', section: 'metodo' },
+    { label: 'Docentes', href: '/#docentes', icon: 'users', section: 'docentes' },
+    { label: 'Plan Premium', href: '/#plan', icon: 'star', section: 'plan' },
+    { label: 'Contacto', href: '/#contacto', icon: 'mail', section: 'contacto' },
 ];
+
+/* ---------- Scrollspy: resalta la sección en la que estás ---------- */
+const activeSection = ref('inicio');
+const scrolled = ref(false);
+let rafId = null;
+let spyLockUntil = 0; // tras un clic, deja que el scroll suave llegue sin “caminar”
+
+function computeSpy() {
+    rafId = null;
+    scrolled.value = window.scrollY > 8;
+    if (!enInicio.value) return;
+    if (performance.now() < spyLockUntil) return;
+
+    const line = window.scrollY + 130; // línea de referencia justo bajo el navbar
+    let current = 'inicio';
+    for (const l of links) {
+        if (l.section === 'inicio') continue;
+        const el = document.getElementById(l.section);
+        if (el && el.getBoundingClientRect().top + window.scrollY <= line) {
+            current = l.section;
+        }
+    }
+    // Al llegar al fondo, la última sección (contacto) siempre gana.
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+        current = 'contacto';
+    }
+    if (current !== activeSection.value) activeSection.value = current;
+}
+function onScroll() {
+    if (rafId == null) rafId = requestAnimationFrame(computeSpy);
+}
+
+const isActive = (l) => enInicio.value && activeSection.value === l.section;
+
+/* ---------- Indicador que se desliza hasta el enlace activo ---------- */
+const linksWrap = ref(null);
+const indicator = ref({ x: 0, w: 0, on: false });
+const indicatorStyle = computed(() => ({
+    transform: `translate(${indicator.value.x}px, -50%)`,
+    width: `${indicator.value.w}px`,
+    opacity: indicator.value.on ? '1' : '0',
+}));
+function moveIndicator() {
+    const wrap = linksWrap.value;
+    if (!wrap) return;
+    const el = wrap.querySelector('.pnav__link.is-active');
+    if (!el) { indicator.value = { ...indicator.value, on: false }; return; }
+    indicator.value = { x: el.offsetLeft, w: el.offsetWidth, on: true };
+}
+function onResize() { moveIndicator(); }
+
+watch([activeSection, enInicio], () => nextTick(moveIndicator));
+
+let spyTimer = null;
+
+onMounted(() => {
+    computeSpy();
+    nextTick(moveIndicator);
+    // Re-medir cuando las fuentes/animaciones ya asentaron el layout.
+    setTimeout(moveIndicator, 420);
+    if (document.fonts?.ready) document.fonts.ready.then(moveIndicator);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    // Red de seguridad: reconciliar la sección activa aunque no haya evento scroll.
+    spyTimer = setInterval(onScroll, 700);
+});
+onBeforeUnmount(() => {
+    window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', onResize);
+    if (rafId != null) cancelAnimationFrame(rafId);
+    if (spyTimer != null) clearInterval(spyTimer);
+});
 
 const icons = {
     home: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z',
@@ -48,8 +120,13 @@ function go(href) {
 
     // Enlace "Inicio"
     if (href === '/') {
-        if (enInicio.value) window.scrollTo({ top: 0, behavior: 'smooth' });
-        else router.visit('/');
+        if (enInicio.value) {
+            activeSection.value = 'inicio';
+            spyLockUntil = performance.now() + 900;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            router.visit('/');
+        }
         return;
     }
 
@@ -57,6 +134,8 @@ function go(href) {
     if (href.startsWith('/#')) {
         const id = href.slice(2);
         if (enInicio.value) {
+            activeSection.value = id; // feedback inmediato en el navbar
+            spyLockUntil = performance.now() + 900;
             const el = document.getElementById(id);
             history.replaceState(null, '', href);
             if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -89,7 +168,7 @@ function logout() {
 </script>
 
 <template>
-    <nav class="pnav">
+    <nav class="pnav" :class="{ 'is-scrolled': scrolled }">
         <div class="pnav__inner">
             <!-- Logo -->
             <Link href="/" class="pnav__brand">
@@ -98,20 +177,21 @@ function logout() {
             </Link>
 
             <!-- Links desktop -->
-            <div class="pnav__links">
+            <div ref="linksWrap" class="pnav__links">
+                <span class="pnav__indicator" :style="indicatorStyle" aria-hidden="true"></span>
                 <a
-                    v-for="l in links"
+                    v-for="(l, i) in links"
                     :key="l.label"
                     :href="l.href"
                     class="pnav__link"
-                    :class="{ 'is-active': l.match && l.match() }"
+                    :class="{ 'is-active': isActive(l) }"
+                    :style="{ '--i': i }"
                     @click.prevent="go(l.href)"
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path :d="icons[l.icon]" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                     <span>{{ l.label }}</span>
-                    <span v-if="l.match && l.match()" class="pnav__dot"></span>
                 </a>
             </div>
 
@@ -173,11 +253,12 @@ function logout() {
         <transition name="pnav-m">
             <div v-if="mobileOpen" class="pnav__mobile">
                 <a
-                    v-for="l in links"
+                    v-for="(l, i) in links"
                     :key="l.label"
                     :href="l.href"
                     class="pnav__mlink"
-                    :class="{ 'is-active': l.match && l.match() }"
+                    :class="{ 'is-active': isActive(l) }"
+                    :style="{ '--i': i }"
                     @click.prevent="go(l.href)"
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path :d="icons[l.icon]" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -212,6 +293,31 @@ function logout() {
     backdrop-filter: saturate(180%) blur(14px);
     border-bottom: 1px solid rgba(226, 232, 240, 0.7);
     box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    animation: pnav-drop 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+/* Barra de acento superior con degradado que fluye */
+.pnav::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: linear-gradient(90deg, #1d4ed8, #4f46e5 40%, #7c3aed 60%, #f59e0b);
+    background-size: 250% 100%;
+    animation: pnav-flow 9s linear infinite;
+    opacity: 0.9;
+}
+.pnav.is-scrolled {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(226, 232, 240, 0.95);
+    box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.18);
+}
+@keyframes pnav-drop {
+    from { opacity: 0; transform: translateY(-100%); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes pnav-flow {
+    to { background-position: -250% 0; }
 }
 .pnav__inner {
     max-width: 1200px;
@@ -251,14 +357,32 @@ function logout() {
 
 /* Links */
 .pnav__links {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 2px;
     flex: 1;
     justify-content: center;
 }
+/* Pastilla que se desliza hasta la sección activa */
+.pnav__indicator {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 34px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, rgba(29, 78, 216, 0.14), rgba(124, 58, 237, 0.14));
+    box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.22), 0 6px 16px -10px rgba(79, 70, 229, 0.5);
+    pointer-events: none;
+    z-index: 0;
+    transition:
+        transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.25s ease;
+}
 .pnav__link {
     position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -269,21 +393,24 @@ function logout() {
     color: #475569;
     text-decoration: none;
     white-space: nowrap;
-    transition: color 0.2s ease, background 0.2s ease;
+    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    animation: pnav-link-in 0.5s both cubic-bezier(0.16, 1, 0.3, 1);
+    animation-delay: calc(var(--i, 0) * 45ms + 0.12s);
 }
-.pnav__link svg { width: 15px; height: 15px; opacity: 0.75; transition: transform 0.2s ease; }
+.pnav__link svg { width: 15px; height: 15px; opacity: 0.75; transition: transform 0.2s ease, opacity 0.2s ease; }
 .pnav__link:hover { color: #1d4ed8; background: rgba(29, 78, 216, 0.06); }
 .pnav__link:hover svg { transform: translateY(-1px); }
-.pnav__link.is-active { color: #1e3a8a; background: rgba(29, 78, 216, 0.09); }
-.pnav__dot {
-    position: absolute;
-    left: 50%;
-    bottom: 1px;
-    transform: translateX(-50%);
-    width: 18px;
-    height: 2.5px;
-    border-radius: 3px;
-    background: #1d4ed8;
+.pnav__link:active { transform: scale(0.96); }
+.pnav__link.is-active { color: #1e3a8a; }
+.pnav__link.is-active svg { opacity: 1; animation: pnav-pop 0.45s ease; }
+@keyframes pnav-link-in {
+    from { opacity: 0; transform: translateY(-9px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes pnav-pop {
+    0% { transform: scale(0.6) rotate(-12deg); }
+    55% { transform: scale(1.18) rotate(4deg); }
+    100% { transform: none; }
 }
 
 /* Acciones */
@@ -418,13 +545,32 @@ function logout() {
 }
 .pnav__mlink svg { width: 17px; height: 17px; opacity: 0.75; }
 .pnav__mlink:hover { background: rgba(29, 78, 216, 0.06); color: #1d4ed8; transform: translateX(3px); }
-.pnav__mlink.is-active { background: rgba(29, 78, 216, 0.09); color: #1e3a8a; }
+.pnav__mlink.is-active {
+    background: linear-gradient(135deg, rgba(29, 78, 216, 0.12), rgba(124, 58, 237, 0.1));
+    color: #1e3a8a;
+    box-shadow: inset 2px 0 0 #1d4ed8;
+}
+.pnav__mlink.is-active svg { opacity: 1; }
 .pnav__mlink.is-danger { color: #dc2626; }
 .pnav__mlink.is-danger:hover { background: #fee2e2; color: #b91c1c; }
 .pnav__msep { height: 1px; background: #eef1f6; margin: 6px 2px; }
 
 .pnav-m-enter-active, .pnav-m-leave-active { transition: opacity 0.22s ease, transform 0.22s ease; }
 .pnav-m-enter-from, .pnav-m-leave-to { opacity: 0; transform: translateY(-8px); }
+/* Entrada escalonada de los enlaces del menú móvil */
+.pnav__mobile .pnav__mlink {
+    animation: pnav-link-in 0.32s both cubic-bezier(0.16, 1, 0.3, 1);
+    animation-delay: calc(var(--i, 0) * 35ms + 0.04s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pnav,
+    .pnav::before,
+    .pnav__link,
+    .pnav__link.is-active svg,
+    .pnav__mobile .pnav__mlink { animation: none !important; }
+    .pnav__indicator { transition: opacity 0.2s ease !important; }
+}
 
 @media (max-width: 900px) {
     .pnav__links { display: none; }

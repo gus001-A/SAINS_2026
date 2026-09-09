@@ -301,6 +301,89 @@ del componente index correspondiente.
 - Verificado en :8002 (8000=CLUB, 8001=RIC): navbar en auth, registro E2E → completar-perfil,
   checkbox alineado, navbar landing con sus dos botones, precio $800, sin errores de consola.
 
+## Iteración 26 (rediseño del landing) ✅
+
+Reescritura completa de `resources/js/Pages/Welcome.vue` (template + `<style scoped>`) con un
+sistema visual coherente (indigo `#4f46e5`→violeta `#7c3aed`, acento ámbar, radios grandes,
+sombras en capas). Sin dependencias nuevas — sigue con grid de Bootstrap + Font Awesome + CSS scoped.
+
+- **Revelado al hacer scroll**: directiva local `v-reveal` con `IntersectionObserver`
+  (`.reveal` → `.is-in`). Directiva revela al instante lo que ya esté en pantalla/por encima al
+  montar (deep-link con `#ancla`); listener de `scroll` (rAF-throttled) + `setTimeout(2500)` de
+  respaldo barren lo que el observer no haya cazado; se limpian en `onBeforeUnmount`.
+  Guard `prefers-reduced-motion`.
+- **Hero** (`#inicio`): degradado profundo + orbes difuminados que flotan + patrón de puntos con
+  máscara + glow. Badge con punto verde pulsante, título con "universidad de tus sueños" en
+  degradado ámbar, dos CTAs (sólido blanco + fantasma → hace scroll a `#metodo`), **tira de stats**
+  en tarjeta glass (`+85%`, `150+`, `5,000+`, `8`), tira de confianza con las 6 universidades como
+  pills, flecha de scroll animada. Entrada escalonada de cada bloque (`hero-in`).
+- **Secciones**: patrón `.sec__head` (eyebrow con degradado + `sec__title` + `sec__sub`).
+  Beneficios (3 tarjetas con icono en tile degradado), banner de admisión rediseñado (degradado +
+  forma decorativa + logos de universidades en chips blancos), **método como stepper** de 4 pasos
+  numerados + panel con imagen enmarcada (las `*_tips.png` son 200×200, se muestran a máx 190px),
+  docentes con foto `aspect-ratio 1/1` + overlay degradado + zoom en hover + área como pill,
+  Plan Premium pulido (tag, precio grande rosa, lista de 8 features en 2 columnas, nota de pago
+  seguro) + tarjeta de garantía con icono verde, y **nueva franja CTA final** ("¿Listo para
+  asegurar tu lugar?").
+- `heroStats`, `beneficios`, `premiumFeatures` como arrays en el `<script setup>`.
+- Verificado en :8002: estructura completa (5 sections + footer#contacto, 3 beneficios, 4 pasos,
+  8 docentes, 8 features), todos los estilos nuevos aplicados (computed styles), sin errores de
+  consola, sin imágenes rotas, build OK. El scroll del Browser pane se congela — la verificación
+  visual completa por scroll quedó bloqueada por el pane (el hero sí se vio y quedó bien).
+
+## Iteración 25 (navbar del landing: scrollspy + animaciones) ✅
+
+- **`Welcome.vue`**: el `<section class="hero">` ahora es `id="inicio"`.
+- **`PublicNav.vue`** — la sección activa te va siguiendo mientras haces scroll:
+  - `activeSection` (ref) se calcula en `computeSpy()` a partir de `scrollY + 130` vs el
+    `getBoundingClientRect().top` de cada sección (`inicio/nosotros/metodo/docentes/plan/contacto`);
+    al fondo del documento fuerza `contacto`. Se dispara con `scroll` (throttle `requestAnimationFrame`),
+    `resize`, y un `setInterval(700 ms)` de respaldo (por si no hay evento scroll).
+  - Al hacer clic en un enlace: fija `activeSection` al instante y bloquea el spy 900 ms
+    (`spyLockUntil`) para que el scroll suave llegue sin "caminar" por las secciones intermedias.
+  - `isActive(l) = enInicio && activeSection === l.section` (en otras páginas: nada activo).
+  - **Indicador deslizante**: `<span class="pnav__indicator">` — pastilla con degradado que se
+    mueve (`translate` + `width` con transición `.38s`) hasta el enlace activo. Se recoloca en
+    `watch([activeSection, enInicio])`, `resize`, `document.fonts.ready` y a los 420 ms.
+- **Animaciones nuevas**: entrada del navbar (`pnav-drop`, baja deslizando), barra de acento
+  superior con degradado que fluye (`pnav-flow`), entrada escalonada de los enlaces
+  (`pnav-link-in` con `--i`), "pop" del icono al activarse (`pnav-pop`), sombra al hacer scroll
+  (`.is-scrolled`), menú móvil con enlaces escalonados y activo con degradado + borde izquierdo.
+  Guardado con `@media (prefers-reduced-motion: reduce)`.
+- Verificado en :8002: el indicador sigue a la sección correcta en las 6 secciones
+  (`nosotros`→123px, `metodo`→232px, `docentes`→332px, `plan`→444px, `contacto`→584px,
+  `inicio`→37px), feedback inmediato al hacer clic, en `/login` sin activo ni indicador,
+  sin errores de consola. (El scroll programático del Browser pane se congela — artefacto del
+  pane; en un navegador real el scroll suave del clic funciona.)
+
+## Iteración 24 (fix: el login abría el dashboard en un modal raro) ✅
+
+- **Síntoma** (prod `sains.sistema-sicad.site`, admin y estudiante): al iniciar sesión, el
+  dashboard aparecía dentro de un overlay a pantalla completa y la URL seguía en `/login`.
+- **Causa**: es el **modal de error interno de Inertia** (`@inertiajs/core` → `modal.show()`),
+  que salta cuando una petición XHR recibe una respuesta que **no** es Inertia. Disparadores:
+  1. En producción, la redirección tras login se genera como `http://` (por `APP_URL` en http
+     y/o proxy no confiable). El navegador, al seguir el redirect `http→https`, **descarta la
+     cabecera `X-Inertia`**, así que el GET del dashboard responde el HTML completo → modal.
+  2. Token CSRF vencido → `POST /login` devuelve **419 Page Expired** → modal con "419"
+     (reproducido en local con cookie `XSRF-TOKEN` vieja / sesiones de archivo borradas).
+- **Fixes**:
+  - `app/Http/Middleware/TrustProxies.php`: `protected $proxies = '*'` — Laravel ahora
+    honra `X-Forwarded-Proto: https` y genera URLs `https://`.
+  - `app/Providers/AppServiceProvider.php` `boot()`: si `config('app.url')` empieza con
+    `https://`, `URL::forceScheme('https')`.
+  - `resources/js/app.js`: `router.on('invalid', …)` como red de seguridad — un **419** recarga
+    la página (token nuevo); una respuesta **2xx/3xx no-Inertia** hace `window.location.assign()`
+    a la URL final (navegación real) en vez de mostrar el modal. No toca los **422** de
+    validación (esos sí son respuestas Inertia válidas → siguen mostrando el error inline).
+  - `.env.example`: comentario sobre `APP_URL` en producción.
+- **Pendiente en el servidor** (hazlo tú): en el `.env` de producción →
+  `APP_URL=https://sains.sistema-sicad.site`, `ASSET_URL=https://sains.sistema-sicad.site`,
+  `SESSION_SECURE_COOKIE=true`; después `php artisan optimize:clear` y `npm run build`.
+- Verificado en :8002: login admin → `/administrador/dashboard`, login estudiante →
+  `/estudiante/clases-premium`, contraseña incorrecta → error inline (sin modal), y el caso
+  419 → recarga automática en vez de modal. Sin overlay en ningún caso.
+
 ## Iteración 23 (navbar único estilo RIC en todas las páginas públicas) ✅
 
 - **`Components/PublicNav.vue`** (NUEVO): un solo navbar para **todo** el público — landing,
