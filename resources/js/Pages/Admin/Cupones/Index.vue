@@ -309,52 +309,65 @@ const columns = [
         </a-modal>
 
         <!-- Compartir -->
-        <a-modal v-model:open="shareOpen" :width="470" :footer="null" centered destroy-on-close
+        <a-modal v-model:open="shareOpen" :width="460" :footer="null" centered destroy-on-close
             wrap-class-name="share-modal" :closable="true">
             <div v-if="shareCupon" class="share-box">
                 <div class="share-hero">
-                    <span class="share-hero__ic"><ShareAltOutlined /></span>
-                    <div>
-                        <div class="share-hero__title">Compartir cupón</div>
-                        <div class="share-hero__sub">Envíalo por WhatsApp o correo</div>
+                    <span class="share-hero__orb" aria-hidden="true"></span>
+                    <img src="/images/logo_u.png" alt="SAINS" class="share-hero__logo" />
+                    <div class="share-hero__title">Compartir cupón</div>
+                    <div class="share-hero__sub">Envíalo por WhatsApp o correo</div>
+                </div>
+
+                <div class="share-body">
+                    <div class="voucher">
+                        <div class="voucher__main">
+                            <span class="voucher__label">Código del cupón</span>
+                            <span class="voucher__code">{{ shareCupon.codigo }}</span>
+                            <span v-if="shareCupon.fecha_expiracion" class="voucher__exp">
+                                Válido hasta {{ shareCupon.fecha_expiracion }}
+                            </span>
+                        </div>
+                        <div class="voucher__cut" aria-hidden="true"></div>
+                        <div class="voucher__amount">
+                            <b>{{ descuentoLabel(shareCupon) }}</b>
+                            <span>de descuento</span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="share-ticket">
-                    <div class="share-ticket__left">
-                        <span class="share-ticket__label">Código</span>
-                        <span class="share-ticket__code">{{ shareCupon.codigo }}</span>
+                    <div class="share-field">
+                        <label>Número de WhatsApp <span>(opcional)</span></label>
+                        <a-input v-model:value="shareTelefono" placeholder="Ej. 55 1234 5678" inputmode="tel">
+                            <template #prefix><WhatsAppOutlined style="color:#25D366" /></template>
+                        </a-input>
                     </div>
-                    <div class="share-ticket__right">{{ descuentoLabel(shareCupon) }}</div>
-                </div>
+                    <div class="share-field">
+                        <label>Correo electrónico <span>(opcional)</span></label>
+                        <a-input v-model:value="shareCorreo" placeholder="alumno@correo.com"
+                            :status="correoValido ? undefined : 'error'">
+                            <template #prefix><MailOutlined style="color:#6366f1" /></template>
+                        </a-input>
+                    </div>
 
-                <div class="share-field">
-                    <label>Número de WhatsApp <span>(opcional)</span></label>
-                    <a-input v-model:value="shareTelefono" placeholder="Ej. 55 1234 5678" inputmode="tel">
-                        <template #prefix><WhatsAppOutlined style="color:#25D366" /></template>
-                    </a-input>
-                </div>
-                <div class="share-field">
-                    <label>Correo electrónico <span>(opcional)</span></label>
-                    <a-input v-model:value="shareCorreo" placeholder="alumno@correo.com"
-                        :status="correoValido ? undefined : 'error'">
-                        <template #prefix><MailOutlined style="color:#6366f1" /></template>
-                    </a-input>
-                </div>
+                    <div class="share-field">
+                        <label>Mensaje</label>
+                        <a-textarea :value="shareMsg" :rows="5" readonly class="share-msg" />
+                    </div>
 
-                <a-textarea :value="shareMsg" :rows="5" readonly class="share-msg" />
-
-                <div class="share-actions">
-                    <a class="share-btn is-wa" :href="whatsappUrl" target="_blank" rel="noopener">
-                        <WhatsAppOutlined /> {{ telDigits ? 'Enviar por WhatsApp' : 'Abrir WhatsApp' }}
-                    </a>
-                    <a class="share-btn is-mail" :class="{ 'is-disabled': !correoValido }"
-                        :href="correoValido ? mailtoUrl : undefined">
-                        <MailOutlined /> {{ shareCorreo.trim() ? 'Enviar por correo' : 'Abrir correo' }}
-                    </a>
-                    <button type="button" class="share-btn is-copy" @click="copiar(shareMsg)">
-                        <CopyOutlined /> Copiar mensaje
-                    </button>
+                    <div class="share-actions">
+                        <a class="share-btn is-wa" :href="whatsappUrl" target="_blank" rel="noopener">
+                            <WhatsAppOutlined /> {{ telDigits ? 'Enviar por WhatsApp' : 'Abrir WhatsApp' }}
+                        </a>
+                        <div class="share-actions__row">
+                            <a class="share-btn is-mail" :class="{ 'is-disabled': !correoValido }"
+                                :href="correoValido ? mailtoUrl : undefined">
+                                <MailOutlined /> {{ shareCorreo.trim() ? 'Enviar correo' : 'Abrir correo' }}
+                            </a>
+                            <button type="button" class="share-btn is-copy" @click="copiar(shareMsg)">
+                                <CopyOutlined /> Copiar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </a-modal>
@@ -362,10 +375,10 @@ const columns = [
 </template>
 
 <style>
-.share-modal .ant-modal-content { padding: 0 !important; overflow: hidden; }
+.share-modal .ant-modal-content { padding: 0 !important; overflow: hidden; border-radius: 20px; }
 .share-modal .ant-modal-body { padding: 0 !important; }
-.share-modal .ant-modal-close { color: #fff; top: 16px; inset-inline-end: 16px; }
-.share-modal .ant-modal-close:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+.share-modal .ant-modal-close { color: #fff; top: 14px; inset-inline-end: 14px; }
+.share-modal .ant-modal-close:hover { background: rgba(255, 255, 255, .2); color: #fff; }
 </style>
 
 <style scoped>
@@ -380,46 +393,89 @@ const columns = [
 .cup-code__ic { font-size: 10px; opacity: .5; flex: none; }
 
 .share-box { display: flex; flex-direction: column; }
+
+/* ---- Hero ---- */
 .share-hero {
-    display: flex; align-items: center; gap: 13px;
-    padding: 20px 24px; background: var(--sains-grad); color: #fff;
+    position: relative;
+    overflow: hidden;
+    padding: 24px 24px 22px;
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #9333ea 100%);
 }
-.share-hero__ic {
-    width: 42px; height: 42px; flex: none; border-radius: 12px; font-size: 19px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255, 255, 255, .18);
+.share-hero__orb {
+    position: absolute;
+    top: -70px; right: -50px;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, rgba(251, 191, 36, .5), transparent 65%);
 }
-.share-hero__title { font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
-.share-hero__sub { font-size: 12.5px; opacity: .85; }
+.share-hero__logo {
+    position: relative;
+    height: 30px; width: auto;
+    filter: brightness(0) invert(1);
+    margin-bottom: 12px;
+}
+.share-hero__title { position: relative; font-weight: 800; font-size: 17px; letter-spacing: -.01em; }
+.share-hero__sub { position: relative; font-size: 12.5px; opacity: .82; margin-top: 2px; }
 
-.share-ticket {
-    display: flex; align-items: center; justify-content: space-between; gap: 14px;
-    margin: 18px 24px 4px; padding: 14px 18px; border-radius: 14px;
-    background: #f8fafc; border: 1px dashed #c7d2fe;
-}
-.share-ticket__label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; margin-bottom: 3px; }
-.share-ticket__code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; font-size: 17px; color: #0f172a; }
-.share-ticket__right {
-    flex: none; font-weight: 800; font-size: 15px; color: #4f46e5;
-    background: #eef2ff; padding: 6px 12px; border-radius: 10px;
-}
+.share-body { padding: 20px 24px 24px; }
 
-.share-field { margin: 12px 24px 0; }
+/* ---- Voucher ---- */
+.voucher {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    border-radius: 16px;
+    background: #f7f8ff;
+    border: 1px solid #e3e7ff;
+    box-shadow: inset 0 0 0 1px #fff;
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+.voucher__main { flex: 1; padding: 16px 18px; }
+.voucher__label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: #94a3b8; font-weight: 700; }
+.voucher__code {
+    display: block; margin-top: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 800; font-size: 19px;
+    color: #1e1b4b; word-break: break-all;
+}
+.voucher__exp { display: block; margin-top: 6px; font-size: 11.5px; color: #64748b; }
+.voucher__cut {
+    width: 0; flex: none;
+    border-left: 2px dashed #c7cdf5;
+    margin: 10px 0;
+}
+.voucher__amount {
+    flex: none; width: 108px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff; padding: 10px;
+}
+.voucher__amount b { font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+.voucher__amount span { font-size: 10px; opacity: .85; text-align: center; line-height: 1.2; }
+
+/* ---- Campos ---- */
+.share-field { margin-bottom: 12px; }
+.share-field:last-of-type { margin-bottom: 0; }
 .share-field label { display: block; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 5px; }
 .share-field label span { color: #94a3b8; font-weight: 400; }
-.share-field :deep(.ant-input-affix-wrapper) { border-radius: 10px; }
+.share-field :deep(.ant-input-affix-wrapper),
+.share-field :deep(.ant-input) { border-radius: 10px; }
+.share-msg { font-size: 12.5px; line-height: 1.5; background: #f8fafc; }
 
-.share-msg { margin: 14px 24px 0; font-size: 12.5px; border-radius: 10px; }
-
-.share-actions { display: flex; flex-direction: column; gap: 9px; padding: 16px 24px 22px; }
+/* ---- Acciones ---- */
+.share-actions { display: flex; flex-direction: column; gap: 9px; margin-top: 18px; }
+.share-actions__row { display: flex; gap: 9px; }
+.share-actions__row .share-btn { flex: 1; }
 .share-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    height: 42px; border-radius: 11px; border: 0; cursor: pointer;
-    font-size: 13.5px; font-weight: 600; transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    height: 44px; border-radius: 12px; border: 0; cursor: pointer;
+    font-size: 13.5px; font-weight: 650; text-decoration: none;
+    transition: transform .12s ease, box-shadow .12s ease, background .15s ease;
 }
 .share-btn:hover { transform: translateY(-1px); }
-.share-btn.is-wa { background: #25D366; color: #fff; box-shadow: 0 8px 18px -8px rgba(37, 211, 102, .6); }
-.share-btn.is-mail { background: #4f46e5; color: #fff; box-shadow: 0 8px 18px -8px rgba(79, 70, 229, .6); }
+.share-btn.is-wa { background: #25D366; color: #fff; box-shadow: 0 10px 20px -10px rgba(37, 211, 102, .7); }
+.share-btn.is-mail { background: #4f46e5; color: #fff; box-shadow: 0 10px 20px -10px rgba(79, 70, 229, .7); }
 .share-btn.is-copy { background: #f1f5f9; color: #475569; }
 .share-btn.is-copy:hover { background: #e2e8f0; }
 .share-btn.is-disabled { opacity: .45; pointer-events: none; }

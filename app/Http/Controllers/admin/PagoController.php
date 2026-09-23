@@ -144,16 +144,22 @@ class PagoController extends Controller
             'tipo_pago' => 'required|string|max:50',
             'alumno_pago' => 'required|exists:estudiante,id',
             'fecha_pago' => 'required|date|before_or_equal:today',
-            'referencia_pago' => 'nullable|string|max:100',
+            'referencia_pago' => 'nullable|string|max:100|unique:pagos,referencia_pago',
             'comprobante' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
             'nota_usuario' => 'nullable|string',
             'estatus' => 'required|in:pendiente,aprobado,rechazado,cancelado',
         ], [
             'fecha_pago.before_or_equal' => 'La fecha de pago no puede ser posterior a hoy.',
+            'referencia_pago.unique' => 'Ya existe un pago con esa referencia. Revisa si el estudiante ya tiene una ficha pendiente.',
         ]);
 
         // El monto del curso premium es fijo; nunca se toma del formulario.
         $montoCurso = \App\Http\Controllers\Alumno\AlumnoController::PRECIO_CURSO;
+
+        // La referencia es obligatoria y única en BD: si viene vacía, se genera.
+        $referencia = trim((string) $request->referencia_pago) ?: Pago::referenciaUnica(
+            str_contains(strtolower((string) $request->tipo_pago), 'oxxo') ? 'OXX' : 'TRA'
+        );
 
         try {
             DB::beginTransaction();
@@ -183,7 +189,7 @@ class PagoController extends Controller
                 'fecha_pago' => $request->fecha_pago,
                 'monto_pago' => $montoCurso,
                 'estatus' => $request->estatus,
-                'referencia_pago' => $request->referencia_pago,
+                'referencia_pago' => $referencia,
                 'comprobante' => $imagenPath,
                 'usuario_revision' => $usuarioRevision,
                 'fecha_aprueba' => $fechaRevision,
@@ -266,12 +272,13 @@ class PagoController extends Controller
             'tipo_pago' => 'required|string|max:50',
             'alumno_pago' => 'required|exists:estudiante,id',
             'fecha_pago' => 'required|date|before_or_equal:today',
-            'referencia_pago' => 'nullable|string|max:100',
+            'referencia_pago' => 'nullable|string|max:100|unique:pagos,referencia_pago,' . $id,
             'comprobante' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
             'nota_usuario' => 'nullable|string',
             'estatus' => 'required|in:pendiente,aprobado,rechazado,cancelado',
         ], [
             'fecha_pago.before_or_equal' => 'La fecha de pago no puede ser posterior a hoy.',
+            'referencia_pago.unique' => 'Ya existe otro pago con esa referencia.',
         ]);
 
         try {
@@ -284,7 +291,8 @@ class PagoController extends Controller
                 'tipo_pago' => $request->tipo_pago,
                 'alumno_pago' => $request->alumno_pago,
                 'fecha_pago' => $request->fecha_pago,
-                'referencia_pago' => $request->referencia_pago,
+                // La referencia no puede quedar vacía (columna NOT NULL + UNIQUE).
+                'referencia_pago' => trim((string) $request->referencia_pago) ?: $pago->referencia_pago,
                 'nota_usuario' => $request->nota_usuario,
                 'estatus' => $request->estatus,
             ];

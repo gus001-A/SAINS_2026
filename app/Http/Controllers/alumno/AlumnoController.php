@@ -246,7 +246,7 @@ class AlumnoController extends Controller
                 'tipo_pago' => 'cupon',
                 'monto_pago' => 0,
                 'estatus' => 'completado',
-                'referencia_pago' => 'CUPON-' . $cupon->codigo,
+                'referencia_pago' => Pago::referenciaPreferida('CUPON-' . $cupon->codigo, 'CUPON'),
                 'fecha_pago' => now(),
                 'nota_usuario' => "Plan Premium activado con el cupón {$cupon->codigo} (100% de descuento).",
             ]);
@@ -1095,7 +1095,15 @@ class AlumnoController extends Controller
             'oxxo' => 'OXX',
             default => 'PAG'
         };
-        return $prefix . date('Ymd') . str_pad($estudianteId, 6, '0', STR_PAD_LEFT) . rand(100, 999);
+
+        // Reintenta hasta obtener una referencia que no exista (la columna es UNIQUE).
+        do {
+            $ref = $prefix . date('Ymd')
+                . str_pad((string) $estudianteId, 6, '0', STR_PAD_LEFT)
+                . random_int(1000, 9999);
+        } while (Pago::where('referencia_pago', $ref)->exists());
+
+        return $ref;
     }
 
     /**

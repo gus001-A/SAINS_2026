@@ -20,6 +20,37 @@ class Pago extends Model
         'fecha_aprueba' => 'datetime',
     ];
 
+    /**
+     * Genera una referencia de pago única.
+     * La columna `referencia_pago` es UNIQUE y NOT NULL, así que nunca debe
+     * quedar vacía ni repetida.
+     */
+    public static function referenciaUnica(string $prefix = 'PAG'): string
+    {
+        $prefix = strtoupper(preg_replace('/[^A-Za-z]/', '', $prefix)) ?: 'PAG';
+
+        do {
+            $ref = $prefix . now()->format('Ymd')
+                . str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+        } while (static::where('referencia_pago', $ref)->exists());
+
+        return $ref;
+    }
+
+    /**
+     * Devuelve `$preferida` si es válida y libre; si no, genera una única.
+     */
+    public static function referenciaPreferida(?string $preferida, string $prefixFallback = 'PAG'): string
+    {
+        $preferida = trim((string) $preferida);
+
+        if ($preferida !== '' && ! static::where('referencia_pago', $preferida)->exists()) {
+            return $preferida;
+        }
+
+        return static::referenciaUnica($prefixFallback);
+    }
+
     // 👇 CORREGIR: La relación debe ser belongsTo, no hasOne
     public function alumno()
     {

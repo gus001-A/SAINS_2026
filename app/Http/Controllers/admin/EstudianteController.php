@@ -163,7 +163,7 @@ class EstudianteController extends Controller
                     'tipo_pago' => 'cupon',
                     'monto_pago' => 0,
                     'estatus' => 'completado',
-                    'referencia_pago' => 'CUPON-' . $cupon->codigo,
+                    'referencia_pago' => Pago::referenciaPreferida('CUPON-' . $cupon->codigo, 'CUPON'),
                     'fecha_pago' => now(),
                     'nota_usuario' => "Plan Premium activado con el cupón {$cupon->codigo} (100%).",
                 ]);
@@ -586,14 +586,6 @@ class EstudianteController extends Controller
                 'tipo' => $e->tipo_examen ?? 'Simulador',
                 'calificacion' => round($e->calificacion ?? 0, 1),
                 'fecha' => isset($e->fecha_fin) && $e->fecha_fin ? Carbon::parse($e->fecha_fin)->format('d/m/Y') : null,
-            ])->values(),
-            'pagos' => $estudiante->pagos->sortByDesc('id')->take(10)->map(fn ($p) => [
-                'id' => $p->id,
-                'monto' => (float) $p->monto_pago,
-                'estatus' => $p->estatus,
-                'tipo' => $p->tipo_pago,
-                'fecha' => optional($p->fecha_pago)->format('d/m/Y'),
-                'referencia' => $p->referencia_pago,
             ])->values(),
         ]);
     }

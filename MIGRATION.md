@@ -301,6 +301,71 @@ del componente index correspondiente.
 - Verificado en :8002 (8000=CLUB, 8001=RIC): navbar en auth, registro E2E → completar-perfil,
   checkbox alineado, navbar landing con sus dos botones, precio $800, sin errores de consola.
 
+## Iteración 29 (Show del estudiante: quitar pagos, mejorar progreso y exámenes) ✅
+
+- **`Admin/Estudiantes/Show.vue`**: se quitó la sección **Pagos** (tabla + `pagoColumns` + `money`);
+  `EstudianteController@show` ya no envía `pagos` al render (prop declarada pero no usada).
+  Queda: cabecera de perfil + 4 KPI + Progreso de videos + Estudio 7 días + Exámenes realizados
+  (esta última **a todo el ancho** al liberar la columna de pagos).
+- **Progreso de videos** rediseñado: círculo + **barra segmentada** (completados indigo / en
+  progreso ámbar / sin ver gris, `videosSinVer = total - completos - en_progreso`) + leyenda con
+  puntos de color y conteos.
+- **Exámenes realizados** rediseñado: meta en el título (`N en total · promedio X/100`); columna
+  Tipo como pill de color (`tipoMeta`: materia azul / curso verde / simulación rojo / otro
+  violeta); Calificación como **barra de score** con color por rango (≥80 verde, ≥60 ámbar, <60
+  rojo) + número; estado vacío propio (`FileDoneOutlined`); `:scroll="{ x: 460 }"` para móvil.
+- Avatar: `@error="fotoOk = false"` → si la foto (`foto_url`) da 404, cae a iniciales.
+- Verificado en :8002 (desktop + móvil): sin errores propios (los 404 de `/storage/fotos_perfil`
+  son archivos que faltan en local y ya caen a iniciales).
+
+## Iteración 28 (rediseño: Ver pago, modal Compartir cupón, Show del estudiante) ✅
+
+- **`Admin/Pagos/Show.vue`** rehecho: banner de estado (verde/rojo/ámbar) con monto + chips;
+  layout de **2 columnas flex independientes** (`.pay__cols`, sin `align-items:stretch` que dejaba
+  huecos): izquierda = "Detalle del pago" (grilla clave/valor `.kv` con divisores finos, ya no
+  `a-descriptions bordered`) + "Comprobante" (imagen grande / bloque PDF / vacío); derecha =
+  "Estudiante" (avatar + correo + plan + botón) + "Nota del pago". Cada columna apila sus
+  tarjetas a su altura natural → sin espacios muertos.
+- **`Admin/Cupones/Index.vue` — modal Compartir** rediseñado: hero degradado con **logo SAINS
+  en blanco (`<img>`, SIN link)** + orbe ámbar; **voucher** tipo cupón (código mono + "Válido
+  hasta" + bloque degradado "X% de descuento" con corte punteado); campos WhatsApp/correo;
+  preview del mensaje; botón WhatsApp full + fila correo/copiar. `.share-modal` con
+  `border-radius:20px`.
+- **`Admin/Estudiantes/Show.vue`** rehecho como **bento** (`.bento`, `gap:14px`): cabecera de
+  perfil horizontal (avatar + nombre + plan + **facts en `flex-wrap` que llenan cada fila sin
+  celdas vacías**); fila de 4 StatCard; fila `1fr 1fr` Progreso (círculo + leyenda) / Estudio 7
+  días (barras, con estado vacío propio si no hay sesiones); fila `1fr 1fr` Exámenes / Pagos.
+  Todas las tarjetas `.card` con el mismo borde/radio/padding, columnas `align-items:stretch`.
+  Responsive: perfil apila en ≤640px.
+- Verificado en :8002 (admin): las 3 vistas sin errores de consola, sin huecos, responsive OK.
+
+## Iteración 27 (fix referencia de pago duplicada + limpieza SweetAlert) ✅
+
+- **Bug** (producción): al registrar un pago desde el admin →
+  `SQLSTATE[23000] 1062 Duplicate entry 'TRA…' for key 'pagos_referencia_pago_unique'`.
+  Causa: `pagos.referencia_pago` es `UNIQUE NOT NULL` y `PagoController::store` insertaba
+  `$request->referencia_pago` tal cual; el admin tecleaba una referencia que ya existía (la de la
+  ficha pendiente del estudiante). Además `AlumnoController::generarReferenciaPago` usaba
+  `rand(100,999)` (colisiona fácil).
+- **Fix**:
+  - `App\Models\Pago::referenciaUnica($prefix)` — genera una referencia y **reintenta** hasta que
+    no exista. `Pago::referenciaPreferida($preferida, $prefixFallback)` — usa la preferida si está
+    libre, si no genera una única.
+  - `PagoController::store` / `update`: regla `unique:pagos,referencia_pago` (con
+    `,{id}` en update) + mensaje claro *"Ya existe un pago con esa referencia…"* (se muestra bajo
+    el campo en `PagoForm.vue`). Si la referencia viene vacía → `Pago::referenciaUnica()`.
+    En update, si viene vacía → conserva la actual (columna NOT NULL).
+  - `AlumnoController::generarReferenciaPago`: bucle `do…while` hasta referencia libre.
+  - Spots de cupón 100% (`AlumnoController::activarPlanPorCupon`,
+    `EstudianteController@store`): `Pago::referenciaPreferida('CUPON-'.$codigo, 'CUPON')`.
+  - Verificado con tinker: referencia duplicada → `ValidationException` (redirige atrás, **sin
+    500**, no crea el pago); referencia vacía → autogenera `TRA20260909…`; estudiante y cupón OK.
+- **SweetAlert**: **no había ninguno en el código** — la migración ya lo reemplazó por
+  Ant Design Vue (`lib/notify.js` → `Modal.confirm` + `message`, `a-popconfirm` en tablas).
+  Sólo quedaba `sweetalert2` como dependencia sin usar en `package.json` → **eliminada**
+  (`npm uninstall sweetalert2`, build OK). Lo que se ve en producción es el build viejo;
+  al desplegar el build actual todas las alertas ya son de Ant Design Vue.
+
 ## Iteración 26 (rediseño del landing) ✅
 
 Reescritura completa de `resources/js/Pages/Welcome.vue` (template + `<style scoped>`) con un
