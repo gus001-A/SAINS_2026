@@ -34,6 +34,13 @@ class User extends Authenticatable
         return $this->contraseña;
     }
 
+    /**
+     * Nombre de la columna de contraseña, usado por el rehash automático al
+     * iniciar sesión (Laravel 11+). Sin esto intentaría guardar en una
+     * columna "password" que no existe en la tabla `usuario`.
+     */
+    protected $authPasswordName = 'contraseña';
+
     // Relaciones existentes
     public function administrador()
     {
