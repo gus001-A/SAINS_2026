@@ -53,7 +53,7 @@ class TiempoEstudio extends Model
             
             // Incrementar sesiones si pasaron más de 5 minutos desde la última actividad
             if ($tiempoEstudio->ultima_actividad) {
-                $diferencia = Carbon::now()->diffInMinutes($tiempoEstudio->ultima_actividad);
+                $diferencia = abs(Carbon::now()->diffInMinutes($tiempoEstudio->ultima_actividad));
                 if ($diferencia > 5) {
                     $tiempoEstudio->sesiones = ($tiempoEstudio->sesiones ?? 0) + 1;
                 }

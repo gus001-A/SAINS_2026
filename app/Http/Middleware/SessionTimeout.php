@@ -31,7 +31,7 @@ class SessionTimeout
         $lastActivity = $request->session()->get('last_activity');
         
         if ($lastActivity !== null) {
-            $inactiveTime = now()->diffInMinutes($lastActivity);
+            $inactiveTime = abs(now()->diffInMinutes($lastActivity));
             
             // Si superó el tiempo de inactividad
             if ($inactiveTime >= $this->timeout) {

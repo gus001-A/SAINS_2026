@@ -301,6 +301,40 @@ del componente index correspondiente.
 - Verificado en :8002 (8000=CLUB, 8001=RIC): navbar en auth, registro E2E → completar-perfil,
   checkbox alineado, navbar landing con sus dos botones, precio $800, sin errores de consola.
 
+## Iteración 30 (upgrade Laravel 10 → 12) ✅
+
+Rama `upgrade/laravel-12` (no mezclada a `main` todavía — probar y hacer merge cuando el
+usuario confirme). PHP local es 8.2.29; Laravel 13 pide PHP ^8.3, así que el objetivo real
+fue **Laravel 12** (última compatible con el PHP instalado en WAMP, compartido con los demás
+proyectos — subir PHP es una decisión aparte, más disruptiva).
+
+- `composer.json`: `php ^8.2`, `laravel/framework ^12.0`, `laravel/sanctum ^4.0`,
+  `nunomaduro/collision ^8.1`, `phpunit/phpunit ^11.0`. `inertiajs/inertia-laravel`,
+  `barryvdh/laravel-dompdf`, `laravel/socialite`, `tightenco/ziggy` ya soportaban Laravel 12
+  con su constraint actual — no se tocaron. `composer update` resolvió todo sin conflictos.
+- **Se conservó la estructura clásica** (`app/Http/Kernel.php`, `Console/Kernel.php`,
+  `Exceptions/Handler.php`) — la guía oficial de Laravel 11/12 dice explícitamente que NO
+  hace falta migrar a `bootstrap/app.php` en apps existentes, sigue soportada tal cual.
+- `config/sanctum.php`: llaves de middleware renombradas para Sanctum 4
+  (`authenticate_session`/`validate_csrf_token`). Sanctum no se usa de verdad en la app (auth
+  100% por sesión custom) — cambio solo de forma, cero riesgo funcional.
+- **Bug real encontrado y corregido** (`User.php`): faltaba `$authPasswordName = 'contraseña'`.
+  Laravel 11+ intenta re-hashear y GUARDAR la contraseña en la columna `password` en cada
+  login si cambió el work factor del hash; la tabla `usuario` no tiene esa columna (es
+  `contraseña`) → sin el fix, un rehash habría roto el login con un error SQL de columna
+  inexistente.
+- **Bug real encontrado y corregido** (Carbon 3, incluido en L11+): invierte el default de
+  `diffIn*()` de absoluto a con signo. Se envolvieron en `abs()` los 3 `diffInMinutes()` que
+  dependían de la magnitud: `ResetPasswordController` (expiración del token de recuperación —
+  **sin el fix, los enlaces de "recuperar contraseña" nunca habrían expirado**),
+  `SessionTimeout` y `TiempoEstudio`.
+- `phpunit.xml` migrado al nuevo esquema (`phpunit --migrate-configuration`).
+- Verificado en :8002: login admin/estudiante, dashboard, Ver pago, Show de estudiante, alta
+  de cupón (POST con CSRF real), validación de referencia de pago duplicada — todo sin
+  errores nuevos en `storage/logs/laravel.log`. Suite de tests (2) en verde.
+- **Pendiente**: probar a fondo en un ambiente aparte antes de mergear a `main` y desplegar;
+  en producción hay que correr `composer install` + `npm run build` tras el deploy.
+
 ## Iteración 29 (Show del estudiante: quitar pagos, mejorar progreso y exámenes) ✅
 
 - **`Admin/Estudiantes/Show.vue`**: se quitó la sección **Pagos** (tabla + `pagoColumns` + `money`);

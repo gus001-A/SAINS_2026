@@ -47,7 +47,7 @@ class ResetPasswordController extends Controller
 
             // Verificar expiración (60 minutos)
             $createdAt = Carbon::parse($resetRecord->created_at);
-            if ($createdAt->diffInMinutes(now()) > 60) {
+            if (abs($createdAt->diffInMinutes(now())) > 60) {
                 DB::table('password_reset_tokens')->where('email', $request->email)->delete();
                 return response()->json([
                     'success' => false,
