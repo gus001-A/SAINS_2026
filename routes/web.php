@@ -157,6 +157,8 @@ Route::prefix('administrador')->name('admin.')->middleware(['auth', 'admin'])->g
         Route::get('/', [PreguntaController::class, 'indexPreguntas'])->name('index');
         Route::get('/crear', [PreguntaController::class, 'createPregunta'])->name('create');
         Route::post('/', [PreguntaController::class, 'storePregunta'])->name('store');
+        Route::get('/exportar-excel', [PreguntaController::class, 'exportarExcel'])->name('exportar-excel');
+        Route::post('/importar-excel', [PreguntaController::class, 'importarExcel'])->name('importar-excel');
         Route::get('/{id}', [PreguntaController::class, 'showPregunta'])->name('show');
         Route::get('/{id}/editar', [PreguntaController::class, 'editPregunta'])->name('edit');
         Route::put('/{id}', [PreguntaController::class, 'updatePregunta'])->name('update');

@@ -1,12 +1,15 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
-import { PlusOutlined, SearchOutlined, QuestionCircleOutlined, CheckCircleFilled, MinusCircleOutlined } from '@ant-design/icons-vue';
+import {
+    PlusOutlined, SearchOutlined, QuestionCircleOutlined, CheckCircleFilled, MinusCircleOutlined,
+    DownloadOutlined, UploadOutlined, InboxOutlined, FileExcelOutlined, DeleteOutlined,
+} from '@ant-design/icons-vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import PageHead from '@/Components/PageHead.vue';
 import StatCard from '@/Components/StatCard.vue';
 import RowActions from '@/Components/RowActions.vue';
-import { confirmDelete } from '@/lib/notify';
+import { confirmDelete, message } from '@/lib/notify';
 
 const props = defineProps({
     preguntas: { type: Object, required: true },
@@ -69,6 +72,31 @@ function eliminar(r) {
     confirmDelete({ title: '¿Eliminar pregunta?', content: r.pregunta.slice(0, 80), onOk: () => router.delete(route('admin.preguntas.destroy', r.id), { preserveScroll: true }) });
 }
 
+/* ---------- Importar desde Excel ---------- */
+const importOpen = ref(false);
+const importForm = useForm({ archivo: null });
+
+function beforeUploadExcel(file) {
+    const okType = /\.(xlsx|xls)$/i.test(file.name);
+    if (!okType) { message.error('Solo se aceptan archivos .xlsx o .xls.'); return false; }
+    importForm.archivo = file;
+    return false;
+}
+function quitarArchivoExcel() {
+    importForm.archivo = null;
+}
+function enviarImportacion() {
+    if (!importForm.archivo) { message.warning('Selecciona un archivo Excel primero.'); return; }
+    importForm.post(route('admin.preguntas.importar-excel'), {
+        forceFormData: true,
+        onSuccess: () => { importOpen.value = false; importForm.reset(); },
+    });
+}
+function alCerrarImport() {
+    importForm.reset();
+    importForm.clearErrors();
+}
+
 const pagination = computed(() => ({
     current: props.preguntas.current_page,
     pageSize: props.preguntas.per_page,
@@ -91,6 +119,10 @@ const columns = [
     <AdminLayout title="Preguntas">
         <PageHead title="Preguntas" subtitle="Banco de reactivos por área" :icon="QuestionCircleOutlined">
             <template #actions>
+                <a-button :href="route('admin.preguntas.exportar-excel')">
+                    <template #icon><DownloadOutlined /></template>Descargar Excel
+                </a-button>
+                <a-button @click="importOpen = true"><template #icon><UploadOutlined /></template>Cargar Excel</a-button>
                 <a-button type="primary" @click="openCreate"><template #icon><PlusOutlined /></template>Nueva pregunta</a-button>
             </template>
         </PageHead>
@@ -171,6 +203,44 @@ const columns = [
                 </a-form-item>
             </a-form>
         </a-modal>
+
+        <a-modal
+            v-model:open="importOpen"
+            title="Cargar preguntas desde Excel"
+            class="sains-modal"
+            :width="540"
+            :confirm-loading="importForm.processing"
+            ok-text="Importar"
+            cancel-text="Cancelar"
+            :ok-button-props="{ disabled: !importForm.archivo }"
+            @ok="enviarImportacion"
+            @cancel="alCerrarImport"
+            @after-close="alCerrarImport"
+        >
+            <a-form layout="vertical">
+                <a-form-item label="Archivo Excel" :validate-status="importForm.errors.archivo ? 'error' : undefined" :help="importForm.errors.archivo">
+                    <a-upload-dragger
+                        v-if="!importForm.archivo"
+                        :before-upload="beforeUploadExcel"
+                        :max-count="1"
+                        :show-upload-list="false"
+                        accept=".xlsx,.xls"
+                    >
+                        <p class="ant-upload-drag-icon"><InboxOutlined /></p>
+                        <p class="ant-upload-text">Haz clic o arrastra tu archivo aquí</p>
+                        <p class="ant-upload-hint">.xlsx o .xls</p>
+                    </a-upload-dragger>
+
+                    <div v-else class="import-file">
+                        <span class="import-file__name"><FileExcelOutlined /> {{ importForm.archivo.name }}</span>
+                        <a-button size="small" type="text" danger @click="quitarArchivoExcel">
+                            <template #icon><DeleteOutlined /></template>Quitar
+                        </a-button>
+                    </div>
+                </a-form-item>
+                <a-alert type="info" show-icon message="Usa las mismas columnas que la descarga: ID, Área, Pregunta, Respuesta Correcta, Respuesta 1, Respuesta 2, Justificación. Deja el ID vacío para crear preguntas nuevas; si coincide con una existente, la actualiza. Si el área no existe, se crea automáticamente." />
+            </a-form>
+        </a-modal>
     </AdminLayout>
 </template>
 
@@ -181,4 +251,11 @@ const columns = [
 }
 .just-flag.is-yes { background: #dcfce7; color: #15803d; }
 .just-flag.is-no { background: #f1f5f9; color: #94a3b8; }
+
+.import-file {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 8px 10px 14px; border: 1px solid var(--sains-line); border-radius: 10px; background: #f8fafc;
+}
+.import-file__name { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #334155; }
+.import-file__name .anticon { color: #16a34a; }
 </style>

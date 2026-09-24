@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\PreguntasExport;
 use App\Http\Controllers\Controller;
+use App\Imports\PreguntasImport;
 use App\Models\Pregunta;
 use App\Models\AreaPregunta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PreguntaController extends Controller
 {
@@ -196,6 +199,45 @@ class PreguntaController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('admin.preguntas.index')
                 ->with('error', 'Error al eliminar la pregunta: ' . $e->getMessage());
+        }
+    }
+
+    // ==================== EXCEL: EXPORTAR / IMPORTAR ====================
+
+    // Descargar todas las preguntas en un Excel (también sirve como plantilla para cargar)
+    public function exportarExcel()
+    {
+        return Excel::download(new PreguntasExport(), 'preguntas-' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    // Cargar preguntas desde un Excel (crea nuevas o actualiza si la columna ID coincide)
+    public function importarExcel(Request $request)
+    {
+        $request->validate([
+            'archivo' => 'required|file|mimes:xlsx,xls',
+        ]);
+
+        try {
+            $import = new PreguntasImport();
+            Excel::import($import, $request->file('archivo'));
+
+            $partes = [];
+            if ($import->creadas > 0) $partes[] = "{$import->creadas} creada(s)";
+            if ($import->actualizadas > 0) $partes[] = "{$import->actualizadas} actualizada(s)";
+            $resumen = $partes ? implode(' · ', $partes) : 'No se importó ninguna pregunta nueva';
+
+            if ($import->errores) {
+                $detalle = implode(' | ', array_slice($import->errores, 0, 5));
+                $extra = count($import->errores) > 5 ? ' (y ' . (count($import->errores) - 5) . ' más)' : '';
+                return redirect()->route('admin.preguntas.index')
+                    ->with('warning', "{$resumen}. Filas con errores: {$detalle}{$extra}");
+            }
+
+            return redirect()->route('admin.preguntas.index')->with('success', "Importación completa: {$resumen}.");
+        } catch (\Exception $e) {
+            Log::error('Error al importar preguntas: ' . $e->getMessage());
+            return redirect()->route('admin.preguntas.index')
+                ->with('error', 'Error al importar el archivo: ' . $e->getMessage());
         }
     }
 
